@@ -1,8 +1,11 @@
 //! KiCad netlist (`.net`, the `(export …)` s-expression) — the source of pin
 //! electrical types, which script-imported boards do not carry.
 //!
-//! Shape relied on (KiCad 9 netlist exporter): `(export (nets (net (code "1")
-//! (name "…") (node (ref "C22") (pin "1") (pintype "PASSIVE")) …)))`.
+//! Shape relied on (KiCad 9 netlist exporter): `(export (components (comp
+//! (ref "U4") (value "…") (footprint "…") …)) (nets (net (code 1) (name "…")
+//! (node (ref "C22") (pin "1") (pintype "PASSIVE")) …)))`. Net codes are
+//! written bare, not quoted — a reader that expects `(code "1")` finds no
+//! nets at all and reports a vacuous match (it happened, 2026-10-12).
 
 use std::collections::HashMap;
 
@@ -15,6 +18,8 @@ pub struct Netlist {
   pub pintype: HashMap<(String, String), String>,
   /// (reference, pin number) → net name.
   pub net_of: HashMap<(String, String), String>,
+  /// reference → (value, footprint), from `(components (comp …))`.
+  pub components: HashMap<String, (String, String)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -38,6 +43,23 @@ impl Netlist {
       .and_then(|r| r.child("nets"))
       .ok_or(NetlistError::NotANetlist)?;
     let mut out = Netlist::default();
+    if let Some(comps) = doc.root().and_then(|r| r.child("components")) {
+      for comp in comps.children("comp") {
+        let field = |k: &str| {
+          comp
+            .child(k)
+            .and_then(|f| f.atom(1))
+            .map(|v| v.into_owned())
+            .unwrap_or_default()
+        };
+        let reference = field("ref");
+        if !reference.is_empty() {
+          out
+            .components
+            .insert(reference, (field("value"), field("footprint")));
+        }
+      }
+    }
     for net in nets.children("net") {
       let name = net.child("name").and_then(|n| n.atom(1)).unwrap_or_default();
       for node in net.children("node") {

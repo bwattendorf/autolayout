@@ -6,6 +6,7 @@
 //!   autolayout pads <file.kicad_pcb>                 every pad's board position, as autolayout computes it
 //!   autolayout grade <file.kicad_pcb>...             placement metrics (overlaps, off-board, wirelength)
 //!   autolayout groups <file.kicad_pcb> <file.net>    supplies, MCUs, converters (from structure only)
+//!   autolayout parity <file.kicad_pcb> <file.net>    parts, wiring and net names: board vs netlist
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -15,7 +16,7 @@ use std::process::ExitCode;
 use autolayout_board::{Board, Netlist, Point, Side, set_pose};
 use autolayout_sexpr::{Document, parse};
 
-const USAGE: &str = "usage:\n  autolayout roundtrip <file.kicad_pcb>...\n  autolayout info <file.kicad_pcb> [<file.net>]\n  autolayout move <in.kicad_pcb> <out.kicad_pcb> (<REF> <x> <y> <deg>)...\n  autolayout pads <file.kicad_pcb>\n  autolayout grade <file.kicad_pcb>...\n  autolayout groups <file.kicad_pcb> <file.net>";
+const USAGE: &str = "usage:\n  autolayout roundtrip <file.kicad_pcb>...\n  autolayout info <file.kicad_pcb> [<file.net>]\n  autolayout move <in.kicad_pcb> <out.kicad_pcb> (<REF> <x> <y> <deg>)...\n  autolayout pads <file.kicad_pcb>\n  autolayout grade <file.kicad_pcb>...\n  autolayout groups <file.kicad_pcb> <file.net>\n  autolayout parity <file.kicad_pcb> <file.net>";
 
 /// Set the pose of each named footprint and write the result to `output`,
 /// which must not exist yet (CLAUDE.md rule 1: inputs are never overwritten).
@@ -49,6 +50,21 @@ fn groups(pcb: &str, net: &str) -> Result<bool, String> {
   let g = autolayout_place::group::group(&board, &netlist);
   print!("{}", g.report(&board));
   Ok(true)
+}
+
+/// Does the board still describe the netlist's circuit? Exit 1 on a parts or
+/// wiring mismatch; a rename alone passes.
+fn parity(pcb: &str, net: &str) -> Result<bool, String> {
+  let (_, doc) = load(pcb)?;
+  let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
+  let (_, net_doc) = load(net)?;
+  let netlist = Netlist::read(&net_doc).map_err(|e| format!("{net}: {e}"))?;
+  if netlist.net_of.is_empty() {
+    return Err(format!("{net}: no nets read; refusing to report a vacuous match"));
+  }
+  let p = autolayout_board::parity::parity(&board, &netlist);
+  println!("{p}");
+  Ok(p.is_clean_for_fab())
 }
 
 /// Placement metrics for each file, read back off disk.
@@ -105,6 +121,7 @@ fn main() -> ExitCode {
     Some((cmd, rest)) if cmd == "pads" && rest.len() == 1 => rest.first().map_or(Ok(false), |f| pads(f)),
     Some((cmd, files)) if cmd == "grade" && !files.is_empty() => grade(files),
     Some((cmd, [pcb, net])) if cmd == "groups" => groups(pcb, net),
+    Some((cmd, [pcb, net])) if cmd == "parity" => parity(pcb, net),
     _ => Err(USAGE.to_owned()),
   };
   match result {

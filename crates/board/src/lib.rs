@@ -24,6 +24,7 @@ use autolayout_sexpr::{Document, List};
 pub mod edit;
 mod geom;
 mod netlist;
+pub mod parity;
 
 pub use edit::{EditError, set_pose};
 pub use geom::{BBox, Point, Seg, outlines_overlap};
