@@ -3,8 +3,8 @@
 **Updated:** 2026-10-12. Top item is next. Strike through and date items when
 they close; don't delete them.
 
-1. **M0.1 — run the round-trip test on the whole corpus** and record the count in
-   ROADMAP. Any file that fails is the next item.
+1. ~~**M0.1 — run the round-trip test on the whole corpus**~~ — closed
+   2026-10-12: 116/116 byte-exact.
 2. **M0.2 — fuzz the parser** (truncated files, unbalanced parens, huge depth,
    invalid UTF-8, unterminated strings): errors, never panics.
 3. ~~**M1.1 — board model, read side**~~ — closed 2026-10-12. Pintype comes
