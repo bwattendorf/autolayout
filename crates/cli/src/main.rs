@@ -8,6 +8,7 @@
 //!   autolayout groups <file.kicad_pcb> <file.net>    supplies, MCUs, converters (from structure only)
 //!   autolayout parity <file.kicad_pcb> <file.net>    parts, wiring and net names: board vs netlist
 //!   autolayout place <in.kicad_pcb> <file.net> <out.kicad_pcb>   place unlocked parts, write a NEW file, grade it
+//!   autolayout strip <in.kicad_pcb> <out.kicad_pcb>  remove tracks, arcs, vias and zones (NEW file)
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -17,7 +18,7 @@ use std::process::ExitCode;
 use autolayout_board::{Board, Netlist, Point, Side, set_pose};
 use autolayout_sexpr::{Document, parse};
 
-const USAGE: &str = "usage:\n  autolayout roundtrip <file.kicad_pcb>...\n  autolayout info <file.kicad_pcb> [<file.net>]\n  autolayout move <in.kicad_pcb> <out.kicad_pcb> (<REF> <x> <y> <deg>)...\n  autolayout pads <file.kicad_pcb>\n  autolayout grade <file.kicad_pcb>...\n  autolayout groups <file.kicad_pcb> <file.net>\n  autolayout parity <file.kicad_pcb> <file.net>\n  autolayout place <in.kicad_pcb> <file.net> <out.kicad_pcb>";
+const USAGE: &str = "usage:\n  autolayout roundtrip <file.kicad_pcb>...\n  autolayout info <file.kicad_pcb> [<file.net>]\n  autolayout move <in.kicad_pcb> <out.kicad_pcb> (<REF> <x> <y> <deg>)...\n  autolayout pads <file.kicad_pcb>\n  autolayout grade <file.kicad_pcb>...\n  autolayout groups <file.kicad_pcb> <file.net>\n  autolayout parity <file.kicad_pcb> <file.net>\n  autolayout place <in.kicad_pcb> <file.net> <out.kicad_pcb>\n  autolayout strip <in.kicad_pcb> <out.kicad_pcb>";
 
 /// Set the pose of each named footprint and write the result to `output`,
 /// which must not exist yet (CLAUDE.md rule 1: inputs are never overwritten).
@@ -105,6 +106,27 @@ fn place(pcb: &str, net: &str, out: &str) -> Result<bool, String> {
   Ok(p.unplaced.is_empty())
 }
 
+/// Remove all routed copper — top-level tracks, arcs, vias and zones — and
+/// write a NEW file. Placement, pads and everything else keep their bytes.
+/// Done here rather than through pcbnew, whose 9.0 SWIG binding leaves every
+/// later object unusable after `board.Remove()` (tools/route_check.py).
+fn strip(pcb: &str, out: &str) -> Result<bool, String> {
+  if Path::new(out).exists() {
+    return Err(format!("{out}: already exists; refusing to overwrite"));
+  }
+  let (_, mut doc) = load(pcb)?;
+  let root = doc.root_mut().ok_or_else(|| format!("{pcb}: no root list"))?;
+  let before = root.items.len();
+  let copper = ["segment", "arc", "via", "zone"];
+  root
+    .items
+    .retain(|n| n.as_list().is_none_or(|l| !copper.iter().any(|k| l.is(k))));
+  let removed = before - root.items.len();
+  fs::write(out, doc.to_string()).map_err(|e| format!("{out}: {e}"))?;
+  println!("wrote {out}: removed {removed} copper item(s)");
+  Ok(true)
+}
+
 /// Placement metrics for each file, read back off disk.
 fn grade(files: &[String]) -> Result<bool, String> {
   for file in files {
@@ -161,6 +183,7 @@ fn main() -> ExitCode {
     Some((cmd, [pcb, net])) if cmd == "groups" => groups(pcb, net),
     Some((cmd, [pcb, net])) if cmd == "parity" => parity(pcb, net),
     Some((cmd, [pcb, net, out])) if cmd == "place" => place(pcb, net, out),
+    Some((cmd, [pcb, out])) if cmd == "strip" => strip(pcb, out),
     _ => Err(USAGE.to_owned()),
   };
   match result {

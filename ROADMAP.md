@@ -93,6 +93,17 @@
   relays, with whole regions empty; the service spreads parts with room to
   route. Short wires on an over-packed board is the classic analytic-
   placement artefact. Routability is unmeasured, so "better" is not claimed.
+- 2026-10-12 — M6.1: routability harness. `autolayout strip` removes all
+  copper (pcbnew's 9.0 SWIG binding breaks every later object after
+  `board.Remove()`, so stripping is done in the lossless file layer), then
+  `tools/route_check.py` pours identical planes (structural GND/+3V3 from
+  `autolayout groups`), exports DSN, runs Freerouting 2.3.0 externally,
+  imports, and lets **KiCad's DRC** count unconnected. Smoke test, our m1 v1,
+  2 passes: 278 → 152 unconnected, 975 s (fan-out on the packed placement
+  is slow). Router choice recorded: Freerouting is the fixed yardstick while
+  placement improves; an own router (M7) comes later and is measured against
+  it — Freerouting is GPL, so it can be run but never shipped inside
+  autolayout.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

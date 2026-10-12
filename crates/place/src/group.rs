@@ -614,6 +614,30 @@ impl Grouping {
     let supplies: Vec<String> = self.supply_nets.iter().map(|&n| net(n)).collect();
     s += &format!("supply nets ({}): {}\n", supplies.len(), supplies.join(" "));
     s += &format!("ground: {}\n", self.ground.map_or("none found".to_owned(), net));
+    // The plane pair a router harness pours: ground, and the supply with the
+    // most pads after it. Structural, so a harness never chooses by name.
+    let mut by_pads: Vec<(usize, u32)> = self
+      .supply_nets
+      .iter()
+      .filter(|&&n| Some(n) != self.ground)
+      .map(|&n| {
+        (
+          board
+            .footprints
+            .iter()
+            .flat_map(|f| &f.pads)
+            .filter(|p| p.net == Some(n))
+            .count(),
+          n,
+        )
+      })
+      .collect();
+    by_pads.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
+    s += &format!(
+      "planes: {} {}\n",
+      self.ground.map_or("-".to_owned(), net),
+      by_pads.first().map_or("-".to_owned(), |&(_, n)| net(n))
+    );
     s += &format!(
       "MCUs: {}\n",
       if self.mcus.is_empty() {
