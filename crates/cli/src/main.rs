@@ -7,7 +7,7 @@
 //!   autolayout grade <file.kicad_pcb>...             placement metrics (overlaps, off-board, wirelength)
 //!   autolayout groups <file.kicad_pcb> <file.net>    supplies, MCUs, converters (from structure only)
 //!   autolayout parity <file.kicad_pcb> <file.net>    parts, wiring and net names: board vs netlist
-//!   autolayout place <in.kicad_pcb> <file.net> <out.kicad_pcb>   place unlocked parts, write a NEW file, grade it
+//!   autolayout place <in.kicad_pcb> <file.net> <out.kicad_pcb> [--no-halo]   place unlocked parts, write a NEW file, grade it
 //!   autolayout strip <in.kicad_pcb> <out.kicad_pcb>  remove tracks, arcs, vias and zones (NEW file)
 
 use std::collections::BTreeMap;
@@ -18,7 +18,7 @@ use std::process::ExitCode;
 use autolayout_board::{Board, Netlist, Point, Side, set_pose};
 use autolayout_sexpr::{Document, parse};
 
-const USAGE: &str = "usage:\n  autolayout roundtrip <file.kicad_pcb>...\n  autolayout info <file.kicad_pcb> [<file.net>]\n  autolayout move <in.kicad_pcb> <out.kicad_pcb> (<REF> <x> <y> <deg>)...\n  autolayout pads <file.kicad_pcb>\n  autolayout grade <file.kicad_pcb>...\n  autolayout groups <file.kicad_pcb> <file.net>\n  autolayout parity <file.kicad_pcb> <file.net>\n  autolayout place <in.kicad_pcb> <file.net> <out.kicad_pcb>\n  autolayout strip <in.kicad_pcb> <out.kicad_pcb>";
+const USAGE: &str = "usage:\n  autolayout roundtrip <file.kicad_pcb>...\n  autolayout info <file.kicad_pcb> [<file.net>]\n  autolayout move <in.kicad_pcb> <out.kicad_pcb> (<REF> <x> <y> <deg>)...\n  autolayout pads <file.kicad_pcb>\n  autolayout grade <file.kicad_pcb>...\n  autolayout groups <file.kicad_pcb> <file.net>\n  autolayout parity <file.kicad_pcb> <file.net>\n  autolayout place <in.kicad_pcb> <file.net> <out.kicad_pcb> [--no-halo]\n  autolayout strip <in.kicad_pcb> <out.kicad_pcb>";
 
 /// Set the pose of each named footprint and write the result to `output`,
 /// which must not exist yet (CLAUDE.md rule 1: inputs are never overwritten).
@@ -71,7 +71,7 @@ fn parity(pcb: &str, net: &str) -> Result<bool, String> {
 
 /// Place every unlocked part and write the result to a NEW file, then grade
 /// the written file read back off disk (rule 3: not the placer's own state).
-fn place(pcb: &str, net: &str, out: &str) -> Result<bool, String> {
+fn place(pcb: &str, net: &str, out: &str, escape_halo: bool) -> Result<bool, String> {
   if Path::new(out).exists() {
     return Err(format!("{out}: already exists; refusing to overwrite"));
   }
@@ -81,7 +81,12 @@ fn place(pcb: &str, net: &str, out: &str) -> Result<bool, String> {
   let netlist = Netlist::read(&net_doc).map_err(|e| format!("{net}: {e}"))?;
   let g = autolayout_place::group::group(&board, &netlist);
   let start = std::time::Instant::now();
-  let p = autolayout_place::place::place(&board, &g);
+  // --no-halo reproduces M4.1 exactly: no halos and no spreading.
+  let opts = autolayout_place::place::Options {
+    escape_halo,
+    spread: escape_halo,
+  };
+  let p = autolayout_place::place::place(&board, &g, opts);
   let secs = start.elapsed().as_secs_f64();
   for &(f, at) in &p.moves {
     let fp = board.footprints.get(f).ok_or("bad footprint index")?;
@@ -182,7 +187,10 @@ fn main() -> ExitCode {
     Some((cmd, files)) if cmd == "grade" && !files.is_empty() => grade(files),
     Some((cmd, [pcb, net])) if cmd == "groups" => groups(pcb, net),
     Some((cmd, [pcb, net])) if cmd == "parity" => parity(pcb, net),
-    Some((cmd, [pcb, net, out])) if cmd == "place" => place(pcb, net, out),
+    Some((cmd, [pcb, net, out])) if cmd == "place" => place(pcb, net, out, true),
+    Some((cmd, [pcb, net, out, flag])) if cmd == "place" && flag == "--no-halo" => {
+      place(pcb, net, out, false)
+    }
     Some((cmd, [pcb, out])) if cmd == "strip" => strip(pcb, out),
     _ => Err(USAGE.to_owned()),
   };

@@ -95,11 +95,15 @@ they close; don't delete them.
      crystals and connectors these checks need.
 9. **Speed:** the overlap check is O(n²) pairs with a box pre-filter; fine at
    200 parts, revisit with a grid if a placer calls it in a loop.
-10. **M1.3 — flip to the other side.** Deferred, not dropped: the first placer
-   keeps every part on the side it starts on. That is also what the RP2350
-   layout rule wants for converter loops (input cap, inductor, output cap on
-   one side), so it costs nothing yet. Needed before the placer may choose
-   sides.
+10. **M1.3 — flip to the other side. NOW NEXT** (2026-10-12): front-only
+   assembly is the user's policy, and the service's better-routing m1 moved
+   every movable back-side cap to the front. Learn KiCad's exact flip
+   transform from KiCad itself (flip a part via pcbnew, diff the file), then
+   verify autolayout's flip the way move/rotate were verified (KiCad
+   `kicad_pads.py` agreement after edits). Then the placer brings movable
+   back-side parts (not test points) to the front, and the escape proxy says
+   whether that closes the gap. Converter loops stay one-sided (RP2350
+   §6.3.8), which front-only satisfies automatically.
 
 ## Known unknowns
 

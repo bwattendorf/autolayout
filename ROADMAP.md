@@ -128,6 +128,27 @@
   confirm. Freerouting's GUI threw an NPE in its plane-drawing code on the
   service's board (AWT thread, routing unaffected); the harness now runs it
   headless.
+- 2026-10-12 — M4.2 first levers, measured with the fan-out escape proxy
+  (Freerouting, headless, ~1.5–2 min), m1:
+
+  | placement | signal HPWL | fan-out escaped |
+  |---|---|---|
+  | M4.1 packed | 2 374 mm | 59.7 % |
+  | + escape halo (0.65 mm × escapes / 4, clamp 0.15–2.0) | 3 069 mm | **64.3 %** |
+  | + halo + spreading (ramped repulsion) | 2 907 mm | 61.8 % |
+  | the service's placement | 3 016 mm | **89.9 %** |
+
+  Halo kept (default on); spreading kept as an option, default OFF since it
+  measured worse. Neither closes the gap. The service's board differs
+  structurally: it moved all six movable back-side caps (C21, C31, C32,
+  C36–C38) to the front, while our placer keeps sides. Next: flip.
+- 2026-10-12 — **Policy: front-side assembly only** (user, 2026-10-12): parts
+  on the back cost a second assembly pass. autolayout's placer will put every
+  part it places on the front. Test points stay on the back (bare pads,
+  probed from below, nothing to assemble). On m1 that leaves 13 locked MCU
+  bypass caps as the only assembled back-side parts — Portcullis's
+  `BACKSIDE_BYPASS`, family-wide since 2026-08-31; changing that is a
+  Portcullis decision, not taken here.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

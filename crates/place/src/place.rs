@@ -22,7 +22,7 @@
 
 use std::collections::HashMap;
 
-use autolayout_board::{BBox, Board, Point, Seg, outlines_overlap};
+use autolayout_board::{BBox, Board, Point, Seg, outlines_overlap, outlines_within};
 
 use crate::group::{Grouping, Role};
 
@@ -41,6 +41,43 @@ pub const EDGE_MARGIN_MM: f64 = 0.5;
 /// Edge contact closer than this counts as touching, not overlapping.
 const TOUCH_MM: f64 = 1e-3;
 
+/// Escape halo (M4.2). Each signal pad that has to be routed OUT of a part
+/// needs a channel past its neighbours: one 0.25 mm track plus 0.2 mm
+/// clearance either side = 0.65 mm, at the corpus boards' Default netclass
+/// (track 0.25, clearance 0.2 — kicad-cli DRC on m1 reports "netclass
+/// 'Default' clearance 0.2000 mm"). Spread over four sides:
+///     halo = 0.65 mm × escapes / 4, clamped to [0.15, 2.0] mm.
+/// Neighbours share the moat, so a pair keeps max(halo a, halo b) apart, not
+/// the sum. A bypass cap and the one IC it serves are exempt: the cap's copper
+/// ends at the pin and blocks no channel. The idea is Portcullis's, measured
+/// there to take a board from 4 unconnected to 0
+/// (controller/docs/placement-comparison-2026-08-20.md); this is a fresh
+/// implementation, not a copy.
+pub const ESCAPE_PITCH_MM: f64 = 0.65;
+pub const HALO_MIN_MM: f64 = 0.15;
+pub const HALO_MAX_MM: f64 = 2.0;
+
+/// Peak strength of the spreading push (fraction of the remaining overlap
+/// resolved per iteration at the end of the ramp).
+const SPREAD: f64 = 0.5;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Options {
+  /// Keep escape halos between parts and from the board edge.
+  pub escape_halo: bool,
+  /// Spread parts apart during global placement (density, M4.2).
+  pub spread: bool,
+}
+
+impl Default for Options {
+  fn default() -> Options {
+    Options {
+      escape_halo: true,
+      spread: true,
+    }
+  }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Placement {
   /// (footprint index, new position). Rotation is unchanged.
@@ -49,7 +86,7 @@ pub struct Placement {
   pub unplaced: Vec<usize>,
 }
 
-pub fn place(board: &Board, g: &Grouping) -> Placement {
+pub fn place(board: &Board, g: &Grouping, opts: Options) -> Placement {
   let n = board.footprints.len();
   let Some(outline) = board.outline else {
     return Placement {
@@ -82,6 +119,45 @@ pub fn place(board: &Board, g: &Grouping) -> Placement {
       .is_some_and(|&k| (2..=PLANE_FANOUT).contains(&k))
   };
 
+  // A through-hole part occupies BOTH sides: its pins come out of the other
+  // face. Treating it as one-sided let the first version drop the SWD header
+  // (J11) through a back-side bypass cap (C14) on m1 — courtyards on
+  // different layers never meet, and KiCad's DRC reported the pad clearance.
+  let tht: Vec<bool> = board
+    .footprints
+    .iter()
+    .map(|fp| fp.attrs.iter().any(|a| a == "through_hole") || fp.pads.iter().any(|p| p.kind == "thru_hole"))
+    .collect();
+  // Escape halos: pads on a sprung (routed, non-plane) net must leave the part.
+  let halo: Vec<f64> = offsets
+    .iter()
+    .map(|pads| {
+      if !opts.escape_halo {
+        return 0.0;
+      }
+      let escapes = pads
+        .iter()
+        .filter(|(_, net)| net.as_ref().is_some_and(&sprung))
+        .count();
+      (ESCAPE_PITCH_MM * escapes as f64 / 4.0).clamp(HALO_MIN_MM, HALO_MAX_MM)
+    })
+    .collect();
+  // A part's footprint radius for spreading: the mean half-extent of its
+  // courtyard box (rotation-independent), or of its pads when it has none.
+  let radius: Vec<f64> = board
+    .footprints
+    .iter()
+    .zip(&offsets)
+    .map(|(fp, pads)| {
+      let bb = fp
+        .courtyard_local
+        .or_else(|| BBox::from_points(pads.iter().map(|&(o, _)| o)));
+      bb.map_or(0.5, |b| (b.width() + b.height()) / 4.0)
+    })
+    .collect();
+  let interact =
+    |a: usize, b: usize| board.footprints[a].side == board.footprints[b].side || tht[a] || tht[b];
+
   let bonds = group_bonds(g);
   let centre = Point::new(
     (outline.min.x + outline.max.x) / 2.0,
@@ -97,7 +173,7 @@ pub fn place(board: &Board, g: &Grouping) -> Placement {
     .map(|(f, fp)| if movable[f] { centre } else { fp.at })
     .collect();
 
-  for _ in 0..ITERATIONS {
+  for it in 0..ITERATIONS {
     // Net centroids from current positions.
     let mut sum: HashMap<u32, (Point, f64)> = HashMap::new();
     for (f, pads) in offsets.iter().enumerate() {
@@ -129,6 +205,46 @@ pub fn place(board: &Board, g: &Grouping) -> Placement {
           pos[f].x + DAMPING * (target.x - pos[f].x),
           pos[f].y + DAMPING * (target.y - pos[f].y),
         );
+      }
+    }
+
+    // Spreading (M4.2): parts closer than their radii plus the shared halo
+    // push apart, with a strength that ramps from 0 to SPREAD over the run —
+    // connectivity first decides who sits near whom, then density decides how
+    // much room they get. Fixed parts push and never move. Coincident parts
+    // separate along a direction fixed by their indices, so it is
+    // deterministic.
+    if opts.spread {
+      let strength = SPREAD * it as f64 / ITERATIONS as f64;
+      let snapshot = pos.clone();
+      for f in (0..n).filter(|&f| movable[f]) {
+        let mut push = Point::default();
+        for o in (0..n).filter(|&o| o != f && interact(f, o)) {
+          let d = snapshot[f] - snapshot[o];
+          let dist = d.length();
+          let reach = radius[f] + radius[o] + halo[f].max(halo[o]);
+          if dist >= reach {
+            continue;
+          }
+          let dir = if dist > 1e-6 {
+            Point::new(d.x / dist, d.y / dist)
+          } else {
+            let a = (f * 7919 + o * 104_729) as f64;
+            Point::new(a.cos(), a.sin())
+          };
+          let share = if movable[o] { 0.5 } else { 1.0 };
+          push = push + Point::new(dir.x * (reach - dist) * share, dir.y * (reach - dist) * share);
+        }
+        let mut p = Point::new(pos[f].x + strength * push.x, pos[f].y + strength * push.y);
+        // Stay on the board.
+        let m = radius[f] + EDGE_MARGIN_MM;
+        p.x = p
+          .x
+          .clamp(outline.min.x + m, (outline.max.x - m).max(outline.min.x + m));
+        p.y = p
+          .y
+          .clamp(outline.min.y + m, (outline.max.y - m).max(outline.min.y + m));
+        pos[f] = p;
       }
     }
   }
@@ -166,15 +282,16 @@ pub fn place(board: &Board, g: &Grouping) -> Placement {
     min: Point::new(outline.min.x + EDGE_MARGIN_MM, outline.min.y + EDGE_MARGIN_MM),
     max: Point::new(outline.max.x - EDGE_MARGIN_MM, outline.max.y - EDGE_MARGIN_MM),
   };
-  // A through-hole part occupies BOTH sides: its pins come out of the other
-  // face. Treating it as one-sided let the first version drop the SWD header
-  // (J11) through a back-side bypass cap (C14) on m1 — courtyards on
-  // different layers never meet, and KiCad's DRC reported the pad clearance.
-  let tht: Vec<bool> = board
-    .footprints
+  let exempt: std::collections::HashSet<(usize, usize)> = g
+    .bypass
     .iter()
-    .map(|fp| fp.attrs.iter().any(|a| a == "through_hole") || fp.pads.iter().any(|p| p.kind == "thru_hole"))
+    .filter_map(|b| match b.ics.as_slice() {
+      [ic] => Some([(b.cap, *ic), (*ic, b.cap)]),
+      _ => None,
+    })
+    .flatten()
     .collect();
+
   let mut moves = Vec::new();
   let mut unplaced = Vec::new();
   for f in order {
@@ -186,7 +303,12 @@ pub fn place(board: &Board, g: &Grouping) -> Placement {
       else {
         return false;
       };
-      if bb.min.x < inner.min.x || bb.min.y < inner.min.y || bb.max.x > inner.max.x || bb.max.y > inner.max.y
+      // The board edge blocks an escape exactly as a neighbour does.
+      let edge = EDGE_MARGIN_MM.max(halo[f]) - EDGE_MARGIN_MM;
+      if bb.min.x < inner.min.x + edge
+        || bb.min.y < inner.min.y + edge
+        || bb.max.x > inner.max.x - edge
+        || bb.max.y > inner.max.y - edge
       {
         return false;
       }
@@ -195,12 +317,27 @@ pub fn place(board: &Board, g: &Grouping) -> Placement {
         if !shares_a_side || edges[o].is_empty() || mine.is_empty() {
           return true;
         }
+        let gap = if exempt.contains(&(f, o)) {
+          0.0
+        } else {
+          halo[f].max(halo[o])
+        };
         let theirs: Vec<Seg> = edges[o].iter().map(|&(a, b)| (a + opos, b + opos)).collect();
         let ob = BBox::from_points(theirs.iter().flat_map(|&(a, b)| [a, b]));
         let apart = ob.is_none_or(|ob| {
-          ob.max.x <= bb.min.x || ob.min.x >= bb.max.x || ob.max.y <= bb.min.y || ob.min.y >= bb.max.y
+          ob.max.x + gap <= bb.min.x
+            || ob.min.x - gap >= bb.max.x
+            || ob.max.y + gap <= bb.min.y
+            || ob.min.y - gap >= bb.max.y
         });
-        apart || !outlines_overlap(&mine, &theirs, TOUCH_MM)
+        if apart {
+          return true;
+        }
+        if gap > 0.0 {
+          !outlines_within(&mine, &theirs, gap)
+        } else {
+          !outlines_overlap(&mine, &theirs, TOUCH_MM)
+        }
       })
     };
     match nearest_free(pos[f], &fits) {

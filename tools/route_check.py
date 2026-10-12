@@ -6,6 +6,9 @@ Run under KiCad's bundled Python (needs pcbnew):
     "C:/Program Files/KiCad/9.0/bin/python.exe" tools/route_check.py \
         IN.kicad_pcb OUT_DIR GROUND_NET PLANE_NET [PASSES]
 
+PASSES 0 = escape-only: stop after Freerouting's fan-out stage and report the
+escaped-pin percentage (the quick proxy, ~2.5 min on m1).
+
 Why each step is shaped this way:
 
 - Copper is STRIPPED first (tracks, vias, zones), by `autolayout strip`
@@ -89,6 +92,34 @@ def drc(pcb, report):
     return (int(unconnected.group(1)) if unconnected else None), kinds
 
 
+FANOUT_RE = re.compile(r"Fanout stage completed.*?escaped pins: (\d+)/(\d+)")
+
+
+def escape_only(dsn, ses, log_path, timeout_s=900):
+    """Quick routability proxy: run Freerouting only until its fan-out stage
+    reports how many SMD pins it escaped, then stop it. On m1 (2026-10-12)
+    this took ~2.5 min and separated two placements (59.7 % vs 89.9 %) as
+    clearly as their 75-minute full routes (135 vs 65 unconnected)."""
+    log = open(log_path, "w", encoding="utf-8")
+    proc = subprocess.Popen([JAVA, "-Djava.awt.headless=true", "-jar", JAR, "--gui.enabled=false",
+                             "-de", dsn, "-do", ses, "-mp", "1", "-mt", "1"],
+                            stdout=log, stderr=subprocess.STDOUT)
+    t0 = time.time()
+    try:
+        while time.time() - t0 < timeout_s:
+            time.sleep(2)
+            m = FANOUT_RE.search(open(log_path, encoding="utf-8", errors="replace").read())
+            if m:
+                return int(m.group(1)), int(m.group(2)), round(time.time() - t0, 1)
+            if proc.poll() is not None:
+                break
+        return None, None, round(time.time() - t0, 1)
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+        log.close()
+
+
 def main(src, out_dir, ground, plane, passes):
     os.makedirs(out_dir, exist_ok=True)
     stem = os.path.join(out_dir, os.path.splitext(os.path.basename(src))[0])
@@ -101,6 +132,13 @@ def main(src, out_dir, ground, plane, passes):
     dsn, ses = stem + ".dsn", stem + ".ses"
     if not pcbnew.ExportSpecctraDSN(board, dsn):
         raise SystemExit("DSN export failed")
+
+    if passes == 0:
+        escaped, total, secs = escape_only(dsn, ses, stem + "_fanout.log")
+        print(json.dumps({"input": src, "mode": "escape-only", "escaped": escaped, "smd_pins": total,
+                          "escape_pct": round(100.0 * escaped / total, 1) if escaped is not None else None,
+                          "seconds": secs}, indent=2))
+        return
 
     t0 = time.time()
     log = open(stem + "_freerouting.log", "w", encoding="utf-8")

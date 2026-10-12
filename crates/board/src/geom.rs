@@ -137,6 +137,30 @@ pub fn outlines_overlap(a: &[Seg], b: &[Seg], tol: f64) -> bool {
     || probes(b).iter().any(|&p| strictly_inside(p, a, tol))
 }
 
+/// Are two outlines closer than `gap` — overlapping, or with some edge of one
+/// within `gap` of some edge of the other? `gap <= 0` reduces to
+/// [`outlines_overlap`].
+pub fn outlines_within(a: &[Seg], b: &[Seg], gap: f64) -> bool {
+  if outlines_overlap(a, b, 1e-3) {
+    return true;
+  }
+  if gap <= 0.0 {
+    return false;
+  }
+  a.iter().any(|&s| b.iter().any(|&t| seg_distance(s, t) < gap))
+}
+
+/// Shortest distance between two segments (zero if they cross).
+pub fn seg_distance((a, b): Seg, (c, d): Seg) -> f64 {
+  if proper_cross((a, b), (c, d), 0.0) {
+    return 0.0;
+  }
+  dist_to_segment(a, c, d)
+    .min(dist_to_segment(b, c, d))
+    .min(dist_to_segment(c, a, b))
+    .min(dist_to_segment(d, a, b))
+}
+
 fn orient(a: Point, b: Point, c: Point) -> f64 {
   (b - a).cross(c - a)
 }
@@ -277,6 +301,31 @@ mod tests {
       // Pushed 0.5 mm down into the tab band, it does overlap.
       let r6_low = rect(cx - 0.47, cy - 0.43, cx + 0.47, cy + 1.43);
       assert!(outlines_overlap(&c22, &r6_low, TOL));
+    }
+
+    #[test]
+    fn within_a_gap() {
+      let a = rect(0.0, 0.0, 1.0, 1.0);
+      assert!(
+        outlines_within(&a, &rect(1.4, 0.0, 2.0, 1.0), 0.5),
+        "0.4 apart, gap 0.5"
+      );
+      assert!(
+        !outlines_within(&a, &rect(1.6, 0.0, 2.0, 1.0), 0.5),
+        "0.6 apart, gap 0.5"
+      );
+      assert!(
+        outlines_within(&a, &rect(0.5, 0.5, 2.0, 2.0), 0.0),
+        "overlap is within any gap"
+      );
+      assert!(
+        (seg_distance(
+          (Point::new(0.0, 0.0), Point::new(1.0, 0.0)),
+          (Point::new(0.5, 2.0), Point::new(0.5, 1.0))
+        ) - 1.0)
+          .abs()
+          < 1e-12
+      );
     }
 
     #[test]

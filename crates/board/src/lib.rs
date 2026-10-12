@@ -27,7 +27,7 @@ mod netlist;
 pub mod parity;
 
 pub use edit::{EditError, set_pose};
-pub use geom::{BBox, Point, Seg, outlines_overlap};
+pub use geom::{BBox, Point, Seg, outlines_overlap, outlines_within};
 pub use netlist::{Netlist, NetlistError};
 
 /// Copper side a footprint is mounted on.
