@@ -26,7 +26,7 @@ mod geom;
 mod netlist;
 
 pub use edit::{EditError, set_pose};
-pub use geom::{BBox, Point};
+pub use geom::{BBox, Point, Seg, outlines_overlap};
 pub use netlist::{Netlist, NetlistError};
 
 /// Copper side a footprint is mounted on.
@@ -64,6 +64,11 @@ pub struct Footprint {
   /// Courtyard extent in the footprint's own frame, from graphics on the
   /// courtyard layer of its side. `None` if the footprint has none.
   pub courtyard_local: Option<BBox>,
+  /// The courtyard outline itself, as edges in the footprint's own frame (arcs
+  /// and circles sampled into chords). Concave outlines stay concave: an
+  /// electrolytic can's courtyard is a cross, and parts legally sit in its
+  /// notches. Empty if the footprint has none.
+  pub courtyard_edges_local: Vec<Seg>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -191,19 +196,23 @@ impl Footprint {
         .unwrap_or_default(),
       pads: Vec::new(),
       courtyard_local: None,
+      courtyard_edges_local: Vec::new(),
     };
     let courtyard = match side {
       Side::Front => "F.CrtYd",
       Side::Back => "B.CrtYd",
     };
+    let mut edges = Vec::new();
     for child in list.items.iter().filter_map(|n| n.as_list()) {
       if child.is("pad") {
         let pad = fp.read_pad(child);
         fp.pads.push(pad);
       } else if child.head().is_some_and(|h| h.starts_with("fp_")) && on_layer(child, courtyard) {
-        fp.courtyard_local = BBox::union(fp.courtyard_local, graphic_extent(child));
+        edges.extend(graphic_edges(child));
       }
     }
+    fp.courtyard_local = BBox::from_points(edges.iter().flat_map(|&(a, b)| [a, b]));
+    fp.courtyard_edges_local = edges;
     fp
   }
 
@@ -270,33 +279,72 @@ fn on_layer(list: &List, layer: &str) -> bool {
     .is_some_and(|l| l == layer)
 }
 
-/// Extent of a `gr_*` / `fp_*` graphic from its defining points. Arcs use their
-/// start, mid and end points — exact for the corner arcs boards and courtyards
-/// use, an under-estimate for a wide arc whose bulge passes an axis extreme.
+/// Chords per arc / circle when sampling outlines. At 32 a 6.3 mm can's
+/// courtyard is within 0.02 mm of the true circle.
+const CURVE_SEGMENTS: usize = 32;
+
 fn graphic_extent(list: &List) -> Option<BBox> {
+  BBox::from_points(graphic_edges(list).into_iter().flat_map(|(a, b)| [a, b]))
+}
+
+/// The edges a `gr_*` / `fp_*` graphic draws: a line is one edge; a
+/// rectangle, polygon or circle is a closed ring; an arc is an open chain
+/// sampled along the curve (so its bulge is included, not just its three
+/// defining points).
+fn graphic_edges(list: &List) -> Vec<Seg> {
   let point = |k: &str| {
     list
       .child(k)
       .and_then(|p| Some(Point::new(p.number(1)?, p.number(2)?)))
   };
-  let head = list.head()?;
+  let Some(head) = list.head() else {
+    return Vec::new();
+  };
   let kind = head.trim_start_matches("gr_").trim_start_matches("fp_");
   match kind {
-    "line" | "rect" => BBox::from_points([point("start")?, point("end")?]),
-    "arc" => BBox::from_points([point("start")?, point("mid")?, point("end")?]),
-    "circle" => {
-      let (c, e) = (point("center")?, point("end")?);
-      let r = (e - c).length();
-      BBox::from_points([c - Point::new(r, r), c + Point::new(r, r)])
-    }
-    "poly" => {
-      let pts = list.child("pts")?;
-      BBox::from_points(
-        pts
+    "line" => match (point("start"), point("end")) {
+      (Some(a), Some(b)) => vec![(a, b)],
+      _ => Vec::new(),
+    },
+    "rect" => match (point("start"), point("end")) {
+      (Some(a), Some(b)) => closed(&[a, Point::new(b.x, a.y), b, Point::new(a.x, b.y)]),
+      _ => Vec::new(),
+    },
+    "arc" => match (point("start"), point("mid"), point("end")) {
+      (Some(s), Some(m), Some(e)) => chain(&geom::arc_points(s, m, e, CURVE_SEGMENTS)),
+      _ => Vec::new(),
+    },
+    "circle" => match (point("center"), point("end")) {
+      (Some(c), Some(e)) => closed(&geom::circle_points(c, (e - c).length(), CURVE_SEGMENTS)),
+      _ => Vec::new(),
+    },
+    "poly" => list
+      .child("pts")
+      .map(|pts| {
+        let v: Vec<Point> = pts
           .children("xy")
-          .filter_map(|xy| Some(Point::new(xy.number(1)?, xy.number(2)?))),
-      )
-    }
-    _ => None,
+          .filter_map(|xy| Some(Point::new(xy.number(1)?, xy.number(2)?)))
+          .collect();
+        closed(&v)
+      })
+      .unwrap_or_default(),
+    _ => Vec::new(),
   }
+}
+
+fn chain(pts: &[Point]) -> Vec<Seg> {
+  pts
+    .windows(2)
+    .filter_map(|w| Some((*w.first()?, *w.get(1)?)))
+    .collect()
+}
+
+fn closed(pts: &[Point]) -> Vec<Seg> {
+  let mut edges = chain(pts);
+  if let (Some(&first), Some(&last)) = (pts.first(), pts.last())
+    && pts.len() > 2
+  {
+    edges.push((last, first));
+  }
+  edges
 }

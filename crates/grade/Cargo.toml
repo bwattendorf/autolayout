@@ -1,0 +1,15 @@
+[package]
+name = "autolayout-grade"
+description = "Placement metrics re-derived from a board file"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+autolayout-board = { path = "../board" }
+
+[dev-dependencies]
+autolayout-sexpr = { path = "../sexpr" }
+
+[lints]
+workspace = true

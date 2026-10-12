@@ -40,4 +40,16 @@ else
   fi
   echo "KiCad cross-check: $rows of $rows pads agree after move/rotate (front, back, 45° MCU)"
 fi
+
+# Slow KiCad cross-checks (~20 min): every placed corpus board's courtyard
+# overlaps against kicad-cli DRC. Run after touching courtyard geometry.
+if [[ "${1:-}" == "--kicad-full" ]]; then
+  if ! out=$(cargo test -p autolayout-grade --release --test kicad_drc -- --ignored --nocapture 2>&1); then
+    echo "$out" | tail -30
+    exit 1
+  fi
+  echo "$out" | grep -E "courtyard overlaps:|SKIPPED" || true
+else
+  echo "not run: slow KiCad DRC comparison (./ci.sh --kicad-full; last: 35/35 boards, 2026-10-12)"
+fi
 echo "ci: all checks pass"

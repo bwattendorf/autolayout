@@ -1,6 +1,6 @@
 # Roadmap
 
-**Stage:** M1 — board model: read, move and rotate done, KiCad-verified; flip open. Nothing places or routes yet.
+**Stage:** M2 — grader running and KiCad-verified for overlaps; M3 grouping next. Nothing places or routes yet.
 **Updated:** 2026-10-12
 
 ## Headline numbers
@@ -10,6 +10,8 @@
 | corpus boards round-tripping byte-exact    | 116 / 116   | measured 2026-10-12, `ci.sh` with `AUTOLAYOUT_CORPUS` set    |
 | rotated-front / back pads meeting copper   | 96.6% / 100% | measured 2026-10-12, m1 fab board, `board` corpus test      |
 | pads agreeing with KiCad after an edit     | 523 / 523   | measured 2026-10-12, KiCad cross-check in `ci.sh`, m1        |
+| boards where overlaps match KiCad DRC      | 35 / 35     | measured 2026-10-12, `./ci.sh --kicad-full`                  |
+| m1 signal HPWL: service's return (the bar) | 3 016 mm    | measured 2026-10-12, `autolayout grade`                      |
 | boards placed                              | 0           | —                                                            |
 | boards routed                              | 0           | —                                                            |
 
@@ -52,6 +54,18 @@
   on m1's freeplace board, `tools/kicad_pads.py` (pcbnew) and `autolayout pads`
   agree on 523 of 523 pads; the file diff is 92 lines, every one an `(at …)`;
   `kicad-cli pcb drc` loads it. The cross-check now runs in `ci.sh`.
+- 2026-10-12 — M2.1: grader (`autolayout grade`): courtyard overlaps, parts
+  off board, half-perimeter and MST-ratsnest wirelength split into signal and
+  plane nets (> 16 pads, structural). Courtyard overlaps agree **exactly**
+  with `kicad-cli pcb drc` on **35 of 35** placed corpus boards (101 pairs,
+  0 false alarms, 0 misses; 20 min, `./ci.sh --kicad-full`). Getting there
+  took three tries at one false positive, m1 R6/C22: boxes and convex hulls
+  both fill the notch of C22's cross-shaped (concave) courtyard; real
+  outlines fixed it but then missed equal-width ganged terminal blocks
+  (collinear sides, corners on boundaries) until edge midpoints were probed.
+  Both shapes are unit tests. First like-for-like numbers on m1: staging
+  input 15 741 mm signal HPWL / 121 parts off board; the service's return
+  3 016 mm / 0 off board / 2 overlaps (the known ganged blocks).
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

@@ -4,6 +4,7 @@
 //!   autolayout info <file.kicad_pcb> [<file.net>]   board summary; with a netlist, the pintype join
 //!   autolayout move <in> <out> (<REF> <x> <y> <deg>)...   set footprint poses, write a NEW file
 //!   autolayout pads <file.kicad_pcb>                 every pad's board position, as autolayout computes it
+//!   autolayout grade <file.kicad_pcb>...             placement metrics (overlaps, off-board, wirelength)
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -34,6 +35,17 @@ fn move_parts(input: &str, output: &str, moves: &[String]) -> Result<bool, Strin
   }
   fs::write(output, doc.to_string()).map_err(|e| format!("{output}: {e}"))?;
   println!("wrote {output} ({} footprint(s) set)", moves.len() / 4);
+  Ok(true)
+}
+
+/// Placement metrics for each file, read back off disk.
+fn grade(files: &[String]) -> Result<bool, String> {
+  for file in files {
+    let (_, doc) = load(file)?;
+    let board = Board::read(&doc).map_err(|e| format!("{file}: {e}"))?;
+    println!("{file}");
+    println!("{}", autolayout_grade::grade(&board));
+  }
   Ok(true)
 }
 
@@ -78,6 +90,7 @@ fn main() -> ExitCode {
       _ => Err(USAGE.to_owned()),
     },
     Some((cmd, rest)) if cmd == "pads" && rest.len() == 1 => rest.first().map_or(Ok(false), |f| pads(f)),
+    Some((cmd, files)) if cmd == "grade" && !files.is_empty() => grade(files),
     _ => Err(USAGE.to_owned()),
   };
   match result {

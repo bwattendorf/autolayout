@@ -7,6 +7,7 @@ name = "autolayout"
 version = "0.1.0"
 dependencies = [
  "autolayout-board",
+ "autolayout-grade",
  "autolayout-sexpr",
 ]
 
@@ -14,6 +15,14 @@ dependencies = [
 name = "autolayout-board"
 version = "0.1.0"
 dependencies = [
+ "autolayout-sexpr",
+]
+
+[[package]]
+name = "autolayout-grade"
+version = "0.1.0"
+dependencies = [
+ "autolayout-board",
  "autolayout-sexpr",
 ]
 
