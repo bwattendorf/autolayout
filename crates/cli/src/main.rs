@@ -81,10 +81,11 @@ fn place(pcb: &str, net: &str, out: &str, escape_halo: bool) -> Result<bool, Str
   let netlist = Netlist::read(&net_doc).map_err(|e| format!("{net}: {e}"))?;
   let g = autolayout_place::group::group(&board, &netlist);
   let start = std::time::Instant::now();
-  // --no-halo reproduces M4.1 exactly: no halos and no spreading.
+  // --no-halo reproduces M4.1 exactly. Spreading stays off: it measured
+  // worse (see place::Options).
   let opts = autolayout_place::place::Options {
     escape_halo,
-    spread: escape_halo,
+    spread: false,
   };
   let p = autolayout_place::place::place(&board, &g, opts);
   let secs = start.elapsed().as_secs_f64();

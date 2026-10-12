@@ -69,11 +69,14 @@ pub struct Options {
   pub spread: bool,
 }
 
+/// Spreading is OFF by default because it measured worse: on m1 (2026-10-12)
+/// Freerouting fan-out escaped 64.3 % with halos alone and 61.8 % with halos
+/// plus spreading. Kept as an option, not deleted — one board, one proxy.
 impl Default for Options {
   fn default() -> Options {
     Options {
       escape_halo: true,
-      spread: true,
+      spread: false,
     }
   }
 }
@@ -137,7 +140,7 @@ pub fn place(board: &Board, g: &Grouping, opts: Options) -> Placement {
       }
       let escapes = pads
         .iter()
-        .filter(|(_, net)| net.as_ref().is_some_and(&sprung))
+        .filter(|(_, net)| net.as_ref().is_some_and(sprung))
         .count();
       (ESCAPE_PITCH_MM * escapes as f64 / 4.0).clamp(HALO_MIN_MM, HALO_MAX_MM)
     })

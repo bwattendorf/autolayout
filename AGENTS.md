@@ -117,7 +117,13 @@ Lower crates never depend on higher ones (`sexpr` ← `board` ← `place`/`route
 
 `./ci.sh` before every commit: `cargo fmt --check`, `cargo clippy --all-targets
 -- -D warnings` (including the no-panic lints), `cargo test`. Paste its last line
-when claiming it passed. A check that exists but is not run is the same as no
+when claiming it passed.
+
+**Gate on its exit status, never on a pipe.** `ci.sh ... | tail -2 && git
+commit` commits even when ci fails: the pipeline's status is `tail`'s. That
+happened once (commit 594157d, 2026-10-12, a clippy failure) and was fixed in
+the next commit. Run `bash ci.sh > out/ci_last.txt 2>&1; echo "exit=$?"`, read
+the exit, then commit. A check that exists but is not run is the same as no
 check: if you add one, add it to `ci.sh`.
 
 One task per commit, message starting with the ROADMAP id (`M0.2: footprint
