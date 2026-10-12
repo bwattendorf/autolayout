@@ -75,6 +75,31 @@ fn m1_converters_match_the_answer_key() {
 }
 
 #[test]
+fn m1_every_part_has_one_role_and_the_crystal_is_found() {
+  let Ok(root) = std::env::var("AUTOLAYOUT_CORPUS") else {
+    eprintln!("SKIPPED: AUTOLAYOUT_CORPUS is not set");
+    return;
+  };
+  let (board, g) = load(
+    &root,
+    "quilter/freeplace/m1/m1.kicad_pcb",
+    "m1-1door/hardware/kicad/controller.net",
+  );
+  assert_eq!(g.role.len(), board.footprints.len(), "one role per footprint");
+  // The crystal by circuit shape: Y1 between two nets, each with a 15 pF
+  // load cap to ground, reaching the MCU.
+  assert_eq!(g.crystals.len(), 1);
+  let x = &g.crystals[0];
+  assert_eq!(refs(&board, &[x.part]), ["Y1"]);
+  assert_eq!(refs(&board, &x.load_caps), ["C18", "C19"]);
+  assert_eq!(refs(&board, &x.host.into_iter().collect::<Vec<_>>()), ["U1"]);
+  // Locked parts are the designer's: every one keeps the Fixed role.
+  for &f in &g.fixed {
+    assert_eq!(g.role[f], autolayout_place::group::Role::Fixed);
+  }
+}
+
+#[test]
 fn emu_has_one_switching_converter() {
   let Ok(root) = std::env::var("AUTOLAYOUT_CORPUS") else {
     eprintln!("SKIPPED: AUTOLAYOUT_CORPUS is not set");

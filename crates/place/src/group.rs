@@ -54,9 +54,68 @@ pub struct Grouping {
   pub mcus: Vec<usize>,
   pub fixed: Vec<usize>,
   pub converters: Vec<Converter>,
+  pub crystals: Vec<Crystal>,
+  pub bypass: Vec<Bypass>,
+  /// One cluster per fixed through-hole connector/relay that reaches signal
+  /// nets; `seed` is that part.
+  pub field: Vec<Cluster>,
+  /// One cluster per MCU; `seed` is the MCU.
+  pub mcu_support: Vec<Cluster>,
+  /// Exactly one role per footprint, by index. The single source of truth for
+  /// "which group is this part in"; the lists above are views of it.
+  pub role: Vec<Role>,
   /// Pads with no netlist entry, i.e. the join failed for them.
   pub unjoined_pads: usize,
 }
+
+/// The one group a footprint belongs to. Assigned in this precedence order,
+/// first claim wins: Fixed, Mcu, Converter, Crystal, Bypass, Field,
+/// McuSupport, Residue.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum Role {
+  /// Locked in the file: the designer's (or the outline's) decision.
+  Fixed,
+  Mcu,
+  /// Index into `converters`.
+  Converter(usize),
+  /// Index into `crystals`.
+  Crystal(usize),
+  Bypass,
+  /// Index into `field`.
+  Field(usize),
+  /// Index into `mcu_support`.
+  McuSupport(usize),
+  Residue,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Crystal {
+  pub part: usize,
+  pub load_caps: Vec<usize>,
+  /// The IC the oscillator nets reach (the MCU when it does).
+  pub host: Option<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Bypass {
+  pub cap: usize,
+  pub rail: u32,
+  /// ICs with a POWER-IN pin on `rail`. Exactly one: this cap serves it.
+  /// Several: the rail is shared and *which* IC this cap serves is not
+  /// structurally knowable — reported, not guessed (inferring it from "the
+  /// nearest pad on the net" is how a layout service once adopted another
+  /// IC's caps; Portcullis comprehension-pairing-2026-08-28).
+  pub ics: Vec<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Cluster {
+  pub seed: usize,
+  pub members: Vec<usize>,
+}
+
+/// Load capacitors are picofarads; anything at or above this is not one.
+const LOAD_CAP_MAX_FARADS: f64 = 100e-12;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Converter {
@@ -182,10 +241,129 @@ pub fn group(board: &Board, netlist: &Netlist) -> Grouping {
     .map(|(f, _)| f)
     .collect();
 
-  let converters = (0..board.footprints.len())
+  let converters: Vec<Converter> = (0..board.footprints.len())
     .filter(|&f| ctx.kinds.get(f) == Some(&Kind::Inductor))
     .filter_map(|l| converter_at(&ctx, l, &supply_nets, ground, &mcus))
     .collect();
+
+  // Rails: supplies, ground, and every converter output (a rail that only
+  // feeds a connector has no POWER-IN pin; see converter_at). Everything else
+  // is a signal net, and only signal nets carry "belongs together".
+  let mut rails = supply_nets.clone();
+  rails.extend(converters.iter().map(|c| c.output_net));
+  rails.extend(ground);
+  let signal_nets_of = |f: usize| -> BTreeSet<u32> {
+    board
+      .footprints
+      .get(f)
+      .map(|fp| {
+        fp.pads
+          .iter()
+          .filter_map(|p| p.net)
+          .filter(|n| !rails.contains(n))
+          .collect()
+      })
+      .unwrap_or_default()
+  };
+
+  let n = board.footprints.len();
+  let mut role: Vec<Option<Role>> = vec![None; n];
+  let claim = |role: &mut Vec<Option<Role>>, f: usize, r: Role| {
+    if let Some(slot) = role.get_mut(f)
+      && slot.is_none()
+    {
+      *slot = Some(r);
+    }
+  };
+  for &f in &fixed {
+    claim(&mut role, f, Role::Fixed);
+  }
+  for &f in &mcus {
+    claim(&mut role, f, Role::Mcu);
+  }
+  for (i, c) in converters.iter().enumerate() {
+    let mut members = vec![c.inductor];
+    if !c.on_mcu {
+      members.push(c.regulator);
+    }
+    members.extend(c.boot.iter().chain(&c.feedback).chain(&c.output_caps));
+    members.extend(c.input_caps.iter().flatten());
+    for f in members {
+      claim(&mut role, f, Role::Converter(i));
+    }
+  }
+
+  let crystals = find_crystals(&ctx, &rails, ground, &mcus, &role);
+  for (i, x) in crystals.iter().enumerate() {
+    for &f in std::iter::once(&x.part).chain(&x.load_caps) {
+      claim(&mut role, f, Role::Crystal(i));
+    }
+  }
+
+  let mut bypass = Vec::new();
+  if let Some(gnd) = ground {
+    for f in 0..n {
+      if role.get(f).copied().flatten().is_some() || ctx.kinds.get(f) != Some(&Kind::Capacitor) {
+        continue;
+      }
+      let Some((a, b)) = ctx.two_nets(f) else { continue };
+      let rail = match (a == gnd, b == gnd) {
+        (true, false) if rails.contains(&b) => b,
+        (false, true) if rails.contains(&a) => a,
+        _ => continue,
+      };
+      let ics: BTreeSet<usize> = ctx
+        .pads_on(rail)
+        .iter()
+        .filter(|pr| ctx.pintype.get(pr) == Some(&"POWER-IN"))
+        .map(|&(g, _)| g)
+        .filter(|&g| ctx.is_ic(g))
+        .collect();
+      claim(&mut role, f, Role::Bypass);
+      bypass.push(Bypass {
+        cap: f,
+        rail,
+        ics: ics.into_iter().collect(),
+      });
+    }
+  }
+
+  // Field clusters: multi-source breadth-first growth from each fixed
+  // through-hole part that reaches a signal net, over signal nets only. The
+  // nearest seed wins a part (ties to the lower seed index). An IC is
+  // claimed but not grown through — past it is a different circuit — and an
+  // MCU is never entered.
+  let seeds: Vec<usize> = fixed
+    .iter()
+    .copied()
+    .filter(|&f| {
+      board
+        .footprints
+        .get(f)
+        .is_some_and(|fp| fp.attrs.iter().any(|a| a == "through_hole"))
+        && !signal_nets_of(f).is_empty()
+    })
+    .collect();
+  let field_members = grow(&ctx, &seeds, &role, &mcus, &signal_nets_of);
+  let mut field = Vec::new();
+  for (i, (&seed, members)) in seeds.iter().zip(field_members).enumerate() {
+    for &f in &members {
+      claim(&mut role, f, Role::Field(i));
+    }
+    field.push(Cluster { seed, members });
+  }
+
+  // MCU support: the same growth from each MCU over what is still unclaimed.
+  let support_members = grow(&ctx, &mcus, &role, &[], &signal_nets_of);
+  let mut mcu_support = Vec::new();
+  for (i, (&seed, members)) in mcus.iter().zip(support_members).enumerate() {
+    for &f in &members {
+      claim(&mut role, f, Role::McuSupport(i));
+    }
+    mcu_support.push(Cluster { seed, members });
+  }
+
+  let role: Vec<Role> = role.into_iter().map(|r| r.unwrap_or(Role::Residue)).collect();
 
   Grouping {
     supply_nets,
@@ -193,8 +371,117 @@ pub fn group(board: &Board, netlist: &Netlist) -> Grouping {
     mcus,
     fixed,
     converters,
+    crystals,
+    bypass,
+    field,
+    mcu_support,
+    role,
     unjoined_pads,
   }
+}
+
+/// A crystal, by the shape of its circuit rather than its value or name: an
+/// unclaimed part whose pads touch exactly two signal nets (any other pads on
+/// ground — 4-pad crystals ground two), where each of those nets carries a
+/// picofarad capacitor to ground, and at least one of them reaches an IC.
+fn find_crystals(
+  ctx: &Ctx,
+  rails: &BTreeSet<u32>,
+  ground: Option<u32>,
+  mcus: &[usize],
+  role: &[Option<Role>],
+) -> Vec<Crystal> {
+  let Some(gnd) = ground else { return Vec::new() };
+  let mut out = Vec::new();
+  for (f, fp) in ctx.board.footprints.iter().enumerate() {
+    if role.get(f).copied().flatten().is_some() || ctx.kinds.get(f) != Some(&Kind::Other) {
+      continue;
+    }
+    let nets: Vec<u32> = fp.pads.iter().filter_map(|p| p.net).collect();
+    let signal: BTreeSet<u32> = nets.iter().copied().filter(|n| !rails.contains(n)).collect();
+    let others_ground = nets.iter().all(|n| signal.contains(n) || *n == gnd);
+    if signal.len() != 2 || !others_ground || fp.pads.len() > 4 {
+      continue;
+    }
+    let mut load_caps = Vec::new();
+    let mut every_net_loaded = true;
+    for &net in &signal {
+      let caps: Vec<usize> = ctx
+        .bridging(Kind::Capacitor, net, gnd)
+        .into_iter()
+        .filter(|&c| ctx.farads(c) > 0.0 && ctx.farads(c) < LOAD_CAP_MAX_FARADS)
+        .collect();
+      every_net_loaded &= !caps.is_empty();
+      load_caps.extend(caps);
+    }
+    let hosts: BTreeSet<usize> = signal
+      .iter()
+      .flat_map(|&net| ctx.pads_on(net).iter().map(|&(g, _)| g))
+      .filter(|&g| g != f && ctx.is_ic(g))
+      .collect();
+    if every_net_loaded && !hosts.is_empty() {
+      let host = hosts
+        .iter()
+        .copied()
+        .find(|h| mcus.contains(h))
+        .or_else(|| hosts.iter().copied().next());
+      load_caps.sort_unstable();
+      out.push(Crystal {
+        part: f,
+        load_caps,
+        host,
+      });
+    }
+  }
+  out
+}
+
+/// Breadth-first growth from each seed over signal nets through unclaimed
+/// parts. Each part goes to the seed that reaches it first (BFS layer order,
+/// ties to the lower seed index). ICs are taken but not grown through, and
+/// parts in `walls` are never entered.
+fn grow(
+  ctx: &Ctx,
+  seeds: &[usize],
+  role: &[Option<Role>],
+  walls: &[usize],
+  signal_nets_of: &dyn Fn(usize) -> BTreeSet<u32>,
+) -> Vec<Vec<usize>> {
+  let n = ctx.board.footprints.len();
+  let mut owner: Vec<Option<usize>> = vec![None; n];
+  let mut frontier: Vec<(usize, usize)> = seeds.iter().copied().enumerate().map(|(i, s)| (s, i)).collect();
+  let mut out: Vec<Vec<usize>> = vec![Vec::new(); seeds.len()];
+  while !frontier.is_empty() {
+    let mut next = Vec::new();
+    for &(part, seed) in &frontier {
+      let grows = seeds.contains(&part) || !ctx.is_ic(part);
+      if !grows {
+        continue;
+      }
+      for net in signal_nets_of(part) {
+        for &(g, _) in ctx.pads_on(net) {
+          let free = role.get(g).copied().flatten().is_none()
+            && owner.get(g).copied().flatten().is_none()
+            && !seeds.contains(&g)
+            && !walls.contains(&g);
+          if free {
+            if let Some(o) = owner.get_mut(g) {
+              *o = Some(seed);
+            }
+            if let Some(list) = out.get_mut(seed) {
+              list.push(g);
+            }
+            next.push((g, seed));
+          }
+        }
+      }
+    }
+    frontier = next;
+  }
+  for list in &mut out {
+    list.sort_unstable();
+  }
+  out
 }
 
 fn converter_at(
@@ -353,6 +640,50 @@ impl Grouping {
           .map_or("not determinable structurally".to_owned(), refs),
       );
     }
+    s += &format!("crystals: {}\n", self.crystals.len());
+    for x in &self.crystals {
+      s += &format!(
+        "  {}  load [{}]  host {}\n",
+        r(x.part),
+        refs(&x.load_caps),
+        x.host.map_or("none".to_owned(), r)
+      );
+    }
+    let single = self.bypass.iter().filter(|b| b.ics.len() == 1).count();
+    s += &format!(
+      "bypass caps: {} ({} serve exactly one IC; {} on a shared rail, IC not structurally knowable)\n",
+      self.bypass.len(),
+      single,
+      self.bypass.len() - single
+    );
+    for (title, clusters) in [
+      ("field clusters", &self.field),
+      ("MCU support", &self.mcu_support),
+    ] {
+      s += &format!("{title}: {}\n", clusters.len());
+      for c in clusters.iter() {
+        s += &format!("  {} ({}): {}\n", r(c.seed), c.members.len(), refs(&c.members));
+      }
+    }
+    let residue: Vec<usize> = (0..self.role.len())
+      .filter(|&f| self.role.get(f) == Some(&Role::Residue))
+      .collect();
+    s += &format!("residue ({}): {}\n", residue.len(), refs(&residue));
+    let mut counts: std::collections::BTreeMap<&str, usize> = std::collections::BTreeMap::new();
+    for role in &self.role {
+      let k = match role {
+        Role::Fixed => "fixed",
+        Role::Mcu => "mcu",
+        Role::Converter(_) => "converter",
+        Role::Crystal(_) => "crystal",
+        Role::Bypass => "bypass",
+        Role::Field(_) => "field",
+        Role::McuSupport(_) => "mcu-support",
+        Role::Residue => "residue",
+      };
+      *counts.entry(k).or_default() += 1;
+    }
+    s += &format!("roles: {counts:?} = {} footprints\n", self.role.len());
     if self.unjoined_pads > 0 {
       s += &format!(
         "WARNING: {} netted pads have no netlist entry\n",

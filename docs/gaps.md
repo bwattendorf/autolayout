@@ -22,13 +22,19 @@ they close; don't delete them.
    grouping of M3 (which converter, which crystal, which cap serves which
    pin) found from pintype and connectivity, never names — so do M3's
    grouping first and let M2.2 consume it.
-7. **M3 — grouping.** M3.1 done 2026-10-12 (supplies, ground, MCU,
-   converters; answer-key tests on m1/r/emu). Open: crystal + USB pair,
-   per-IC bypass caps (nearest-pin pairing needs a rule that is not "nearest
-   pad sharing the net" — that inference is exactly what made the layout
-   service adopt the wrong caps, Portcullis comprehension-pairing doc),
-   per-connector field clusters, MCU support parts, residue. g2n's ESP32-C6
-   module (5 bidirectional pins) is not found as an MCU. Reference: Portcullis `place_floorplan.py` step 1
+7. **M3 — grouping.** M3.1 + M3.2 done 2026-10-12: one role per footprint
+   (fixed / MCU / converter / crystal / bypass / field cluster / MCU
+   support / residue). Crystals by circuit shape (m1 Y1; r Y1 *and* the
+   PN5180's own Y2). Bypass caps on a shared rail are reported with their
+   candidate ICs, not guessed. Open:
+   - USB pair: needs the connector's D+/D- pins without matching pin
+     numbers (rule 2); USB-C pin numbering is standard, so a per-part
+     record is the honest route.
+   - emu leaves 41 parts in residue, mostly LED resistors behind two driver
+     ICs that growth does not pass through. Candidate rule: a residue part
+     whose only signal neighbour is one group joins it ("satellite").
+   - g2n's ESP32-C6 module (5 bidirectional pins) is not found as an MCU.
+   Reference: Portcullis `place_floorplan.py` step 1
    (worktree branch `worktree-agent-abcb674faad74edba`) and its findings:
    POWER-IN (not POWER-OUT) marks supply nets; MCU = ≥ 16 bidirectional
    pins; field clusters seed from fixed through-hole parts. Read it for the
