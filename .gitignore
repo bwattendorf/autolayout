@@ -1,0 +1,7 @@
+/target/
+*.kicad_pcb
+*.kicad_pro
+*.kicad_prl
+*.dsn
+*.ses
+/out/

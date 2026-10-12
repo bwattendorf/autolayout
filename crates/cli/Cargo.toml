@@ -1,0 +1,12 @@
+[package]
+name = "autolayout"
+description = "Placement and routing for KiCad boards"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+autolayout-sexpr = { path = "../sexpr" }
+
+[lints]
+workspace = true

@@ -1,0 +1,9 @@
+[package]
+name = "autolayout-sexpr"
+description = "Lossless KiCad s-expression parser and writer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
