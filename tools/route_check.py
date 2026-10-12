@@ -104,7 +104,13 @@ def main(src, out_dir, ground, plane, passes):
 
     t0 = time.time()
     log = open(stem + "_freerouting.log", "w", encoding="utf-8")
-    proc = subprocess.run([JAVA, "-jar", JAR, "-de", dsn, "-do", ses, "-mp", str(passes), "-mt", "1"],
+    # HEADLESS, both ways. Without these Freerouting opens a window on the
+    # user's screen, and on the first comparison run (2026-10-12) that window
+    # threw a NullPointerException from its plane-drawing code
+    # (ConductionArea.draw on the AWT EventDispatchThread). The router thread
+    # was unaffected, but a tool must not pop errors at the user.
+    proc = subprocess.run([JAVA, "-Djava.awt.headless=true", "-jar", JAR, "--gui.enabled=false",
+                           "-de", dsn, "-do", ses, "-mp", str(passes), "-mt", "1"],
                           stdout=log, stderr=subprocess.STDOUT)
     log.close()
     route_s = time.time() - t0

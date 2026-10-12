@@ -39,17 +39,18 @@ they close; don't delete them.
    POWER-IN (not POWER-OUT) marks supply nets; MCU = ≥ 16 bidirectional
    pins; field clusters seed from fixed through-hole parts. Read it for the
    rules; do not copy its code (AGPL).
-7a. **M4.2 — spread, then measure routability (next).** v1 over-packs
-   (see ROADMAP 2026-10-12). Two steps, in this order:
-   - *Measure first:* pull M6 forward. Export DSN, run Freerouting as an
-     external process on both our m1 and the service's m1 (copper stripped),
-     and compare unconnected counts after the same passes. Without this,
-     every placement change is graded on wirelength, which rewards exactly
-     the clumping we see.
-   - *Then spread:* a density term in global placement (bin utilisation
-     target, e.g. ≤ 70 %), field-cluster parts pulled toward their own
-     connector's board edge, and rotation to align two-pad parts with their
-     nets.
+7a. **M4.2 — spread (next).** Measured 2026-10-12: m1 v1 leaves 135
+   unconnected vs the service's placement's 65 (ROADMAP). Target: beat 65 on
+   the same harness. Levers, in order of evidence:
+   - *Escape halo* around many-pin ICs. Portcullis measured it on a small
+     board: HPWL alone went 3 → 4 unconnected, adding the halo went to 0
+     (`controller/docs/placement-comparison-2026-08-20.md`, addendum). Read
+     for the idea, not the code (AGPL).
+   - *Density limit* in global placement (bin utilisation target).
+   - *Field parts toward their own connector's edge.*
+   - *Rotation* of two-pad parts to align with their nets.
+   Quick proxy per change: Freerouting fan-out escape % (≈ 2.5 min;
+   59.7 % ours vs 89.9 % the service's). Confirm with a full 10-pass route.
 8. **M8 — RF checks**, two halves. Every threshold comes from a cited
    datasheet layout section or app note (CLAUDE.md rule 7). None is invented
    here: until a number is cited, the check reports a measurement and says

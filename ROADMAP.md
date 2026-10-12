@@ -13,7 +13,7 @@
 | boards where overlaps match KiCad DRC      | 35 / 35     | measured 2026-10-12, `./ci.sh --kicad-full`                  |
 | m1 signal HPWL: service's return (the bar) | 3 016 mm    | measured 2026-10-12, `autolayout grade`                      |
 | boards placed legally (KiCad DRC clean)    | 1 (m1)      | measured 2026-10-12, `autolayout place` + `kicad-cli pcb drc` |
-| boards placed *routably*                   | unknown     | needs M6 (route it and count unconnected)                    |
+| m1 unconnected after 10 Freerouting passes | ours 135, service 65 | measured 2026-10-12, `tools/route_check.py` + KiCad DRC |
 | boards routed                              | 0           | —                                                            |
 
 ## Milestones
@@ -104,6 +104,30 @@
   placement improves; an own router (M7) comes later and is measured against
   it — Freerouting is GPL, so it can be run but never shipped inside
   autolayout.
+- 2026-10-12 — **M6.2: first routability comparison, m1.** Both placements
+  stripped to bare pads, identical planes (GND F/In1/B, +3V3 In2),
+  Freerouting 2.3.0 `-mp 10 -mt 1`, verdict from `kicad-cli pcb drc`:
+
+  | | ours (M4.1) | service's placement |
+  |---|---|---|
+  | unconnected before → after (KiCad) | 278 → **135** | 278 → **65** |
+  | Freerouting's own count, pass 10 | 101 | 51 |
+  | fan-out pins escaped | 259/434 (59.7 %) | 390/434 (89.9 %) |
+  | clearance violations | 0 | 14 |
+  | copper | 2 075 mm, 120 vias | 2 695 mm, 160 vias |
+  | route time | 4 413 s | 4 446 s |
+
+  **The service's placement routes about twice as well.** The 21 % HPWL
+  "advantage" of M4.1 was the over-packing artefact the render suggested;
+  the router confirms it. Notes: Freerouting leaves 65 on a placement the
+  service's own router finished, so this ranks placements and does not
+  predict a strong router's result; KiCad counts more unconnected than
+  Freerouting reports on both boards, which is why KiCad gives the verdict;
+  the fan-out escape % (≈ 2.5 min) separated the two as clearly as the
+  75-minute run, so it is the quick proxy for tuning, with full routes to
+  confirm. Freerouting's GUI threw an NPE in its plane-drawing code on the
+  service's board (AWT thread, routing unaffected); the harness now runs it
+  headless.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss
