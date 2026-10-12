@@ -4,3 +4,4 @@
 
 pub mod group;
 pub mod kind;
+pub mod place;

@@ -12,7 +12,8 @@
 | pads agreeing with KiCad after an edit     | 523 / 523   | measured 2026-10-12, KiCad cross-check in `ci.sh`, m1        |
 | boards where overlaps match KiCad DRC      | 35 / 35     | measured 2026-10-12, `./ci.sh --kicad-full`                  |
 | m1 signal HPWL: service's return (the bar) | 3 016 mm    | measured 2026-10-12, `autolayout grade`                      |
-| boards placed                              | 0           | —                                                            |
+| boards placed legally (KiCad DRC clean)    | 1 (m1)      | measured 2026-10-12, `autolayout place` + `kicad-cli pcb drc` |
+| boards placed *routably*                   | unknown     | needs M6 (route it and count unconnected)                    |
 | boards routed                              | 0           | —                                                            |
 
 ## Milestones
@@ -80,6 +81,18 @@
   Known over-reach: bulk caps shared by two converters on one input rail
   (m1 U3/U4 on +12V) are listed for both; separating them needs position,
   which is placement's job.
+- 2026-10-12 — M3.2: one role per footprint; crystals by circuit shape.
+- 2026-10-12 — M4.1: **first legal placer** (`autolayout place`). m1 from
+  the staging board, 2.4 s, deterministic: 121/121 parts placed, 0 off
+  board, courtyard overlaps only the 2 pre-existing locked terminal pairs.
+  **KiCad DRC on the written file: 0 clearance violations** from placement
+  (the first version had 1 — J11, a through-hole header, dropped onto C14
+  on the back; through-hole parts now occupy both sides). Signal HPWL
+  2 374 mm vs the service's 3 016 mm — **but that is not a win.** The top
+  render shows everything movable packed into one blob between J4 and the
+  relays, with whole regions empty; the service spreads parts with room to
+  route. Short wires on an over-packed board is the classic analytic-
+  placement artefact. Routability is unmeasured, so "better" is not claimed.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

@@ -39,6 +39,17 @@ they close; don't delete them.
    POWER-IN (not POWER-OUT) marks supply nets; MCU = ≥ 16 bidirectional
    pins; field clusters seed from fixed through-hole parts. Read it for the
    rules; do not copy its code (AGPL).
+7a. **M4.2 — spread, then measure routability (next).** v1 over-packs
+   (see ROADMAP 2026-10-12). Two steps, in this order:
+   - *Measure first:* pull M6 forward. Export DSN, run Freerouting as an
+     external process on both our m1 and the service's m1 (copper stripped),
+     and compare unconnected counts after the same passes. Without this,
+     every placement change is graded on wirelength, which rewards exactly
+     the clumping we see.
+   - *Then spread:* a density term in global placement (bin utilisation
+     target, e.g. ≤ 70 %), field-cluster parts pulled toward their own
+     connector's board edge, and rotation to align two-pad parts with their
+     nets.
 8. **M8 — RF checks**, two halves. Every threshold comes from a cited
    datasheet layout section or app note (CLAUDE.md rule 7). None is invented
    here: until a number is cited, the check reports a measurement and says
