@@ -7,6 +7,7 @@ license.workspace = true
 
 [dependencies]
 autolayout-sexpr = { path = "../sexpr" }
+autolayout-board = { path = "../board" }
 
 [lints]
 workspace = true

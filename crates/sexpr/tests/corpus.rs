@@ -3,6 +3,8 @@
 //! This is the M0 exit condition (ROADMAP). The test skips, saying so, when the
 //! variable is unset, so the repo still builds and tests without the corpus.
 
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+
 use std::fs;
 use std::path::{Path, PathBuf};
 

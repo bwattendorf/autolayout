@@ -7,9 +7,10 @@ they close; don't delete them.
    ROADMAP. Any file that fails is the next item.
 2. **M0.2 — fuzz the parser** (truncated files, unbalanced parens, huge depth,
    invalid UTF-8, unterminated strings): errors, never panics.
-3. **M1.1 — board model, read side:** footprints with ref, position, rotation,
-   side, lock state, attributes; pads with number, net, pintype, absolute
-   position; nets; Edge.Cuts outline.
+3. ~~**M1.1 — board model, read side**~~ — closed 2026-10-12. Pintype comes
+   from the `.net` (boards carry none). Open half: courtyard extent ignores
+   arc bulge past an axis extreme; absolute (rotated) courtyard boxes are not
+   computed yet — needed by the grader.
 4. **M1.2 — board model, write side:** move / rotate / flip a footprint by
    editing only its `(at …)` and layer tokens; check KiCad opens it
    (`kicad-cli pcb drc` runs without a load error).
