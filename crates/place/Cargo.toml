@@ -1,0 +1,15 @@
+[package]
+name = "autolayout-place"
+description = "Grouping and placement"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+autolayout-board = { path = "../board" }
+
+[dev-dependencies]
+autolayout-sexpr = { path = "../sexpr" }
+
+[lints]
+workspace = true

@@ -22,7 +22,13 @@ they close; don't delete them.
    grouping of M3 (which converter, which crystal, which cap serves which
    pin) found from pintype and connectivity, never names — so do M3's
    grouping first and let M2.2 consume it.
-7. **M3 — grouping.** Reference: Portcullis `place_floorplan.py` step 1
+7. **M3 — grouping.** M3.1 done 2026-10-12 (supplies, ground, MCU,
+   converters; answer-key tests on m1/r/emu). Open: crystal + USB pair,
+   per-IC bypass caps (nearest-pin pairing needs a rule that is not "nearest
+   pad sharing the net" — that inference is exactly what made the layout
+   service adopt the wrong caps, Portcullis comprehension-pairing doc),
+   per-connector field clusters, MCU support parts, residue. g2n's ESP32-C6
+   module (5 bidirectional pins) is not found as an MCU. Reference: Portcullis `place_floorplan.py` step 1
    (worktree branch `worktree-agent-abcb674faad74edba`) and its findings:
    POWER-IN (not POWER-OUT) marks supply nets; MCU = ≥ 16 bidirectional
    pins; field clusters seed from fixed through-hole parts. Read it for the

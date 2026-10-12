@@ -67,6 +67,19 @@
   Both shapes are unit tests. First like-for-like numbers on m1: staging
   input 15 741 mm signal HPWL / 121 parts off board; the service's return
   3 016 mm / 0 off board / 2 overlaps (the known ganged blocks).
+- 2026-10-12 — M3.1: grouping, first part (`autolayout groups <pcb> <net>`).
+  Part kinds from the part's own value units; supply nets from POWER-IN;
+  ground = widest supply; MCU = ≥ 16 bidirectional pins; switching
+  converters found from their inductor (switch node = the end on a non-rail
+  net that reaches an IC; rail = supply or bulk-to-ground). On m1 all three
+  converters match Portcullis's step-1 answer key exactly for inductor, boot
+  cap and feedback divider, including U4, whose regulator is a second,
+  locally re-declared copy of the AP63201 with SW/BST typed PASSIVE — a
+  pintype-only rule misses it. r's fixed 5 V buck correctly has no divider;
+  emu correctly has one converter (its other regulator is a linear LDO).
+  Known over-reach: bulk caps shared by two converters on one input rail
+  (m1 U3/U4 on +12V) are listed for both; separating them needs position,
+  which is placement's job.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

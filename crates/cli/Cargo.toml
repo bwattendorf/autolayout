@@ -9,6 +9,7 @@ license.workspace = true
 autolayout-sexpr = { path = "../sexpr" }
 autolayout-board = { path = "../board" }
 autolayout-grade = { path = "../grade" }
+autolayout-place = { path = "../place" }
 
 [lints]
 workspace = true
