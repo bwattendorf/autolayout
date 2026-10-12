@@ -1,6 +1,6 @@
 # Roadmap
 
-**Stage:** M1 — board model (read side done). Nothing places or routes yet.
+**Stage:** M1 — board model: read, move and rotate done, KiCad-verified; flip open. Nothing places or routes yet.
 **Updated:** 2026-10-12
 
 ## Headline numbers
@@ -9,6 +9,7 @@
 |--------------------------------------------|-------------|--------------------------------------------------------------|
 | corpus boards round-tripping byte-exact    | 116 / 116   | measured 2026-10-12, `ci.sh` with `AUTOLAYOUT_CORPUS` set    |
 | rotated-front / back pads meeting copper   | 96.6% / 100% | measured 2026-10-12, m1 fab board, `board` corpus test      |
+| pads agreeing with KiCad after an edit     | 523 / 523   | measured 2026-10-12, KiCad cross-check in `ci.sh`, m1        |
 | boards placed                              | 0           | —                                                            |
 | boards routed                              | 0           | —                                                            |
 
@@ -41,6 +42,16 @@
   measured, not assumed (emu: 357/365, 30/30). Netlist join on m1 freeplace:
   0 netted pads without a pintype. Finding: no corpus board carries `pintype`
   itself.
+- 2026-10-12 — M0.2: parser fuzzing. 20 000 seeded cases (noise, truncation,
+  substitution, splicing): 0 panics, all 4 833 accepted inputs byte-exact; a
+  1 000 000-deep nest is an error, not a stack overflow. **M0 closed.**
+- 2026-10-12 — M1.2 (move + rotate; flip still open): `autolayout move`.
+  Measured first: 7072/7072 rotated chip pads across 116 files store their
+  angle in board terms, so a rotation adds its delta to every pad/text angle.
+  Graded by KiCad: after moving R8 to 135°, back-side C4 to 30° and U1 to 45°
+  on m1's freeplace board, `tools/kicad_pads.py` (pcbnew) and `autolayout pads`
+  agree on 523 of 523 pads; the file diff is 92 lines, every one an `(at …)`;
+  `kicad-cli pcb drc` loads it. The cross-check now runs in `ci.sh`.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

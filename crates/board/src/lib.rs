@@ -21,9 +21,11 @@ use std::collections::{BTreeMap, HashMap};
 
 use autolayout_sexpr::{Document, List};
 
+pub mod edit;
 mod geom;
 mod netlist;
 
+pub use edit::{EditError, set_pose};
 pub use geom::{BBox, Point};
 pub use netlist::{Netlist, NetlistError};
 
@@ -74,6 +76,10 @@ pub struct Pad {
   pub local: Point,
   /// Position on the board, see [`Footprint::to_board`].
   pub at: Point,
+  /// The angle written in the pad's `(at …)`. KiCad stores pad orientation
+  /// in board terms — footprint rotation already added — not relative to
+  /// the footprint (measured, see `tests/corpus.rs`).
+  pub angle: f64,
   pub size: Point,
   pub net: Option<u32>,
   pub layers: Vec<String>,
@@ -202,7 +208,7 @@ impl Footprint {
   }
 
   fn read_pad(&self, list: &List) -> Pad {
-    let (local, _) = read_at(list.child("at"));
+    let (local, angle) = read_at(list.child("at"));
     let size = list
       .child("size")
       .map(|s| Point::new(s.number(1).unwrap_or(0.0), s.number(2).unwrap_or(0.0)))
@@ -212,6 +218,7 @@ impl Footprint {
       kind: list.atom(2).unwrap_or_default().into_owned(),
       local,
       at: self.to_board(local),
+      angle,
       size,
       net: list.child("net").and_then(|n| n.number(1)).map(|c| c as u32),
       layers: list

@@ -67,6 +67,65 @@ fn pad_centres_meet_routed_copper() {
   }
 }
 
+/// Chip resistors and capacitors have both pads at 0° in their library
+/// footprint. If KiCad stores pad angles in board terms, every such pad on
+/// every corpus board reads exactly its footprint's rotation; if it stores
+/// them relative to the footprint, they all read 0. The write side depends on
+/// which, so it is measured here rather than assumed.
+#[test]
+fn pad_angles_are_stored_in_board_terms() {
+  let Ok(root) = std::env::var("AUTOLAYOUT_CORPUS") else {
+    eprintln!("SKIPPED: AUTOLAYOUT_CORPUS is not set");
+    return;
+  };
+  let mut files = Vec::new();
+  collect(Path::new(&root), &mut files);
+  let (mut absolute, mut relative, mut rotated_pads) = (0usize, 0usize, 0usize);
+  for path in &files {
+    let doc = parse(&fs::read_to_string(path).unwrap()).unwrap();
+    let board = Board::read(&doc).unwrap();
+    for fp in &board.footprints {
+      let chip = fp.lib_id.starts_with("Resistor_SMD:R_") || fp.lib_id.starts_with("Capacitor_SMD:C_");
+      if !chip || (fp.rotation % 360.0).abs() < 1e-6 {
+        continue;
+      }
+      for pad in &fp.pads {
+        rotated_pads += 1;
+        if same_angle(pad.angle, fp.rotation) {
+          absolute += 1;
+        } else if same_angle(pad.angle, 0.0) {
+          relative += 1;
+        }
+      }
+    }
+  }
+  eprintln!(
+    "pad angles on rotated chip R/C across {} files: {absolute} board-terms, {relative} footprint-relative, of {rotated_pads}",
+    files.len()
+  );
+  assert!(rotated_pads > 1000, "too few rotated chip pads to judge");
+  assert_eq!(
+    absolute, rotated_pads,
+    "some pad angles are not footprint rotation"
+  );
+}
+
+fn same_angle(a: f64, b: f64) -> bool {
+  ((a - b).rem_euclid(360.0) + 1e-6).rem_euclid(360.0) < 2e-6
+}
+
+fn collect(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
+  let Ok(entries) = fs::read_dir(dir) else { return };
+  for entry in entries.flatten() {
+    let path = entry.path();
+    if path.is_dir() {
+      collect(&path, out);
+    } else if path.extension().is_some_and(|e| e == "kicad_pcb") {
+      out.push(path);
+    }
+  }
+}
+
 #[derive(Default, Clone, Copy)]
 struct Tally {
   hit: usize,

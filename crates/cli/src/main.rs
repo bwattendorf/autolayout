@@ -2,16 +2,65 @@
 //!
 //!   autolayout roundtrip <file.kicad_pcb>...        parse + rewrite in memory, report byte-exactness
 //!   autolayout info <file.kicad_pcb> [<file.net>]   board summary; with a netlist, the pintype join
+//!   autolayout move <in> <out> (<REF> <x> <y> <deg>)...   set footprint poses, write a NEW file
+//!   autolayout pads <file.kicad_pcb>                 every pad's board position, as autolayout computes it
 
 use std::collections::BTreeMap;
 use std::fs;
+use std::path::Path;
 use std::process::ExitCode;
 
-use autolayout_board::{Board, Netlist, Side};
+use autolayout_board::{Board, Netlist, Point, Side, set_pose};
 use autolayout_sexpr::{Document, parse};
 
-const USAGE: &str =
-  "usage:\n  autolayout roundtrip <file.kicad_pcb>...\n  autolayout info <file.kicad_pcb> [<file.net>]";
+const USAGE: &str = "usage:\n  autolayout roundtrip <file.kicad_pcb>...\n  autolayout info <file.kicad_pcb> [<file.net>]\n  autolayout move <in.kicad_pcb> <out.kicad_pcb> (<REF> <x> <y> <deg>)...\n  autolayout pads <file.kicad_pcb>";
+
+/// Set the pose of each named footprint and write the result to `output`,
+/// which must not exist yet (CLAUDE.md rule 1: inputs are never overwritten).
+fn move_parts(input: &str, output: &str, moves: &[String]) -> Result<bool, String> {
+  if Path::new(output).exists() {
+    return Err(format!("{output}: already exists; refusing to overwrite"));
+  }
+  let (_, mut doc) = load(input)?;
+  let board = Board::read(&doc).map_err(|e| format!("{input}: {e}"))?;
+  for m in moves.chunks(4) {
+    let [reference, x, y, deg] = m else { continue };
+    let num = |s: &str| s.parse::<f64>().map_err(|_| format!("not a number: {s}"));
+    let fp = board
+      .footprint(reference)
+      .ok_or_else(|| format!("{input}: no footprint {reference}"))?;
+    set_pose(&mut doc, fp.node_index, Point::new(num(x)?, num(y)?), num(deg)?)
+      .map_err(|e| format!("{reference}: {e}"))?;
+  }
+  fs::write(output, doc.to_string()).map_err(|e| format!("{output}: {e}"))?;
+  println!("wrote {output} ({} footprint(s) set)", moves.len() / 4);
+  Ok(true)
+}
+
+/// Tab-separated `REF PAD X Y ANGLE`, sorted, so it can be diffed against the
+/// same listing produced by KiCad (`tools/kicad_pads.py`).
+fn pads(file: &str) -> Result<bool, String> {
+  let (_, doc) = load(file)?;
+  let board = Board::read(&doc).map_err(|e| format!("{file}: {e}"))?;
+  let mut rows = Vec::new();
+  for fp in &board.footprints {
+    for pad in &fp.pads {
+      rows.push(format!(
+        "{}\t{}\t{:.4}\t{:.4}\t{:.1}",
+        fp.reference,
+        pad.number,
+        pad.at.x,
+        pad.at.y,
+        pad.angle.rem_euclid(360.0)
+      ));
+    }
+  }
+  rows.sort();
+  for r in rows {
+    println!("{r}");
+  }
+  Ok(true)
+}
 
 fn main() -> ExitCode {
   let args: Vec<String> = std::env::args().skip(1).collect();
@@ -22,6 +71,13 @@ fn main() -> ExitCode {
       [pcb, net] => info(pcb, Some(net)),
       _ => Err(USAGE.to_owned()),
     },
+    Some((cmd, rest)) if cmd == "move" => match rest {
+      [input, output, moves @ ..] if !moves.is_empty() && moves.len() % 4 == 0 => {
+        move_parts(input, output, moves)
+      }
+      _ => Err(USAGE.to_owned()),
+    },
+    Some((cmd, rest)) if cmd == "pads" && rest.len() == 1 => rest.first().map_or(Ok(false), |f| pads(f)),
     _ => Err(USAGE.to_owned()),
   };
   match result {
