@@ -669,3 +669,70 @@ totals comparison, the per-board changes, the four-board table, the step 4
 entries and probes, what was not run. Copy `summary.md`, `results.csv`,
 `results.json`. Commit; `git push origin m7-router`; reply with the new totals,
 any board that got worse, and the hash.
+
+---
+
+# Round 12: plane pockets against KiCad, placement by routability, Freerouting on c2 and io
+
+Commits since round 11 (`ea961e6`): `9a2b5b6` (stub landing reach 1.5 -> 4.5
+pitches; local verifier unconnected 209 -> 194), `5695b5d` (plane-pocket
+emulation in `verify`), `6d0767e` (Freerouting tooling), and the
+placement-comparison script. Every number below the branch produces is
+UNVERIFIED until this round.
+
+## Prompt to paste
+
+> Follow "Round 12" in docs/windows-handoff.md exactly. Change no autolayout
+> Rust code. If a script in `tools/` breaks, make the smallest fix and say what
+> you changed (m7_place_compare.py and the close_outline function in
+> route_check.py have never run). Fresh output directories; never overwrite a
+> board; no PR; no boards or files over 1 MB committed. If something is
+> missing (a netlist, Java), say so and do the other steps.
+
+## Steps
+
+`git fetch origin && git checkout m7-router && git pull`; record the hash (must
+include `6d0767e`); `cargo build --release`.
+
+1. `"$KPY" tools/m7_batch.py out/m7r12_all`. Totals vs round 11
+   (`docs/m7-results/2026-10-13-round11/results.csv`): boards with 0 routing
+   violations; boards with 0 unconnected and 0 new violations; KiCad
+   unconnected summed; new clearance / shorting / hole_to_hole summed; nets
+   complete / total; then per board where KiCad unconnected or any new
+   violation changed, both numbers.
+2. Plane pockets, the calibration. Each board dir holds `*_verify.txt` (the new
+   verifier) and the KiCad DRC report. For EVERY board, one row:
+   `emulated pockets (count and the plane_island coordinates)` against
+   `KiCad unconnected_items / via_dangling entries that name a plane net (+3V3
+   or the ground net), with coordinates`. Say per board: both agree, only the
+   emulation, only KiCad. Local expectation (our verifier, NOT KiCad): 1 on
+   c4/3p5mil-candidate3 at (132.0772, 73.0328), 2 on r/3p5mil-candidate2,
+   1 each on c2, el, emu and g2 3p5mil, 0 elsewhere. For each emulated pocket
+   KiCad does not report, run
+   `./target/release/autolayout verify <dir>/b_routed.kicad_pcb --plane In1.Cu=GND --plane In2.Cu=+3V3 --probe X,Y`
+   and paste the probe, and say whether KiCad's fill covers the point
+   (`tools/zone_probe.py`).
+3. Placement by routability (needs the Portcullis netlist; m1 is
+   `controller.net`, find the others). For m1: freeplace board
+   `quilter/freeplace/m1/m1.kicad_pcb`, returned board = the best service
+   candidate of round 11 (name it), then
+   `python tools/m7_place_compare.py FREEPLACE NETLIST RETURNED out/m7r12_place_m1 --pro <the m1 .kicad_pro> --plane In1.Cu=GND --plane In2.Cu=+3V3 --variant nohalo=--no-halo --judge GND +3V3`
+   (judge needs KiCad's python as `sys.executable`; if it does not, run
+   `tools/m7_check.py` by hand on each `*_stripped.kicad_pcb`). Paste the
+   table and the KiCad numbers. Repeat on one more board with a netlist if one
+   is cheap (c4 or emu).
+4. Freerouting on the two boards that gave no number. c2:
+   `"$KPY" tools/m7_batch.py out/m7r12_c2 --boards "quilter/returned/c2/**/*.kicad_pcb" --freerouting`
+   (the DSN export now closes a broken outline in memory; paste the `outline:`
+   line from stderr/log and whether a DSN was written and what Freerouting
+   left unconnected). io:
+   `"$KPY" tools/m7_batch.py out/m7r12_io --boards "quilter/returned/io/**/*.kicad_pcb" --freerouting --fr-timeout 14400 --fr-passes 5`
+   Report seconds, whether `timed_out` is true, KiCad unconnected after.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-round12.md`: hash, commands and exit codes, step 1
+totals, the step 2 table (every board), step 3 tables and judge output, step 4
+results, what was not run. Copy `summary.md`, `results.csv`. Commit; `git push
+origin m7-router`; reply with the new totals, the agree / emulation-only /
+KiCad-only counts for step 2, and the hash.

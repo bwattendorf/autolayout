@@ -1,6 +1,6 @@
 # Roadmap
 
-**Stage:** M7 — our own router is built and judged by KiCad on all 37 service-placed corpus boards (M7.0-M7.4 closed, M7.5 largely met: it leaves 0 unconnected where Freerouting leaves 12-36 on the service-final boards, in seconds). Open: MCU-pin escape on the older candidate placements, plane islands under via fields, per-class track widths. Placement (M5) is now the larger gap: our own m1 placement routes worse than the service's with either router.
+**Stage:** M7 — our own router is built and judged by KiCad on all 37 service-placed corpus boards (M7.0-M7.4 closed, M7.5 largely met: it leaves 0 unconnected where Freerouting leaves 12-36 on the service-final boards, in seconds). Open: MCU-pin escape on the older candidate placements (stub reach widened; the rest is congestion), plane islands (the verifier now emulates them, awaiting KiCad calibration in Round 12), per-class track widths (only g2i differs). Placement (M5) is now the larger gap: our own m1 placement routes worse than the service's with either router.
 **Updated:** 2026-10-13
 
 ## Headline numbers
