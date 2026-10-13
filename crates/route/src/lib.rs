@@ -4,6 +4,7 @@ pub mod driver;
 pub mod model;
 pub mod negotiate;
 pub mod planes;
+pub mod pocket;
 pub mod rules;
 pub mod search;
 pub mod shape;

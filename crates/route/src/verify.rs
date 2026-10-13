@@ -76,6 +76,13 @@ fn outer_radius(s: &Shape) -> f64 {
   }
 }
 
+/// The pour the harness makes (`tools/m7_check.py`): zone clearance, inset from
+/// the outline and minimum thickness, mm. The emulation matches it, not any
+/// board's own zone settings, because a stripped board has none to read.
+const POUR_CLEARANCE: f64 = 0.25;
+const POUR_INSET: f64 = 0.5;
+const POUR_MIN_THICKNESS: f64 = 0.2;
+
 /// Shortfalls below this are not counted (float noise). KiCad flags 0.0006 mm
 /// (round 9), so this must stay far below a micrometre.
 const CLEARANCE_SLACK: f64 = 0.0002;
@@ -106,6 +113,10 @@ pub struct VerifyReport {
   /// an island split off by antipads or tracks (KiCad did, on Freerouting's
   /// m1: 17 unconnected items the verifier missed). Not a finding; a limit.
   pub plane_items_assumed: usize,
+  /// Taps (pads/vias of a plane's net) the plane-pocket EMULATION found cut off
+  /// from the main plane (see `pocket`); counted apart from `unconnected`
+  /// until a KiCad round has compared them. Zero when no plane was assumed.
+  pub plane_islands: usize,
   /// `filled_polygon` islands read from zones in the file; each is its own
   /// component until a same-net pad, via or track lies on it.
   pub fill_polygons: usize,
@@ -150,6 +161,12 @@ impl VerifyReport {
       s += &format!(
         "\n  LIMIT: {} pads/vias on plane nets were assumed connected to their plane because this file holds no zone fill for that layer and net (a stripped board); islands in a plane are NOT checked (unconnected 0 does not cover them)",
         self.plane_items_assumed
+      );
+    }
+    if self.plane_items_assumed > 0 {
+      s += &format!(
+        "\n  plane pockets (EMULATED raster fill, not KiCad's; not in `unconnected`): {} tap(s) cut off from the main plane",
+        self.plane_islands
       );
     }
     s
@@ -656,6 +673,99 @@ pub fn verify_with_probes(
       if it.net == *net && ((it.kind == Kind::Via) || (it.kind == Kind::Pad && it.layers.contains(&li))) {
         uf.union(i, node);
         rep.plane_items_assumed += 1;
+      }
+    }
+  }
+
+  // Pockets in the assumed planes (emulated fill).
+  if let Some(bb) = board.outline {
+    for &k in &assumed_planes {
+      let Some((layer, net)) = planes.get(k) else {
+        continue;
+      };
+      let Some(li) = cu.iter().position(|l| l == layer) else {
+        continue;
+      };
+      let hole_cl = rules.min.hole_clearance.max(POUR_CLEARANCE);
+      let mut holes: Vec<Shape> = Vec::new();
+      for it in &items {
+        if it.net != *net
+          && let Some((c, d)) = it.hole
+          && (it.layers.is_empty() || it.layers.contains(&li))
+        {
+          holes.push(Shape::Capsule(c, c, d / 2.0));
+        }
+      }
+      let mut blocks: Vec<crate::pocket::Block> = Vec::new();
+      for it in &items {
+        if it.net != *net && it.layers.contains(&li) {
+          blocks.push(crate::pocket::Block {
+            shape: &it.shape,
+            margin: it.clearance.unwrap_or(0.0).max(POUR_CLEARANCE),
+          });
+        }
+      }
+      for h in &holes {
+        blocks.push(crate::pocket::Block {
+          shape: h,
+          margin: hole_cl,
+        });
+      }
+      let taps: Vec<&Item> = items
+        .iter()
+        .filter(|it| {
+          it.net == *net && (it.kind == Kind::Via || (it.kind == Kind::Pad && it.layers.contains(&li)))
+        })
+        .collect();
+      let shapes: Vec<&Shape> = taps.iter().map(|t| &t.shape).collect();
+      let pour = crate::pocket::Pour {
+        min: bb.min,
+        max: bb.max,
+        inset: POUR_INSET,
+        min_thickness: POUR_MIN_THICKNESS,
+      };
+      if let Some(an) = crate::pocket::analyse(&pour, &blocks, &shapes) {
+        for pr in probes {
+          for (i, t) in taps.iter().enumerate() {
+            if t.shape.sdf(*pr) <= 0.5 {
+              rep.probe_notes.push(format!(
+                "probe ({:.4}, {:.4}): emulated {} fill on {}: tap {} touches component(s) of {:?} cells (main {} cells, 0.1 mm raster){}",
+                pr.x,
+                pr.y,
+                name(*net),
+                layer,
+                if t.label.is_empty() { "via" } else { t.label.as_str() },
+                an.touched.get(i).cloned().unwrap_or_default(),
+                an.main_cells,
+                if an.islands.contains(&i) { " -> ISLAND" } else { "" }
+              ));
+            }
+          }
+        }
+        for i in an.islands {
+          if let Some(t) = taps.get(i) {
+            rep.plane_islands += 1;
+            let at = t.anchor.unwrap_or_else(|| {
+              t.shape.bbox().map_or(bb.min, |b| {
+                Point::new((b.min.x + b.max.x) / 2.0, (b.min.y + b.max.y) / 2.0)
+              })
+            });
+            issues.push(Issue {
+              kind: "plane_island",
+              at,
+              detail: format!(
+                "net {} {}: tap cut off from the main {} fill (emulated)",
+                name(*net),
+                if t.label.is_empty() {
+                  "via"
+                } else {
+                  t.label.as_str()
+                },
+                layer
+              ),
+            });
+          }
+        }
       }
     }
   }
