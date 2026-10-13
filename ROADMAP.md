@@ -374,6 +374,28 @@
   off-grid stub instead (`m1_fab_every_pad_is_reachable` is replaced by
   `m1_fab_routes_and_the_verifier_is_clean`, which routes, writes and verifies
   the whole board: 104/104 nets, verifier clean, measured 2026-10-13).
+- 2026-10-13 — **M7.4 round 2 verdict (KiCad 9.0.1, commit 49bd01a, fab m1,
+  `docs/m7-results/2026-10-13-fab-m1-round2.md`).** Our router: KiCad reports
+  **0 in every routing category** (round 1: 2 unconnected, 2 track_dangling, 2
+  hole_to_hole); 104/104 nets, 925 segments, 460 vias, 3 009 mm, 0.7 s. Only
+  the five non-routing kinds already on the stripped board remain. **The
+  three fixes worked.** Freerouting on the same board and rules (reproduced
+  exactly): 17 unconnected, 2 clearance, 2 shorting_items, 45 track_width, 9
+  via_dangling, 6 min 25 s. Verifier vs KiCad on **Freerouting's** board (the
+  test it could fail): track_width 45/45; the four clearance-type spots
+  agree (KiCad calls two of them shorting_items, the verifier now does too);
+  **unconnected: KiCad 17, verifier 0 — a real gap.** Cause: told a layer is
+  a plane, the verifier joins every via and pad of that net to it
+  unconditionally, so it cannot see a pour split into islands (13 of the 17
+  are GND fragments on F/B, 3 are +3V3 track pairs, 1 is a GND pad pair).
+  Agreement on our own board never tested this: both said 0. **Open:** read
+  zone fills (`filled_polygon`) instead of assuming planes; needs the real
+  file format, so `tools/zone_probe.py` + "Round 3" in docs/windows-handoff.md
+  ask for it. Done now: `shorting` is its own category; the report prints a
+  LIMIT line (e.g. 168 pads/vias assumed on planes for our fab board) so
+  "unconnected 0" cannot be read as covering plane islands. Still not
+  implemented: via_dangling. Stress case at 0.2 mm (model only): 62/104 nets,
+  verifier unconnected 57, clearance 2; not KiCad-judged.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss
