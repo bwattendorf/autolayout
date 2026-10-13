@@ -480,8 +480,8 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   );
   if let Some(st) = &stats {
     println!(
-      "  {} iteration(s); contested cells per iteration {:?}; nets dropped to make the result legal {}",
-      st.iterations, st.conflicts, st.dropped_nets
+      "  {} iteration(s); contested cells per iteration {:?}; nets dropped to make the result legal {} (completed by hard re-route: {})",
+      st.iterations, st.conflicts, st.dropped_nets, st.repaired_nets
     );
   }
   for r in s.routes.iter().filter(|r| !r.failed.is_empty()).take(12) {
