@@ -20,7 +20,7 @@ own and ends with something measured.
   recorded that "the via change is what moved it" to 0 unrouted. A router
   must never guess its rules: if no project is found, refuse, or take rules
   on the command line.
-- **M7.1 — routing model.** A layer grid at a resolution derived from the
+- ~~**M7.1 — routing model.**~~ — closed 2026-10-13 (`crates/route/src/model.rs`, `autolayout model`; see ROADMAP). Original scope: A layer grid at a resolution derived from the
   rules. Obstacles: pads (real rotated shapes, clearance-inflated),
   keepout zones, the board edge, through-hole pads on every layer. Plane
   nets (poured) connect by a via to their plane, not by traces.

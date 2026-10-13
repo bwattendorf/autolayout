@@ -11,6 +11,7 @@
 //!   autolayout strip <in.kicad_pcb> <out.kicad_pcb>  remove tracks, arcs, vias and zones (NEW file)
 //!   autolayout flip <in> <out> (<REF>... | ALL)      move footprints to the other side (NEW file)
 //!   autolayout rules <file.kicad_pcb> [--track W --clearance C --via D/DRILL]   design rules from the project beside the board (or explicit)
+//!   autolayout model <file.kicad_pcb> [--class NAME] [--plane LAYER=NET]... [explicit rules]   build the routing grid, report obstacles and pad access
 //!   autolayout unlock <in> <out> <REF>...            unlock footprints for an experiment (NEW file)
 
 use std::collections::BTreeMap;
@@ -360,6 +361,115 @@ fn explicit_rules(
   DesignRules::explicit(track, clearance, num("--via", d)?, num("--via", dr)?)
 }
 
+/// Build the routing model for one net class and report what it blocks and
+/// which netted pads it can reach (M7.1). Nothing is written.
+fn model(pcb: &str, args: &[String]) -> Result<bool, String> {
+  use autolayout_route::model::RoutingModel;
+  use autolayout_route::rules::DesignRules;
+  let (mut class, mut planes, mut rule_flags) = (String::from("Default"), Vec::new(), Vec::new());
+  let mut it = args.iter();
+  while let Some(a) = it.next() {
+    match a.as_str() {
+      "--class" => class = it.next().ok_or("--class needs a name")?.clone(),
+      "--plane" => {
+        let v = it.next().ok_or("--plane needs LAYER=NET")?;
+        let (l, n) = v.split_once('=').ok_or("--plane needs LAYER=NET")?;
+        planes.push((l.to_owned(), n.to_owned()));
+      }
+      _ => {
+        rule_flags.push(a.clone());
+        rule_flags.extend(it.next().cloned());
+      }
+    }
+  }
+  let rules = if rule_flags.is_empty() {
+    DesignRules::load_for_board(Path::new(pcb))
+  } else {
+    explicit_rules(&rule_flags)
+  }
+  .map_err(|e| e.to_string())?;
+  let profile = rules
+    .classes
+    .iter()
+    .find(|c| c.name == class)
+    .ok_or_else(|| format!("no net class `{class}` in the rules"))?
+    .clone();
+  let (_, doc) = load(pcb)?;
+  let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
+  let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
+  print!("{}", rules.report());
+  println!(
+    "profile `{}`: track {:.4} clearance {:.4} via {:.4}/{:.4}; pitch {:.4} mm",
+    profile.name, profile.track_width, profile.clearance, profile.via_diameter, profile.via_drill, m.pitch
+  );
+  println!(
+    "grid {} x {} cells, {} routable layer(s)",
+    m.nx,
+    m.ny,
+    m.layers.len()
+  );
+  for (i, l) in m.layers.iter().enumerate() {
+    println!(
+      "  {l:<8} {:5.1} % of cells unusable by a typical net",
+      100.0 * m.blocked_fraction(i)
+    );
+  }
+  for p in &m.planes {
+    println!(
+      "  plane {} = {}",
+      p.layer,
+      board.nets.get(&p.net).map_or("?", String::as_str)
+    );
+  }
+  let sx = &m.stats;
+  println!(
+    "copper already on board: {} segments/arcs, {} vias (kept as obstacles); keepout zones used {}; zone fills ignored {}; custom pads approximated {}",
+    sx.existing_segments, sx.existing_vias, sx.keepout_zones, sx.ignored_fills, sx.custom_pads
+  );
+  let plane_nets: Vec<u32> = m.planes.iter().map(|p| p.net).collect();
+  let (mut total, mut none, mut sample) = (0usize, 0usize, Vec::new());
+  let (mut by_kind, mut cells_sum) = (BTreeMap::<String, (usize, usize)>::new(), 0usize);
+  for (fi, fp) in board.footprints.iter().enumerate() {
+    for (pi, pad) in fp.pads.iter().enumerate() {
+      let Some(net) = pad.net.filter(|&n| n != 0) else {
+        continue;
+      };
+      if plane_nets.contains(&net) && pad.kind == "smd" {
+        continue;
+      }
+      total += 1;
+      let a = m.pad_access(&board, fi, pi);
+      cells_sum += a.cells.len();
+      let e = by_kind.entry(pad.kind.clone()).or_default();
+      e.0 += 1;
+      if a.cells.is_empty() {
+        none += 1;
+        e.1 += 1;
+        if sample.len() < 12 {
+          sample.push(format!("{}.{} ({})", fp.reference, pad.number, pad.shape));
+        }
+      }
+    }
+  }
+  println!(
+    "pad access (netted pads, plane-net SMD pads excluded): {} of {total} have no usable grid cell",
+    none
+  );
+  for (k, (n, bad)) in &by_kind {
+    println!("  {k:<14} {n:5} pads, {bad:4} unreachable");
+  }
+  if total > 0 {
+    println!(
+      "  mean access cells per pad {:.2}",
+      cells_sum as f64 / total as f64
+    );
+  }
+  if !sample.is_empty() {
+    println!("  e.g. {}", sample.join(", "));
+  }
+  Ok(true)
+}
+
 fn main() -> ExitCode {
   let args: Vec<String> = std::env::args().skip(1).collect();
   let result = match args.split_first() {
@@ -387,6 +497,7 @@ fn main() -> ExitCode {
       place(pcb, net, out, true, Some(pairs))
     }
     Some((cmd, [pcb, flags @ ..])) if cmd == "rules" => rules(pcb, flags),
+    Some((cmd, [pcb, flags @ ..])) if cmd == "model" => model(pcb, flags),
     Some((cmd, [pcb, out])) if cmd == "strip" => strip(pcb, out),
     Some((cmd, files)) if cmd == "escape" && !files.is_empty() => escape(files),
     Some((cmd, [input, output, refs @ ..])) if cmd == "flip" && !refs.is_empty() => {

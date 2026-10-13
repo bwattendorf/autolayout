@@ -223,6 +223,25 @@
   to use for the M7.5 comparison is the owner's call. Unverified: pattern
   semantics (`*`/`?` only, explicit assignment first, first pattern wins) are
   assumed, not checked against KiCad; no corpus project uses assignments.
+- 2026-10-13 — **M7.1: routing model** (`autolayout model`, `route::model`).
+  One grid per routable copper layer plus one via map, built for one net
+  class (pitch = track + clearance); cells hold free / one net / blocked.
+  Obstacles: rotated rect pads, capsule circle/oval pads, drilled holes
+  (hole clearance, hole-to-hole), existing tracks/arcs/vias, keepout zones
+  by their tracks/vias flags, board edge at `min_copper_edge_clearance`;
+  plane layers (declared with `--plane LAYER=NET`, a stripped board no
+  longer says) are not routed on. Unit tests (synthetic board) caught a real
+  bug: keepout points are under `pts`, not `polygon`. Measured, m1, 0.1 s:
+  at the **fab rules** (pitch 0.178 mm, 608 x 394 cells) 0 of 345 netted
+  pads are unreachable (`cargo test`, corpus); at the **freeplace project's
+  rules** (pitch 0.45 mm) **249 of 345 pads contain no grid cell centre**
+  (242 of 285 SMD). So pad access cannot depend on on-grid cells: M7.2 must
+  connect pads off-grid (stub from the pad centre to the nearest usable
+  cell) or use a finer grid. Not modelled (documented in the module):
+  non-rectangular outlines (bbox only), custom-pad primitives (anchor
+  rectangle; 0 on m1), roundrect corners (square, conservative), zone fills
+  (4 on the fab board, counted not blocked), footprint-level keepouts.
+  Unverified: nothing here is checked against KiCad DRC yet; that is M7.4.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss
