@@ -1,0 +1,17 @@
+rules from out/m7r7/m1_ours.kicad_pro
+  class Default    track 0.0889  clearance 0.0889  via 0.2500/0.1500
+  class Power      track 0.0889  clearance 0.0889  via 0.2500/0.1500
+  patterns 8  assignments 0
+  min: clearance 0.0889  track 0.0889  via 0.2500  hole 0.1500  edge 0.3000  hole-clearance 0.0889  hole-to-hole 0.0889
+profile `Default`: track 0.0889 clearance 0.0889 via 0.2500/0.1500; pitch 0.1778 mm
+grid 608 x 394 cells, 2 routable layer(s)
+  F.Cu      15.2 % of cells unusable by a typical net
+  B.Cu       7.5 % of cells unusable by a typical net
+  plane In1.Cu = GND
+  plane In2.Cu = +3V3
+copper already on board: 0 segments/arcs, 0 vias (kept as obstacles); keepout zones used 0; zone fills ignored 0; custom pads approximated 0
+pad access (netted pads, plane-net SMD pads excluded): 21 of 345 have no usable grid cell
+  smd              285 pads,   21 unreachable
+  thru_hole         60 pads,    0 unreachable
+  mean access cells per pad 78.88
+  e.g. U1.3 (roundrect), U1.4 (roundrect), U1.7 (roundrect), U1.8 (roundrect), U1.12 (roundrect), U1.15 (roundrect), U1.18 (roundrect), U1.21 (roundrect), U1.22 (roundrect), U1.25 (roundrect), U1.26 (roundrect), U1.29 (roundrect)

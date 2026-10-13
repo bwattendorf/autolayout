@@ -1,0 +1,12 @@
+rules from out/m7r7/m1_ours.kicad_pro; pitch 0.1778 mm; grid 608 x 394 x 2
+negotiated (PathFinder) route (UNVERIFIED: not written, not checked by KiCad): nets complete 103 of 104; pads connected 487 of 494; 2970.3 mm of track, 464 vias, 16.2 s
+  61 iteration(s); contested cells per iteration [45, 13, 10, 8, 6, 5, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]; nets dropped to make the result legal 1
+  incomplete: net N$4 — unreached C20.1 U2.2 SW1.1 SW1.1 U1.26 R2.2 TP12.1
+verifier (re-derived from the written copper, NOT KiCad; judge is `kicad-cli pcb drc`): 888 segments, 464 vias: unconnected 6, track_dangling 0, hole_to_hole 0, clearance 0, shorting 0, copper_edge 0, track_width 0, via_size 0
+  LIMIT: 168 pads/vias on plane nets were assumed connected to their plane because this file holds no zone fill for that layer and net (a stripped board); islands in a plane are NOT checked (unconnected 0 does not cover them)
+  unconnected at (96.9625, 87.8500): net N$4 part 2 of 7 (main part has 1 pads): pads [U2.2], 0 tracks, 0 vias
+  unconnected at (79.4000, 96.5000): net N$4 part 3 of 7 (main part has 1 pads): pads [SW1.1], 0 tracks, 0 vias
+  unconnected at (86.6000, 96.5000): net N$4 part 4 of 7 (main part has 1 pads): pads [SW1.1#2], 0 tracks, 0 vias
+  unconnected at (99.9000, 101.7500): net N$4 part 5 of 7 (main part has 1 pads): pads [U1.26], 0 tracks, 0 vias
+  unconnected at (91.7100, 74.7000): net N$4 part 6 of 7 (main part has 1 pads): pads [R2.2], 0 tracks, 0 vias
+  unconnected at (104.0000, 88.0000): net N$4 part 7 of 7 (main part has 1 pads): pads [TP12.1], 0 tracks, 0 vias
