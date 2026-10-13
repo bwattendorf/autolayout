@@ -1,0 +1,12 @@
+[package]
+name = "autolayout-route"
+description = "Routing for KiCad boards: design rules, grid model, search"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde_json = "1"
+
+[lints]
+workspace = true

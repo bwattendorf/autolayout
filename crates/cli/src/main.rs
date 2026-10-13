@@ -10,6 +10,7 @@
 //!   autolayout place <in.kicad_pcb> <file.net> <out.kicad_pcb> [--no-halo]   place unlocked parts, write a NEW file, grade it
 //!   autolayout strip <in.kicad_pcb> <out.kicad_pcb>  remove tracks, arcs, vias and zones (NEW file)
 //!   autolayout flip <in> <out> (<REF>... | ALL)      move footprints to the other side (NEW file)
+//!   autolayout rules <file.kicad_pcb> [--track W --clearance C --via D/DRILL]   design rules from the project beside the board (or explicit)
 //!   autolayout unlock <in> <out> <REF>...            unlock footprints for an experiment (NEW file)
 
 use std::collections::BTreeMap;
@@ -322,6 +323,43 @@ fn pads(file: &str) -> Result<bool, String> {
   Ok(true)
 }
 
+/// Print the design rules a router would use. With no flags they come from
+/// the `.kicad_pro` beside the board and a missing project is an error; with
+/// all three flags they are explicit. Anything in between is refused.
+fn rules(pcb: &str, flags: &[String]) -> Result<bool, String> {
+  let r = if flags.is_empty() {
+    autolayout_route::rules::DesignRules::load_for_board(Path::new(pcb))
+  } else if flags.len() == 6 {
+    explicit_rules(flags)
+  } else {
+    return Err("rules: give all of --track W --clearance C --via D/DRILL, or none".to_owned());
+  }
+  .map_err(|e| e.to_string())?;
+  print!("{}", r.report());
+  Ok(true)
+}
+
+fn explicit_rules(
+  flags: &[String],
+) -> Result<autolayout_route::rules::DesignRules, autolayout_route::rules::RulesError> {
+  use autolayout_route::rules::{DesignRules, RulesError};
+  let get = |name: &str| {
+    flags
+      .iter()
+      .position(|f| f == name)
+      .and_then(|i| flags.get(i + 1))
+      .ok_or_else(|| RulesError::Field(name.to_owned()))
+  };
+  let num = |name: &str, s: &str| s.parse::<f64>().map_err(|_| RulesError::Field(name.to_owned()));
+  let track = num("--track", get("--track")?)?;
+  let clearance = num("--clearance", get("--clearance")?)?;
+  let via = get("--via")?;
+  let (d, dr) = via
+    .split_once('/')
+    .ok_or_else(|| RulesError::Field("--via (D/DRILL)".to_owned()))?;
+  DesignRules::explicit(track, clearance, num("--via", d)?, num("--via", dr)?)
+}
+
 fn main() -> ExitCode {
   let args: Vec<String> = std::env::args().skip(1).collect();
   let result = match args.split_first() {
@@ -348,6 +386,7 @@ fn main() -> ExitCode {
     Some((cmd, [pcb, net, out, flag, pairs])) if cmd == "place" && flag == "--pairs" => {
       place(pcb, net, out, true, Some(pairs))
     }
+    Some((cmd, [pcb, flags @ ..])) if cmd == "rules" => rules(pcb, flags),
     Some((cmd, [pcb, out])) if cmd == "strip" => strip(pcb, out),
     Some((cmd, files)) if cmd == "escape" && !files.is_empty() => escape(files),
     Some((cmd, [input, output, refs @ ..])) if cmd == "flip" && !refs.is_empty() => {

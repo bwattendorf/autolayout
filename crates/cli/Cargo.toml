@@ -10,6 +10,7 @@ autolayout-sexpr = { path = "../sexpr" }
 autolayout-board = { path = "../board" }
 autolayout-grade = { path = "../grade" }
 autolayout-place = { path = "../place" }
+autolayout-route = { path = "../route" }
 serde_json = "1"
 
 [lints]

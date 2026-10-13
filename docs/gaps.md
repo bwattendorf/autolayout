@@ -11,7 +11,8 @@ unrouted from pass 8 to 10). Portcullis's in-house Python routers plateaued
 too; speed per experiment was part of why. Each step below commits on its
 own and ends with something measured.
 
-- **M7.0 — design rules from the project.** Read the netclasses (track width,
+- ~~**M7.0 — design rules from the project.**~~ — closed 2026-10-13 (`autolayout rules`, `crates/route/src/rules.rs`; below).
+  Original scope: Read the netclasses (track width,
   clearance, via diameter and drill) from `<board>.kicad_pro` (JSON) beside the
   board. The Freerouting harness silently routed at KiCad defaults (0.2 mm,
   0.6/0.3 vias) because the prepared board was saved without its project.
