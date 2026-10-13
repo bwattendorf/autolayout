@@ -193,6 +193,19 @@
     routed boards right, the three halo boards wrong). Recorded as NOT
     VALIDATED in `grade/src/escape.rs`.
   Open: the mechanism behind the plane-pin failures is not yet known.
+- 2026-10-13 — **Full route of the front-decoupled m1** (caps on the front,
+  placed by pin record; same harness, 10 passes, 2 843 s): **131
+  unconnected** (KiCad) vs 135 for M4.1 and 65 for the service's placement.
+  U1 endpoints **rose 56 → 64**: the caps now ring U1 at 1.35 mm on the TOP,
+  blocking its escape there exactly as the back-side ring did below —
+  Portcullis's "the ring cannot both decouple and leave the escape alone"
+  holds on either face. GND/+3V3 failures outside U1 unchanged (41/29).
+  Conclusions: (1) the cap *arrangement* around the MCU must leave escape
+  channels (caps at the power pins / corners, gaps at signal pins, still
+  ≤ 3 mm) — next lever, scored by U1's unconnected count; (2) the plane-pin
+  deficit outside U1 is a separate open problem. The owner's front-side
+  decision is a cost decision and is unaffected; this result is about how
+  the placer arranges the caps, not where.
 - 2026-10-13 — **Decoupling record** (`place --pairs`): with the cap→pin
   record, 17 of 22 m1 caps within 3 mm of their pin, all on the front
   (without it 2 of 22; back-side ring 13 of 22). Escape unchanged (60.4 %).
