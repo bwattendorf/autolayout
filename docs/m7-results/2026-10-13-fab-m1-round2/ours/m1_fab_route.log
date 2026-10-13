@@ -1,0 +1,5 @@
+rules from out/m7r2/ours\m1_fab_prepared.kicad_pro; pitch 0.1778 mm; grid 608 x 394 x 2
+negotiated (PathFinder) route (UNVERIFIED: not written, not checked by KiCad): nets complete 104 of 104; pads connected 494 of 494; 3009.1 mm of track, 460 vias, 0.7 s
+  10 iteration(s); contested cells per iteration [52, 13, 11, 6, 3, 2, 2, 1, 1, 0]; nets dropped to make the result legal 0
+wrote out/m7r2/ours\m1_fab_routed_raw.kicad_pcb: 925 segments, 460 vias added (read back: 925 / 460); judge it with KiCad DRC, not with this tool
+verifier (re-derived from the written copper, NOT KiCad; judge is `kicad-cli pcb drc`): 925 segments, 460 vias: unconnected 0, track_dangling 0, hole_to_hole 0, clearance 0, copper_edge 0, track_width 0, via_size 0

@@ -1,0 +1,26 @@
+rules from command line; pitch 0.4000 mm; grid 271 x 176 x 2
+negotiated (PathFinder) route (UNVERIFIED: not written, not checked by KiCad): nets complete 62 of 104; pads connected 436 of 494; 2756.0 mm of track, 370 vias, 6.7 s
+  61 iteration(s); contested cells per iteration [86, 43, 30, 21, 20, 18, 8, 7, 5, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]; nets dropped to make the result legal 1
+  incomplete: net GND — unreached U1.47
+  incomplete: net +3V3 — unreached U1.11 U1.20 U1.38 U1.49 U1.53 U1.54
+  incomplete: net N$1 — unreached U1.48
+  incomplete: net N$2 — unreached U1.21
+  incomplete: net N$62 — unreached U1.18
+  incomplete: net N$24 — unreached U1.35
+  incomplete: net VREG_AVDD_F — unreached R1.2 C2.1
+  incomplete: net N$3 — unreached U1.22
+  incomplete: net N$66 — unreached U1.32
+  incomplete: net N$84 — unreached U1.31
+  incomplete: net N$18 — unreached U1.15
+  incomplete: net N$74 — unreached U1.43
+verifier (re-derived from the written copper, NOT KiCad; judge is `kicad-cli pcb drc`): 931 segments, 370 vias: unconnected 57, track_dangling 0, hole_to_hole 0, clearance 2, copper_edge 0, track_width 0, via_size 0
+  clearance at (94.4000, 94.8000): GND vs +3V3: 0.1695 mm, rule 0.2000
+  clearance at (95.6000, 102.8000): +3V3 vs N$35: -0.2000 mm, rule 0.2000
+  unconnected at (137.7000, 91.6200): net GND split into 2 parts; nearest same-net track end is 20.3400 mm outside this pad
+  unconnected at (92.0200, 106.9375): net N$80 split into 2 parts; nearest same-net track end is -0.1250 mm outside this pad
+  unconnected at (93.9200, 106.9375): net N$81 split into 2 parts; nearest same-net track end is -0.1250 mm outside this pad
+  unconnected at (100.7000, 94.8500): net N$1 split into 2 parts; nearest same-net track end is inf mm outside this pad
+  unconnected at (98.1300, 90.0400): net +1V1 split into 11 parts; nearest same-net track end is inf mm outside this pad
+  unconnected at (95.7403, 93.2857): net +1V1 split into 11 parts; nearest same-net track end is inf mm outside this pad
+  unconnected at (95.2500, 97.5000): net +1V1 split into 11 parts; nearest same-net track end is inf mm outside this pad
+  unconnected at (98.7000, 101.7500): net +1V1 split into 11 parts; nearest same-net track end is inf mm outside this pad
