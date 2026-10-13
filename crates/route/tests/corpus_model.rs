@@ -1,5 +1,7 @@
 //! Checks on a real board. Skip, printing why, without the corpus.
 
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+
 use std::path::Path;
 
 use autolayout_board::Board;
