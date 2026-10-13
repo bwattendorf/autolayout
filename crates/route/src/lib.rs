@@ -3,5 +3,6 @@
 pub mod check;
 pub mod driver;
 pub mod model;
+pub mod negotiate;
 pub mod rules;
 pub mod search;

@@ -12,7 +12,7 @@
 //!   autolayout flip <in> <out> (<REF>... | ALL)      move footprints to the other side (NEW file)
 //!   autolayout rules <file.kicad_pcb> [--track W --clearance C --via D/DRILL]   design rules from the project beside the board (or explicit)
 //!   autolayout model <file.kicad_pcb> [--class NAME] [--plane LAYER=NET]... [explicit rules]   build the routing grid, report obstacles and pad access
-//!   autolayout route <file.kicad_pcb> [same flags as model]   greedy sequential route of every net; reports only (M7.2)
+//!   autolayout route <file.kicad_pcb> [--greedy] [--iters N] [model flags]   route every net (PathFinder, or greedy baseline); reports only until M7.4
 //!   autolayout unlock <in> <out> <REF>...            unlock footprints for an experiment (NEW file)
 
 use std::collections::BTreeMap;
@@ -407,13 +407,39 @@ fn model_args(pcb: &str, args: &[String]) -> Result<ModelArgs, String> {
 /// (writing is M7.4). Copper already on the board is kept as obstacles, so
 /// route a stripped board (`autolayout strip`).
 fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
-  use autolayout_route::{driver::route_all, model::RoutingModel, search::Costs};
-  let (rules, profile, planes) = model_args(pcb, args)?;
+  use autolayout_route::{
+    driver::route_all,
+    model::RoutingModel,
+    negotiate::{Params, route_negotiated},
+    search::Costs,
+  };
+  let mut greedy = false;
+  let mut params = Params::default();
+  let mut rest = Vec::new();
+  let mut it = args.iter();
+  while let Some(a) = it.next() {
+    match a.as_str() {
+      "--greedy" => greedy = true,
+      "--iters" => {
+        params.max_iterations = it
+          .next()
+          .and_then(|v| v.parse().ok())
+          .ok_or("--iters needs a number")?;
+      }
+      _ => rest.push(a.clone()),
+    }
+  }
+  let (rules, profile, planes) = model_args(pcb, &rest)?;
   let (_, doc) = load(pcb)?;
   let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
   let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
   let t = std::time::Instant::now();
-  let s = route_all(&board, &m, Costs::default());
+  let (s, stats) = if greedy {
+    (route_all(&board, &m, Costs::default()), None)
+  } else {
+    let (s, st) = route_negotiated(&board, &m, Costs::default(), params);
+    (s, Some(st))
+  };
   println!(
     "rules from {}; pitch {:.4} mm; grid {} x {} x {}",
     rules.source,
@@ -423,7 +449,12 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     m.layers.len()
   );
   println!(
-    "greedy sequential route (UNVERIFIED: not written, not checked by KiCad): nets complete {} of {}; pads connected {} of {}; {:.1} mm of track, {} vias, {:.1} s",
+    "{} route (UNVERIFIED: not written, not checked by KiCad): nets complete {} of {}; pads connected {} of {}; {:.1} mm of track, {} vias, {:.1} s",
+    if greedy {
+      "greedy sequential"
+    } else {
+      "negotiated (PathFinder)"
+    },
     s.nets_complete,
     s.nets_total,
     s.pads_connected,
@@ -432,6 +463,12 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     s.vias,
     t.elapsed().as_secs_f64()
   );
+  if let Some(st) = &stats {
+    println!(
+      "  {} iteration(s); contested cells per iteration {:?}; nets dropped to make the result legal {}",
+      st.iterations, st.conflicts, st.dropped_nets
+    );
+  }
   for r in s.routes.iter().filter(|r| !r.failed.is_empty()).take(12) {
     let pads: Vec<String> = r
       .failed

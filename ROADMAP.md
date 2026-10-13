@@ -264,6 +264,26 @@
   grid, so routing it says nothing about routability (3 of 104 nets at fab
   rules); M7.5 needs the `place` output, which needs the `.net` file that is
   not in the cloud clone of Portcullis.
+- 2026-10-13 — **M7.3: negotiated congestion** (`route::negotiate`;
+  `autolayout route` now uses it, `--greedy` keeps the M7.2 baseline).
+  PathFinder (McMurchie & Ebeling, FPGA '95): cells may be shared at a
+  present penalty that grows 1.5x per iteration plus a history that grows
+  on every still-contested cell; only nets on contested cells are ripped up
+  and rerouted; if conflicts remain at the cap the best iteration is kept
+  and nets sharing a cell with an earlier kept net are dropped and reported.
+  Measured, m1 fab stripped, same setup as M7.2, `autolayout route`:
+  greedy **102 of 104** nets (U1.27, U1.28 unreached), negotiated **104 of
+  104 nets, 494 of 494 pads, 2 989 mm, 462 vias, 0.5 s**; contested cells
+  per iteration 45, 15, 6, 4, 1, 1, 1, 0 (8 iterations); 0 nets dropped;
+  identical bytes on two runs. Also changed: plane-tap reach 1.5 -> 5
+  pitches (`TAP_REACH_PITCHES`), because 1.5 left 4 of 104 plane pads
+  without a via (GND C6.2 C8.2 C11.2, +3V3 R1.1); those stubs reach up to
+  ~0.9 mm and are not grid-checked, so they are the first thing to look at
+  in the DRC. **UNVERIFIED:** not written, not checked by KiCad (M7.4); the
+  self-check (0 illegal cells, 0 shared cells, 0 disconnected pads) is the
+  model's own geometry and not a grade. The synthetic unit board only proves
+  convergence, determinism and legality, not that negotiation beats greedy;
+  the m1 numbers are the evidence, from one board.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

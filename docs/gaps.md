@@ -27,7 +27,7 @@ own and ends with something measured.
 - ~~**M7.2 — one net, A\*.**~~ — closed 2026-10-13 (`route::search`, `route::driver`, `autolayout route`; see ROADMAP). Original scope: Deterministic maze search on the 3-D grid (x, y,
   layer) with a via cost and a direction preference per layer. Multi-pin
   nets grow a Steiner-ish tree from the nearest pin pair outward.
-- **M7.3 — negotiated congestion.** PathFinder (McMurchie & Ebeling,
+- ~~**M7.3 — negotiated congestion.**~~ — closed 2026-10-13 (`route::negotiate`, `autolayout route`; see ROADMAP). Original scope: PathFinder (McMurchie & Ebeling,
   FPGA '95): route every net, let them share cells at a cost, raise the
   history cost of over-used cells, rip up and reroute until no cell is
   shared. Published, well understood, and suited to fixed-grid routing.
