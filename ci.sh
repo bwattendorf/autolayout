@@ -39,6 +39,20 @@ else
     exit 1
   fi
   echo "KiCad cross-check: $rows of $rows pads agree after move/rotate (front, back, 45° MCU)"
+
+  # Flip: every footprint on the m1 fab board, by autolayout and by KiCad;
+  # KiCad must read autolayout's file exactly as it wrote its own, and
+  # autolayout must read both the same way (compare_pads.sh refuses empty
+  # listings, so a step that silently produced nothing cannot pass).
+  fab="$AUTOLAYOUT_CORPUS/quilter/fab/m1/m1.kicad_pcb"
+  ./target/release/autolayout flip "$fab" "$tmp/al_flip.kicad_pcb" ALL >/dev/null
+  "$KICAD_PY" tools/kicad_flip_all.py "$fab" "$tmp/kc_flip.kicad_pcb" >/dev/null 2>&1
+  "$KICAD_PY" tools/kicad_pads.py "$tmp/kc_flip.kicad_pcb" >"$tmp/kc_flip.tsv" 2>/dev/null
+  "$KICAD_PY" tools/kicad_pads.py "$tmp/al_flip.kicad_pcb" >"$tmp/al_flip_k.tsv" 2>/dev/null
+  ./target/release/autolayout pads "$tmp/al_flip.kicad_pcb" >"$tmp/al_flip_a.tsv"
+  bash tools/compare_pads.sh "$tmp/al_flip_k.tsv" "$tmp/kc_flip.tsv" >/dev/null || { echo "FAIL: flip differs from KiCad's"; exit 1; }
+  bash tools/compare_pads.sh "$tmp/al_flip_a.tsv" "$tmp/kc_flip.tsv" >/dev/null || { echo "FAIL: reading a flipped board differs from KiCad"; exit 1; }
+  echo "KiCad cross-check: flip of all $(grep -c . "$tmp/kc_flip.tsv") pads (183 parts) identical to KiCad's own flip"
 fi
 
 # Slow KiCad cross-checks (~20 min): every placed corpus board's courtyard

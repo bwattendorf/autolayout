@@ -30,7 +30,22 @@ impl Point {
     if degrees == 0.0 {
       return self;
     }
-    let (s, c) = degrees.to_radians().sin_cos();
+    // Multiples of 90° are exact, as in KiCad's integer-nanometre maths.
+    // Floating cos(180°) is not exactly −1, and that tipped coordinates
+    // sitting on a 0.1 µm rounding boundary the other way from KiCad on 10 of
+    // 523 pads of a fully flipped m1 (2026-10-12).
+    let q = degrees.rem_euclid(360.0);
+    let (s, c) = if q == 0.0 {
+      (0.0, 1.0)
+    } else if q == 90.0 {
+      (1.0, 0.0)
+    } else if q == 180.0 {
+      (0.0, -1.0)
+    } else if q == 270.0 {
+      (-1.0, 0.0)
+    } else {
+      degrees.to_radians().sin_cos()
+    };
     Point::new(self.x * c + self.y * s, -self.x * s + self.y * c)
   }
 }

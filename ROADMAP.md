@@ -149,6 +149,20 @@
   bypass caps as the only assembled back-side parts — Portcullis's
   `BACKSIDE_BYPASS`, family-wide since 2026-08-31; changing that is a
   Portcullis decision, not taken here.
+- 2026-10-12 — **M1.3: flip, verified against KiCad on a whole board.**
+  Rules read off files KiCad itself wrote (`tools/kicad_flip_probe.py`, and
+  all 183 m1 parts flipped by pcbnew): F.x↔B.x layers; every local y negated
+  (pads, graphics, texts, polygons, arcs; 3D model untouched); footprint
+  angle θ→180−θ; pads keep board-frame angles; text angle → upright(180−t)
+  with `(justify mirror)` toggled (fits all 7 angle classes of 366 texts).
+  Every m1 part flipped by autolayout and by KiCad: **523/523 pads identical**
+  read by KiCad and read by autolayout; runs in `ci.sh`. Two reader fixes
+  fell out of it: board coordinates resolve to whole nanometres (KiCad's
+  unit — 10 pads printed 0.1 µm off on exact half-values) and 90° rotations
+  are exact. New guard: `tools/compare_pads.sh` refuses empty listings,
+  after a comparison reported "0 differing rows" between two empty files.
+  Known cosmetic gap: `move`'s rotate adds the delta to text angles without
+  KiCad's keep-upright step.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

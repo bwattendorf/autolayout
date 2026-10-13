@@ -9,6 +9,7 @@
 //!   autolayout parity <file.kicad_pcb> <file.net>    parts, wiring and net names: board vs netlist
 //!   autolayout place <in.kicad_pcb> <file.net> <out.kicad_pcb> [--no-halo]   place unlocked parts, write a NEW file, grade it
 //!   autolayout strip <in.kicad_pcb> <out.kicad_pcb>  remove tracks, arcs, vias and zones (NEW file)
+//!   autolayout flip <in> <out> (<REF>... | ALL)      move footprints to the other side (NEW file)
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -112,6 +113,34 @@ fn place(pcb: &str, net: &str, out: &str, escape_halo: bool) -> Result<bool, Str
   Ok(p.unplaced.is_empty())
 }
 
+/// Flip the named footprints to the other side (`ALL` flips every one) and
+/// write a NEW file.
+fn flip_parts(input: &str, output: &str, refs: &[String]) -> Result<bool, String> {
+  if Path::new(output).exists() {
+    return Err(format!("{output}: already exists; refusing to overwrite"));
+  }
+  let (_, mut doc) = load(input)?;
+  let board = Board::read(&doc).map_err(|e| format!("{input}: {e}"))?;
+  let targets: Vec<&autolayout_board::Footprint> = if refs.iter().any(|r| r == "ALL") {
+    board.footprints.iter().collect()
+  } else {
+    refs
+      .iter()
+      .map(|r| {
+        board
+          .footprint(r)
+          .ok_or_else(|| format!("{input}: no footprint {r}"))
+      })
+      .collect::<Result<_, _>>()?
+  };
+  for fp in &targets {
+    autolayout_board::flip(&mut doc, fp.node_index).map_err(|e| format!("{}: {e}", fp.reference))?;
+  }
+  fs::write(output, doc.to_string()).map_err(|e| format!("{output}: {e}"))?;
+  println!("wrote {output} ({} footprint(s) flipped)", targets.len());
+  Ok(true)
+}
+
 /// Remove all routed copper — top-level tracks, arcs, vias and zones — and
 /// write a NEW file. Placement, pads and everything else keep their bytes.
 /// Done here rather than through pcbnew, whose 9.0 SWIG binding leaves every
@@ -152,13 +181,17 @@ fn pads(file: &str) -> Result<bool, String> {
   let mut rows = Vec::new();
   for fp in &board.footprints {
     for pad in &fp.pads {
+      // Angle printed in [0, 360) after rounding, so 359.97 and 0.0 agree
+      // with KiCad's own normalisation.
+      let angle = ((pad.angle.rem_euclid(360.0) * 10.0).round() / 10.0).rem_euclid(360.0);
       rows.push(format!(
-        "{}\t{}\t{:.4}\t{:.4}\t{:.1}",
+        "{}\t{}\t{}\t{:.4}\t{:.4}\t{:.1}",
         fp.reference,
         pad.number,
+        if fp.side == Side::Back { "B" } else { "F" },
         pad.at.x,
         pad.at.y,
-        pad.angle.rem_euclid(360.0)
+        angle
       ));
     }
   }
@@ -193,6 +226,9 @@ fn main() -> ExitCode {
       place(pcb, net, out, false)
     }
     Some((cmd, [pcb, out])) if cmd == "strip" => strip(pcb, out),
+    Some((cmd, [input, output, refs @ ..])) if cmd == "flip" && !refs.is_empty() => {
+      flip_parts(input, output, refs)
+    }
     _ => Err(USAGE.to_owned()),
   };
   match result {

@@ -10,8 +10,18 @@
 //!   their footprint's rotation). Graphics (`fp_line` …) carry no angle and
 //!   are untouched.
 //!
-//! Flipping to the other side is not here: it mirrors coordinates and swaps
-//! every layer name, and is its own task (docs/gaps.md).
+//! - **Flip** ([`flip`]) moves a footprint to the other side, about its own
+//!   position, the way KiCad's own left-right flip does. Every rule below was
+//!   read off files KiCad wrote itself (tools/kicad_flip_probe.py; a whole
+//!   board flipped by pcbnew, 2026-10-12), not assumed:
+//!   - every `F.x` layer name becomes `B.x` and back; `*.Cu`, `F&B.Cu` stay;
+//!   - every local coordinate's y is negated (pads, graphics, texts, polygon
+//!     points, arcs); the 3D `model` block is left alone, as KiCad leaves it;
+//!   - footprint angle θ → 180 − θ (135→45, 30→150, 0→180 measured);
+//!   - pads keep board-frame angles: new = new_fp − (old − old_fp);
+//!   - text angle → upright(180 − t), where upright subtracts 180 from angles
+//!     in (90, 270]: this reproduced all 7 (footprint, text) angle classes of
+//!     366 texts on the m1 fab board; and `(justify mirror)` toggles.
 
 use autolayout_sexpr::{Atom, Document, List, Node};
 
@@ -71,6 +81,164 @@ pub fn set_pose(doc: &mut Document, node_index: usize, at: Point, rotation: f64)
     }
   }
   Ok(())
+}
+
+/// Move the footprint at root item `node_index` to the other side of the
+/// board, about its own position (see the module notes for every rule).
+pub fn flip(doc: &mut Document, node_index: usize) -> Result<(), EditError> {
+  let root = doc.root_mut().ok_or(EditError::NoRoot)?;
+  let fp = root
+    .items
+    .get_mut(node_index)
+    .and_then(Node::as_list_mut)
+    .filter(|l| l.is("footprint"))
+    .ok_or(EditError::NotAFootprint(node_index))?;
+  let old_fp = fp.child("at").and_then(|a| a.number(3)).unwrap_or(0.0);
+  let new_fp = normalise(180.0 - old_fp);
+
+  for child in fp.items.iter_mut().filter_map(Node::as_list_mut) {
+    let head = child.head().map(|h| h.into_owned()).unwrap_or_default();
+    match head.as_str() {
+      // The footprint's own position: angle only, the point does not move.
+      "at" => set_angle(child, new_fp),
+      "layer" | "layers" => swap_layers(child),
+      "model" => {}
+      "pad" => {
+        if let Some(at) = child.children_mut("at").next() {
+          negate(at, 2);
+          let a = at.number(3).unwrap_or(0.0);
+          set_angle(at, new_fp - (a - old_fp));
+        }
+        mirror_within(child, true);
+      }
+      "property" | "fp_text" => {
+        if let Some(at) = child.children_mut("at").next() {
+          negate(at, 2);
+          let t = at.number(3).unwrap_or(0.0);
+          set_angle(at, upright(180.0 - t));
+        }
+        toggle_justify_mirror(child);
+        mirror_within(child, true);
+      }
+      _ => {
+        mirror_coords(child);
+        mirror_within(child, false);
+      }
+    }
+  }
+  Ok(())
+}
+
+/// Recurse into `list`'s children: swap layer names, negate y of coordinate
+/// lists, leave `model` alone. `skip_at` keeps an already-handled `(at …)`.
+fn mirror_within(list: &mut List, skip_at: bool) {
+  for child in list.items.iter_mut().filter_map(Node::as_list_mut) {
+    let head = child.head().map(|h| h.into_owned()).unwrap_or_default();
+    match head.as_str() {
+      "model" => {}
+      "at" if skip_at => {}
+      "layer" | "layers" => swap_layers(child),
+      _ => {
+        mirror_coords(child);
+        mirror_within(child, false);
+      }
+    }
+  }
+}
+
+/// Negate the y of a coordinate list: `(start x y)`, `(end …)`, `(mid …)`,
+/// `(center …)`, `(xy …)`, and a nested `(at …)` / `(offset …)`.
+fn mirror_coords(list: &mut List) {
+  if ["start", "end", "mid", "center", "xy", "at", "offset"]
+    .iter()
+    .any(|k| list.is(k))
+  {
+    negate(list, 2);
+  }
+}
+
+fn negate(list: &mut List, i: usize) {
+  if let Some(v) = list.number(i) {
+    set_number(list, i, -v);
+  }
+}
+
+/// `F.x` ↔ `B.x` for every layer atom in a `(layer …)` / `(layers …)` list.
+fn swap_layers(list: &mut List) {
+  for node in list.items.iter_mut().skip(1) {
+    let Node::Atom(atom) = node else { continue };
+    let value = atom.value().into_owned();
+    let swapped = if let Some(rest) = value.strip_prefix("F.") {
+      format!("B.{rest}")
+    } else if let Some(rest) = value.strip_prefix("B.") {
+      format!("F.{rest}")
+    } else {
+      continue;
+    };
+    let lead = atom.lead.clone();
+    *atom = if atom.is_quoted() {
+      Atom::quoted(lead, &swapped)
+    } else {
+      match Atom::bare(lead.clone(), &swapped) {
+        Some(a) => a,
+        None => Atom::quoted(lead, &swapped),
+      }
+    };
+  }
+}
+
+/// Toggle `mirror` in a text's `(effects … (justify …))`, adding or removing
+/// the `justify` list as needed.
+fn toggle_justify_mirror(text: &mut List) {
+  let Some(effects) = text.children_mut("effects").next() else {
+    return;
+  };
+  let lead = effects
+    .items
+    .iter()
+    .filter_map(Node::as_list)
+    .next()
+    .map_or_else(|| " ".to_owned(), |l| l.lead.clone());
+  let had_justify = match effects.children_mut("justify").next() {
+    Some(justify) => {
+      let had = justify.items.len();
+      justify
+        .items
+        .retain(|n| n.as_atom().is_none_or(|a| a.value() != "mirror"));
+      if justify.items.len() == had
+        && let Some(a) = Atom::bare(" ", "mirror")
+      {
+        justify.items.push(Node::Atom(a));
+      }
+      true
+    }
+    None => false,
+  };
+  if had_justify {
+    // A justify with nothing left but its keyword means nothing; drop it.
+    effects.items.retain(|n| {
+      n.as_list()
+        .is_none_or(|l| !(l.is("justify") && l.items.len() == 1))
+    });
+    return;
+  }
+  if let (Some(k), Some(m)) = (Atom::bare("", "justify"), Atom::bare(" ", "mirror")) {
+    effects.items.push(Node::List(List {
+      lead,
+      items: vec![Node::Atom(k), Node::Atom(m)],
+      tail: String::new(),
+    }));
+  }
+}
+
+/// Keep text readable: angles in (90, 270] turn by 180.
+fn upright(degrees: f64) -> f64 {
+  let d = normalise(degrees);
+  if d > 90.0 && d <= 270.0 {
+    normalise(d - 180.0)
+  } else {
+    d
+  }
 }
 
 /// Write `value` as item `i`, keeping the whitespace that preceded the old one.

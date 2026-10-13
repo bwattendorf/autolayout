@@ -26,7 +26,7 @@ mod geom;
 mod netlist;
 pub mod parity;
 
-pub use edit::{EditError, set_pose};
+pub use edit::{EditError, flip, set_pose};
 pub use geom::{BBox, Point, Seg, outlines_overlap, outlines_within};
 pub use netlist::{Netlist, NetlistError};
 
@@ -251,7 +251,12 @@ impl Footprint {
   /// flipped. Both facts are checked against routed corpus boards, where every
   /// track ends on a pad centre (`tests/corpus.rs`).
   pub fn to_board(&self, local: Point) -> Point {
-    local.rotated(self.rotation) + self.at
+    let p = local.rotated(self.rotation) + self.at;
+    // Resolved to whole nanometres, KiCad's internal unit. Summing decimal
+    // millimetres lands a hair off an exact value (77.04595 became
+    // 77.045949999…), which then rounds the other way from KiCad when printed:
+    // 10 of 523 m1 pads disagreed in the fourth decimal before this.
+    Point::new((p.x * 1e6).round() / 1e6, (p.y * 1e6).round() / 1e6)
   }
 }
 

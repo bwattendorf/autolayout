@@ -21,11 +21,12 @@ def main(path):
     rows = []
     for fp in board.GetFootprints():
         ref = fp.GetReference()
+        side = "B" if fp.GetLayer() == pcbnew.B_Cu else "F"
         for pad in fp.Pads():
             pos = pad.GetPosition()
-            angle = pad.GetOrientation().AsDegrees() % 360.0
-            rows.append("%s\t%s\t%.4f\t%.4f\t%.1f" % (
-                ref, pad.GetNumber(),
+            angle = round(pad.GetOrientation().AsDegrees() % 360.0, 1) % 360.0
+            rows.append("%s\t%s\t%s\t%.4f\t%.4f\t%.1f" % (
+                ref, pad.GetNumber(), side,
                 pcbnew.ToMM(pos.x), pcbnew.ToMM(pos.y), angle))
     rows.sort()
     sys.stdout.write("\n".join(rows) + "\n")
