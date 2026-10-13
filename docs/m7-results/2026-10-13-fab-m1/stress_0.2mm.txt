@@ -1,0 +1,16 @@
+rules from command line; pitch 0.4000 mm; grid 271 x 176 x 2
+negotiated (PathFinder) route (UNVERIFIED: not written, not checked by KiCad): nets complete 73 of 104; pads connected 391 of 494; 2518.0 mm of track, 307 vias, 41.5 s
+  61 iteration(s); contested cells per iteration [334, 226, 201, 189, 167, 156, 141, 138, 134, 124, 119, 114, 110, 110, 107, 108, 108, 106, 107, 107, 106, 106, 105, 104, 105, 105, 104, 105, 105, 104, 105, 105, 104, 105, 105, 104, 105, 105, 104, 105, 105, 104, 105, 105, 104, 105, 105, 104, 105, 105, 104, 105, 105, 104, 105, 105, 104, 105, 105, 104, 105]; nets dropped to make the result legal 21
+  incomplete: net N$62 — unreached U1.18 R45.1
+  incomplete: net N$24 — unreached R17.1
+  incomplete: net VREG_AVDD_F — unreached R1.2 C2.1
+  incomplete: net N$3 — unreached Y1.3 U1.22 C19.1
+  incomplete: net N$84 — unreached R57.2 U1.31 R58.1
+  incomplete: net N$74 — unreached U1.43
+  incomplete: net N$72 — unreached U1.37
+  incomplete: net N$68 — unreached U1.33
+  incomplete: net N$64 — unreached R46.1 U1.19
+  incomplete: net N$60 — unreached SW2.1 SW2.1 R42.2 U1.34
+  incomplete: net N$12 — unreached U1.3 U5.1
+  incomplete: net N$81 — unreached D90.3 D90.4 J10.A7 J10.B7
+self-check (our own model, not a grade): 104 nets, 0 illegal cells, 0 shared cells, 0 disconnected pads
