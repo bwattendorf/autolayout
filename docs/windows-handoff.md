@@ -273,3 +273,47 @@ commands and their exit codes, the full verifier output for both boards, a
 table of verifier vs KiCad per category and per net (GND, +3V3), and every
 difference. Commit and `git push origin m7-router`. Reply with the table and
 the hash.
+
+
+---
+
+# Round 5 (2026-10-13): are the verifier's unconnected parts KiCad's parts?
+
+Why: round 4 matched KiCad's counts (17 = 14 GND + 3 +3V3) but not locations.
+The verifier now lists each extra component by its members. This round checks
+that the members are the ones KiCad pointed at. No routing, no code change.
+
+## Prompt to paste
+
+> Follow "Round 5" in docs/windows-handoff.md. Change no code and no boards.
+> Report which of KiCad's findings fall in which listed part, and every one
+> that does not, without reconciling. No PR.
+
+## Steps
+
+`git fetch origin && git checkout m7-router && git pull`; record the hash
+(it must be later than e85487b); `cargo build --release`.
+
+1. `./target/release/autolayout verify out/m7r2/fr/m1_fab_routed.kicad_pcb --plane In1.Cu=GND --plane F.Cu=GND --plane B.Cu=GND --plane In2.Cu=+3V3 > out/m7r2/verify_fr_round5.txt`
+   (exit 1 is expected). Paste the whole file into the log. There should now be
+   one `unconnected` line per extra part (14 for GND, 3 for +3V3), each with
+   `pads [...]`, track count and box, vias, and fill islands.
+2. GND pad pair: is `C2.2` in one GND part and `U1.47` in a different one?
+   (KiCad: Pad 2 of C2 at (101.7206, 93.8032) and Pad 47 of U1 at (101.1,
+   94.85) need a connection.) Say which parts, and whether either part has
+   other pads.
+3. GND fragments: KiCad lists 13 zone-vs-zone entries. Count the verifier's
+   GND parts that contain no pad (fills only, or fills + vias) and say how many
+   there are. Expected: 13 fill-only parts if each fragment is its own island.
+4. +3V3 pairs: for each KiCad pair, take the two track coordinates —
+   (95.4582, 95.2794) and (95.25, 95.5); (102.6653, 97.9853) and (101.8218,
+   98.3); (100.3, 95.1956) and (101.3518, 93.357) — and say which verifier
+   part's `tracks with ends in (...)` box contains each point, i.e. whether the
+   two points of a pair land in two different parts.
+5. Anything the verifier lists that KiCad does not, and vice versa.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-verify-parts.md` with the hash, the commands and
+exit codes, the full verifier output, and the answers to 2-5 as short tables.
+Commit and `git push origin m7-router`; reply with the tables and the hash.

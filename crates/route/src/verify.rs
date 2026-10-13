@@ -28,7 +28,7 @@
 
 use std::collections::HashMap;
 
-use autolayout_board::{Board, Point, arc_points};
+use autolayout_board::{BBox, Board, Point, arc_points};
 use autolayout_sexpr::{Document, List};
 
 use crate::rules::DesignRules;
@@ -142,6 +142,8 @@ struct Item {
   ends: Option<(Point, Point)>,
   /// Pad or via centre: KiCad joins a track whose body passes over it.
   anchor: Option<Point>,
+  /// `REF.PIN` for pads, empty otherwise: names a component's members.
+  label: String,
   /// Via/track diameter or width, for the minimum checks.
   size: f64,
 }
@@ -227,6 +229,7 @@ pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(Str
             hole: Some((pad.at, d.x.max(d.y))),
             ends: None,
             anchor: None,
+            label: String::new(),
             size: 0.0,
           });
         }
@@ -240,6 +243,7 @@ pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(Str
         hole: pad.drill.map(|d| (pad.at, d.x.max(d.y))),
         ends: None,
         anchor: Some(pad.at),
+        label: format!("{}.{}", fp.reference, pad.number),
         size: 0.0,
       });
     }
@@ -280,6 +284,7 @@ pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(Str
               hole: None,
               ends: Some((*a, *b)),
               anchor: None,
+              label: String::new(),
               size: w,
             });
           }
@@ -300,6 +305,7 @@ pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(Str
           hole: Some((at, drill)),
           ends: None,
           anchor: Some(at),
+          label: String::new(),
           size,
         });
       }
@@ -667,50 +673,130 @@ pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(Str
   for (net, mut roots) in nets {
     roots.sort_unstable();
     roots.dedup();
-    if roots.len() > 1 {
-      rep.unconnected += roots.len() - 1;
-      // Locate the first pad of each extra component.
-      let mut shown = 0;
-      for &r in roots.iter().skip(1) {
-        let found = items
-          .iter()
-          .enumerate()
-          .find(|(i, it)| it.kind == Kind::Pad && it.net == net && uf.find(*i) == r);
-        let at = found
-          .and_then(|(_, it)| {
-            it.hole.map(|h| h.0).or_else(|| {
-              it.shape
-                .bbox()
-                .map(|b| Point::new((b.min.x + b.max.x) / 2.0, (b.min.y + b.max.y) / 2.0))
-            })
-          })
-          .unwrap_or_default();
-        // The nearest end of any track of this net: how far it stops short.
-        let stop = found.map(|(_, pad)| {
-          items
-            .iter()
-            .filter(|o| {
-              o.kind == Kind::Track && o.net == net && o.layers.iter().any(|l| pad.layers.contains(l))
-            })
-            .filter_map(|o| o.ends)
-            .flat_map(|(p, q)| [p, q])
-            .map(|e| pad.shape.sdf(e))
-            .fold(f64::INFINITY, f64::min)
-        });
-        if shown < 6 {
-          issues.push(Issue {
-            kind: "unconnected",
-            at,
-            detail: format!(
-              "net {} split into {} parts; nearest same-net track end is {:.4} mm outside this pad",
-              name(net),
-              roots.len(),
-              stop.unwrap_or(f64::NAN)
-            ),
-          });
-          shown += 1;
+    if roots.len() < 2 {
+      continue;
+    }
+    rep.unconnected += roots.len() - 1;
+    // Describe every component by what is in it, so it can be compared with
+    // KiCad's report member by member. (KiCad prints one point per zone, not
+    // per island: all 13 GND fragments of Freerouting's m1 sit at the zone's
+    // anchor (50.425, 50.425), so a fill island has no location to match.)
+    struct Comp {
+      root: usize,
+      pads: Vec<String>,
+      tracks: usize,
+      /// Box around every track end of this component (to match KiCad's track coordinates).
+      tbox: Option<BBox>,
+      vias: usize,
+      fills: Vec<(String, BBox)>,
+      at: Point,
+    }
+    let mut comps: Vec<Comp> = roots
+      .iter()
+      .map(|&r| Comp {
+        root: r,
+        pads: Vec::new(),
+        tracks: 0,
+        tbox: None,
+        vias: 0,
+        fills: Vec::new(),
+        at: Point::default(),
+      })
+      .collect();
+    for (i, it) in items.iter().enumerate() {
+      if it.net != net {
+        continue;
+      }
+      let r = uf.find(i);
+      if let Some(c) = comps.iter_mut().find(|c| c.root == r) {
+        match it.kind {
+          Kind::Pad if !it.layers.is_empty() => {
+            c.pads.push(it.label.clone());
+            if c.pads.len() == 1 {
+              c.at = it.anchor.unwrap_or_default();
+            }
+          }
+          Kind::Track => {
+            c.tracks += 1;
+            if let Some((p, q)) = it.ends {
+              c.tbox = BBox::union(c.tbox, BBox::from_points([p, q]));
+            }
+          }
+          Kind::Via => c.vias += 1,
+          Kind::Pad => {}
         }
       }
+    }
+    for (k, (n, li, poly)) in fills.iter().enumerate() {
+      if *n != net {
+        continue;
+      }
+      let r = uf.find(fill_base + k);
+      if let (Some(c), Some(bb)) = (
+        comps.iter_mut().find(|c| c.root == r),
+        BBox::from_points(poly.iter().copied()),
+      ) {
+        if c.pads.is_empty() && c.fills.is_empty() {
+          c.at = bb.min;
+        }
+        c.fills.push((cu.get(*li).cloned().unwrap_or_default(), bb));
+      }
+    }
+    // The main component is the one with the most pads (then fills); the rest are reported.
+    comps.sort_by(|a, b| {
+      (b.pads.len(), b.fills.len(), b.tracks)
+        .cmp(&(a.pads.len(), a.fills.len(), a.tracks))
+        .then(a.root.cmp(&b.root))
+    });
+    for (k, c) in comps.iter().enumerate().skip(1) {
+      if k > 40 {
+        issues.push(Issue {
+          kind: "unconnected",
+          at: c.at,
+          detail: format!(
+            "net {}: {} more components not listed",
+            name(net),
+            comps.len() - k
+          ),
+        });
+        break;
+      }
+      let fills = c
+        .fills
+        .iter()
+        .map(|(l, b)| {
+          format!(
+            "{l} fill ({:.3},{:.3})-({:.3},{:.3})",
+            b.min.x, b.min.y, b.max.x, b.max.y
+          )
+        })
+        .collect::<Vec<_>>()
+        .join("; ");
+      issues.push(Issue {
+        kind: "unconnected",
+        at: c.at,
+        detail: format!(
+          "net {} part {} of {} (main part has {} pads): pads [{}], {} tracks{}, {} vias{}",
+          name(net),
+          k + 1,
+          comps.len(),
+          comps.first().map_or(0, |m| m.pads.len()),
+          c.pads.join(" "),
+          c.tracks,
+          c.tbox
+            .map(|b| format!(
+              " with ends in ({:.3},{:.3})-({:.3},{:.3})",
+              b.min.x, b.min.y, b.max.x, b.max.y
+            ))
+            .unwrap_or_default(),
+          c.vias,
+          if fills.is_empty() {
+            String::new()
+          } else {
+            format!(", fills: {fills}")
+          }
+        ),
+      });
     }
   }
   rep.issues = issues;
@@ -912,5 +998,33 @@ mod tests {
     let without = run_planes("", &[("F.Cu".to_string(), 1)]);
     assert_eq!(without.plane_items_assumed, 2);
     assert_eq!(without.unconnected, 0);
+  }
+
+  /// Each extra component is described by its members, so it can be compared
+  /// with KiCad's report item by item instead of by one arbitrary location.
+  #[test]
+  fn unconnected_components_are_listed_with_their_members() {
+    let z = format!(
+      "{} {}",
+      fill(1, "F.Cu", 2.0, 3.0, 8.0, 7.0),
+      fill(1, "F.Cu", 12.0, 3.0, 18.0, 7.0)
+    );
+    let r = run(&z);
+    let u: Vec<&Issue> = r.issues.iter().filter(|i| i.kind == "unconnected").collect();
+    assert_eq!(u.len(), 1, "{u:?}");
+    assert!(u[0].detail.contains("pads [U1."), "{}", u[0].detail);
+    assert!(u[0].detail.contains("F.Cu fill ("), "{}", u[0].detail);
+    // A lone island has no pads and says where it is.
+    let island = format!(
+      "{} {}",
+      fill(1, "F.Cu", 2.0, 3.0, 17.0, 7.0),
+      fill(1, "F.Cu", 9.0, 1.0, 10.0, 2.0)
+    );
+    let r = run(&island);
+    let d = &r.issues.iter().find(|i| i.kind == "unconnected").unwrap().detail;
+    assert!(
+      d.contains("pads []") && d.contains("(9.000,1.000)-(10.000,2.000)"),
+      "{d}"
+    );
   }
 }

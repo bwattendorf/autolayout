@@ -416,6 +416,27 @@
   saying about 17 unconnected (14 GND + 3 +3V3) and 0 on ours; pad/via/track
   overlap is by sample points, not exact, and thermal-relief rules are not
   modelled. Round 4 in docs/windows-handoff.md.
+- 2026-10-13 — **M7.4b round 4 (KiCad 9.0.1, verifier at b997df0,
+  `docs/m7-results/2026-10-13-verify-fills.md`).** The fill-reading verifier
+  now agrees with KiCad on Freerouting's m1 in every category it implements:
+  unconnected **17 vs 17** (GND 14 vs 14 = 15 components; +3V3 3 vs 3 = 4
+  components), clearance 2 / shorting 2 / track_width 45, all with the same
+  coordinates and values; ours 0 vs 0; fill-polygon count 21 as in the probe;
+  no LIMIT line (fills present). Round 2 had said 0 on that board. **What is
+  and is not confirmed:** equal counts on a board it did not help make, on
+  two nets, is real evidence; but the verifier's printed locations did not
+  match KiCad's, so *which* components it counts is not shown to be the same
+  ones. Two reasons, neither a counting error: KiCad prints one point per
+  zone, not per island (all 13 GND fragments are at the zone anchor (50.425,
+  50.425)), so a fill island has no location to match; and the verifier
+  named one arbitrary pad per extra component, capped at 6 per net (hence 9
+  lines for 17 findings), with a meaningless "inf mm" distance. Fixed now:
+  each extra component is listed with its pads (`REF.PIN`), track count and
+  the box around its track ends, vias and fill islands (layer + box), main
+  part = most pads, up to 40 listed per net. Round 5 asks Windows to check
+  that C2.2 and U1.47 land in different GND parts and that each KiCad +3V3
+  track coordinate falls in a listed part's box. Still not implemented:
+  via_dangling (KiCad 9 on Freerouting, 0 on ours).
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss
