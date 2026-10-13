@@ -129,6 +129,25 @@ check: if you add one, add it to `ci.sh`.
 One task per commit, message starting with the ROADMAP id (`M0.2: footprint
 iterator`).
 
+## Running in a Claude cloud session
+
+The router work (M7) is meant to run in a cloud session too. Setup script for
+the environment (Ubuntu):
+
+```sh
+curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal -c clippy,rustfmt
+. "$HOME/.cargo/env"
+git clone --depth 1 https://github.com/bwattendorf/Portcullis.git ../Portcullis
+echo 'export AUTOLAYOUT_CORPUS="$(cd ../Portcullis/controller/boards && pwd)"' >> ~/.bashrc
+```
+
+The environment needs GitHub access to **both** private repos (autolayout and
+Portcullis). Without KiCad, `ci.sh` prints `SKIPPED: KiCad cross-check`.
+That is expected in the cloud and is never a pass. Router results produced
+there must be graded by KiCad DRC on the Windows machine before anything is
+claimed (rule 3). Freerouting comparisons need Java 21+ and the
+freerouting-2.3.0 jar; neither is in the cloud image by default.
+
 ## Toolchain on this machine
 
 Rust stable, **GNU toolchain** (`stable-x86_64-pc-windows-gnu`, no Visual Studio

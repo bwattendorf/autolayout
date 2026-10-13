@@ -1,7 +1,45 @@
 # Gaps — ranked work list
 
-**Updated:** 2026-10-12. Top item is next. Strike through and date items when
+**Updated:** 2026-10-13. Top item is next. Strike through and date items when
 they close; don't delete them.
+
+## NOW: M7 — our own router (owner's choice, 2026-10-13)
+
+Why now, and why Rust: Freerouting (GPL) can be run but never shipped inside
+autolayout; it sees only nets, not our groups; and on m1 it plateaus (90
+unrouted from pass 8 to 10). Portcullis's in-house Python routers plateaued
+too; speed per experiment was part of why. Each step below commits on its
+own and ends with something measured.
+
+- **M7.0 — design rules from the project.** Read the netclasses (track width,
+  clearance, via diameter and drill) from `<board>.kicad_pro` (JSON) beside the
+  board. The Freerouting harness silently routed at KiCad defaults (0.2 mm,
+  0.6/0.3 vias) because the prepared board was saved without its project.
+  m1's real fab rules are 3.5 mil with 0.25/0.15 vias, and Portcullis
+  recorded that "the via change is what moved it" to 0 unrouted. A router
+  must never guess its rules: if no project is found, refuse, or take rules
+  on the command line.
+- **M7.1 — routing model.** A layer grid at a resolution derived from the
+  rules. Obstacles: pads (real rotated shapes, clearance-inflated),
+  keepout zones, the board edge, through-hole pads on every layer. Plane
+  nets (poured) connect by a via to their plane, not by traces.
+- **M7.2 — one net, A\*.** Deterministic maze search on the 3-D grid (x, y,
+  layer) with a via cost and a direction preference per layer. Multi-pin
+  nets grow a Steiner-ish tree from the nearest pin pair outward.
+- **M7.3 — negotiated congestion.** PathFinder (McMurchie & Ebeling,
+  FPGA '95): route every net, let them share cells at a cost, raise the
+  history cost of over-used cells, rip up and reroute until no cell is
+  shared. Published, well understood, and suited to fixed-grid routing.
+- **M7.4 — write and judge.** Tracks and vias go into the `.kicad_pcb` through
+  the lossless layer, into a NEW file. **KiCad DRC is the judge:** 0
+  clearance violations, and the unconnected count reported every time.
+- **M7.5 — the bar.** On the same placements and the same rules: m1 ours
+  (131 unconnected with Freerouting at default rules), the service's m1
+  stripped (65). Beat Freerouting on both, then go after the service.
+
+Later and deliberately not first: escape planning for many-pin parts (U1
+is the largest failure on every m1 route so far), length and impedance
+rules, differential pairs, and the RF checks of M8.
 
 1. ~~**M0.1 — run the round-trip test on the whole corpus**~~ — closed
    2026-10-12: 116/116 byte-exact.
