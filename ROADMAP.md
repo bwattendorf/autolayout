@@ -242,6 +242,28 @@
   rectangle; 0 on m1), roundrect corners (square, conservative), zone fills
   (4 on the fab board, counted not blocked), footprint-level keepouts.
   Unverified: nothing here is checked against KiCad DRC yet; that is M7.4.
+- 2026-10-13 — **M7.2: A\* per net, greedy baseline** (`route::search`,
+  `route::driver`, `autolayout route`). Deterministic A* (integer costs, ties
+  on state index) from every cell already in the net's tree to the cheapest
+  unconnected pad; four-neighbour moves with a preferred direction per layer,
+  through-vias between layers; pads with no grid cell inside get a stub from
+  the nearest usable cell to the pad centre; plane-net SMD pads get one via
+  each. `route` runs plane taps, then signal nets shortest-first, each
+  blocking the rest, no rip-up: the number M7.3 has to beat. **Result, m1
+  fab board stripped of copper** (service's placement, its own fab rules
+  0.0889 mm / 0.25/0.15 via, GND=In1, +3V3=In2 planes, 2 routable layers,
+  `autolayout route`, release build): **101 of 104 nets complete, 489 of 494
+  pads connected, 2 936 mm of track, 449 vias, 0.3 s**, identical output on
+  two runs. Incomplete: GND (C6.2 C8.2 C11.2), +3V3 (R1.1), N$42 (U1.13).
+  **UNVERIFIED:** nothing was written or checked by KiCad (that is M7.4); an
+  internal self-check (`route::check`: cells legal for the net, no cell
+  shared, every pad joined) reports 0 problems, but it uses the model's own
+  geometry and is not a grade. Stubs are not checked against the grid at all.
+  Not comparable yet to Freerouting's 65 unconnected (different rules: that
+  run used 0.2 mm defaults). The `freeplace` m1 board is the unplaced staging
+  grid, so routing it says nothing about routability (3 of 104 nets at fab
+  rules); M7.5 needs the `place` output, which needs the `.net` file that is
+  not in the cloud clone of Portcullis.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

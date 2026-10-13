@@ -220,7 +220,7 @@ impl RoutingModel {
   }
 
   /// Layer indices (into `self.layers`) a pad's copper is on.
-  fn pad_layers(&self, names: &[String]) -> Vec<usize> {
+  pub fn pad_layer_indices(&self, names: &[String]) -> Vec<usize> {
     let mut out = Vec::new();
     for n in names {
       for (i, l) in self.layers.iter().enumerate() {
@@ -252,7 +252,7 @@ impl RoutingModel {
       return Access { cells };
     };
     let (x0, x1, y0, y1) = self.cell_range(bb, 0.0);
-    for layer in self.pad_layers(&pad.layers) {
+    for layer in self.pad_layer_indices(&pad.layers) {
       for iy in y0..=y1 {
         for ix in x0..=x1 {
           if shape.distance(self.centre(ix, iy)) == 0.0 && self.track_ok(layer, ix, iy, net) {
@@ -425,7 +425,7 @@ impl RoutingModel {
         // itself is an obstacle below.
         let has_copper = pad.kind != "np_thru_hole";
         if has_copper {
-          for layer in m.pad_layers(&pad.layers) {
+          for layer in m.pad_layer_indices(&pad.layers) {
             if let Some(map) = track_maps.get_mut(layer) {
               m.paint(map, &shape, tr + cl, owner);
             }
