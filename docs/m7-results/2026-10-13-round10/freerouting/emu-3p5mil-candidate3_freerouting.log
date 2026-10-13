@@ -1,0 +1,36 @@
+{
+  "input": "out/m7r10_fr\\quilter__returned__emu__3p5mil-candidate3__emu.kicad_pcb\\b_stripped.kicad_pcb",
+  "planes": 4,
+  "passes": 10,
+  "route_seconds": 2288.5,
+  "unconnected_before_routing": 416,
+  "unconnected_after_routing": 36,
+  "segments": 2707,
+  "vias": 552,
+  "track_mm": 12802.1,
+  "drc": {
+    "via_dangling": 13,
+    "clearance": 42,
+    "shorting_items": 1,
+    "hole_clearance": 6,
+    "silk_edge_clearance": 2,
+    "lib_footprint_issues": 18,
+    "track_width": 68,
+    "silk_over_copper": 199,
+    "silk_overlap": 199,
+    "unconnected_items": 36
+  },
+  "routed_board": "out/m7r10_fr\\quilter__returned__emu__3p5mil-candidate3__emu.kicad_pcb\\fr\\b_stripped_routed.kicad_pcb"
+}
+Adding duplicate image handler for 'PNG file'
+Adding duplicate image handler for 'JPEG file'
+Adding duplicate image handler for 'TIFF file'
+Adding duplicate image handler for 'GIF file'
+Adding duplicate image handler for 'PNM file'
+Adding duplicate image handler for 'PCX file'
+Adding duplicate image handler for 'IFF file'
+Adding duplicate image handler for 'Windows icon file'
+Adding duplicate image handler for 'Windows cursor file'
+Adding duplicate image handler for 'Windows animated cursor file'
+Adding duplicate image handler for 'TGA file'
+Adding duplicate image handler for 'XPM file'
