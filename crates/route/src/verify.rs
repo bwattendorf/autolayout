@@ -65,9 +65,17 @@ pub struct VerifyReport {
   pub dangling_tracks: usize,
   pub hole_to_hole: usize,
   pub clearance: usize,
+  /// Copper of different nets overlapping (clearance below zero): KiCad's
+  /// `shorting_items`, which it counts apart from `clearance`.
+  pub shorting: usize,
   pub copper_edge: usize,
   pub track_width: usize,
   pub via_size: usize,
+  /// Pads and vias joined to a declared plane without looking at any zone
+  /// fill. The verifier does not read fills, so on these items it cannot see
+  /// an island split off by antipads or tracks (KiCad did, on Freerouting's
+  /// m1: 17 unconnected items the verifier missed). Not a finding; a limit.
+  pub plane_items_assumed: usize,
   pub issues: Vec<Issue>,
 }
 
@@ -84,18 +92,26 @@ impl VerifyReport {
   }
 
   pub fn summary(&self) -> String {
-    format!(
-      "{} segments, {} vias: unconnected {}, track_dangling {}, hole_to_hole {}, clearance {}, copper_edge {}, track_width {}, via_size {}",
+    let mut s = format!(
+      "{} segments, {} vias: unconnected {}, track_dangling {}, hole_to_hole {}, clearance {}, shorting {}, copper_edge {}, track_width {}, via_size {}",
       self.segments,
       self.vias,
       self.unconnected,
       self.dangling_tracks,
       self.hole_to_hole,
       self.clearance,
+      self.shorting,
       self.copper_edge,
       self.track_width,
       self.via_size
-    )
+    );
+    if self.plane_items_assumed > 0 {
+      s += &format!(
+        "\n  LIMIT: {} pads/vias on plane nets were assumed connected to their plane; zone fills are not read, so islands in a plane are NOT checked (unconnected 0 does not cover them)",
+        self.plane_items_assumed
+      );
+    }
+    s
   }
 }
 
@@ -413,14 +429,18 @@ pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(Str
             _ => Point::default(),
           }),
         };
-        if g < need - CLEARANCE_SLACK {
+        if g < 0.0 {
+          rep.shorting += 1;
+        } else if g < need - CLEARANCE_SLACK {
           rep.clearance += 1;
+        }
+        if g < need - CLEARANCE_SLACK {
           let at = match &a.shape {
             Shape::Capsule(p, ..) => *p,
             _ => Point::default(),
           };
           issues.push(Issue {
-            kind: "clearance",
+            kind: if g < 0.0 { "shorting_items" } else { "clearance" },
             at,
             detail: format!(
               "{} vs {}: {:.4} mm, rule {:.4}",
@@ -444,6 +464,7 @@ pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(Str
     for (i, it) in items.iter().enumerate() {
       if it.net == *net && ((it.kind == Kind::Via) || (it.kind == Kind::Pad && it.layers.contains(&li))) {
         uf.union(i, node);
+        rep.plane_items_assumed += 1;
       }
     }
   }
@@ -678,5 +699,38 @@ mod tests {
   fn garbage_copper_does_not_panic() {
     let r = run("(segment) (via) (segment (start 1) (end)) (via (at x y))");
     assert_eq!(r.segments + r.vias, 0);
+  }
+
+  /// KiCad counts overlapping copper of different nets as `shorting_items`
+  /// and a too-small positive gap as `clearance` (Freerouting's m1: 2 + 2,
+  /// the verifier used to call all four clearance).
+  #[test]
+  fn overlap_is_a_short_and_a_small_gap_is_a_clearance() {
+    let short = run(&format!(
+      "{} {}",
+      seg((5.0, 5.0), (15.0, 5.0), 1),
+      seg((8.0, 7.7), (12.0, 7.7), 1)
+    ));
+    assert!(short.shorting >= 1 && short.clearance == 0, "{short:?}");
+    let near = run(&format!(
+      "{} {}",
+      seg((5.0, 5.0), (15.0, 5.0), 1),
+      seg((8.0, 7.5), (12.0, 7.5), 1)
+    ));
+    assert!(near.clearance >= 1 && near.shorting == 0, "{near:?}");
+  }
+
+  /// A plane is assumed solid; the report must say so rather than let
+  /// "unconnected 0" read as a check of the fill.
+  #[test]
+  fn assuming_a_plane_is_reported_as_a_limit() {
+    let doc = parse(&board("")).unwrap();
+    let b = Board::read(&doc).unwrap();
+    let mut r = DesignRules::explicit(0.1, 0.1, 0.4, 0.2).unwrap();
+    r.min.copper_edge_clearance = 0.3;
+    let rep = verify(&doc, &b, &r, &[("F.Cu".to_string(), 1)]);
+    assert_eq!(rep.plane_items_assumed, 2, "both net-A pads sit on F.Cu");
+    assert!(rep.summary().contains("LIMIT"));
+    assert!(!run("").summary().contains("LIMIT"));
   }
 }

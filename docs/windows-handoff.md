@@ -186,3 +186,44 @@ examples; what you changed (ideally nothing) and what you did not run. Copy the
 `*_drc.rpt` and `*_route.log` files (not boards, nothing over 1 MB) into
 `docs/m7-results/YYYY-MM-DD-fab-m1-round2/`. Commit, `git push origin
 m7-router`, reply with the table and the hash.
+
+
+---
+
+# Round 3 (2026-10-13): data for the zone-fill verifier
+
+Why: in round 2 KiCad found 17 unconnected items on Freerouting's m1 that
+`autolayout verify` missed, because the verifier assumes a plane is solid.
+To read zone fills properly I need to see how KiCad 9.0.1 actually writes them.
+This round is **read-only data collection: change no code**.
+
+## Prompt to paste
+
+> Follow "Round 3" in docs/windows-handoff.md. Change no code and no boards.
+> Run the commands, paste their output into the log file, commit it to
+> `m7-router` and push. If a command fails, report the error text; do not fix
+> it. No PR.
+
+## Steps
+
+`git fetch origin && git checkout m7-router && git pull`; record the hash.
+Use the two KiCad-saved boards from round 2 (they are under `out/m7r2/`; if
+the directory is gone, rerun round 2 steps 2 and 4 first):
+
+1. `python tools/zone_probe.py out/m7r2/ours/m1_fab_routed.kicad_pcb --show 40`
+2. `python tools/zone_probe.py out/m7r2/fr/m1_fab_routed.kicad_pcb --show 40`
+   (the Freerouting board has GND zones on F, In1, B and +3V3 on In2.)
+3. From Freerouting's DRC report, for each of the 17 `unconnected_items`
+   entries, copy the whole entry (they are 3-4 lines each) into the log.
+4. For Freerouting's board only: in `kicad-cli`'s output or the pcbnew Python,
+   report whether zone fill islands are removed (`zone.GetIslandRemovalMode()`
+   for each zone) — one line per zone: layer, net, mode. Under KiCad's python:
+   `"$KPY" -c "import pcbnew,sys; b=pcbnew.LoadBoard(sys.argv[1]); [print(z.GetLayerName(), z.GetNetname(), z.GetIslandRemovalMode()) for z in b.Zones()]" out/m7r2/fr/m1_fab_routed.kicad_pcb`
+   and the same for the ours board.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-zone-data.md`: commit hash, KiCad version, each
+command and its exact output (the probe output is small; do not trim it),
+the 17 entries, and anything that failed. Commit and `git push origin
+m7-router`. Reply with the file name and the hash.
