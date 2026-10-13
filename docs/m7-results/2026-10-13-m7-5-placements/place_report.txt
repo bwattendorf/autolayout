@@ -1,0 +1,18 @@
+flipped to the front: C32 C36 C31 C37 C38 C21
+placed 121 part(s) in 5.37 s; unplaced: 0
+before (C:/Portcullis/controller/boards/quilter/freeplace/m1/m1.kicad_pcb):
+  footprints            183 (0 without courtyard)
+  courtyard overlaps    2
+      J1 / J4
+      J2 / J3
+  off board             121
+  signal nets (102)     HPWL   15741.1 mm   ratsnest   13528.8 mm
+  plane nets  (  2)     HPWL     541.5 mm   ratsnest    1037.2 mm  (> 16 pads)
+after (out/m7r7/m1_ours_placed.kicad_pcb, read back):
+  footprints            183 (0 without courtyard)
+  courtyard overlaps    2
+      J1 / J4
+      J2 / J3
+  off board             0
+  signal nets (102)     HPWL    3051.2 mm   ratsnest    2617.9 mm
+  plane nets  (  2)     HPWL     248.1 mm   ratsnest     639.9 mm  (> 16 pads)

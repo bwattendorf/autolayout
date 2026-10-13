@@ -1,0 +1,37 @@
+2026-10-13 13:38:19.176 INFO   Freerouting v2.3.0 (build-date: 2026-08-07)
+2026-10-13 13:38:19.721 WARN   Analytics tracking: first delivery failure in this window - /v1/analytics/identify - IOException: Server returned HTTP response code: 403 for URL: https://api.freerouting.app/v1/analytics/identify | Server response: <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=Edge"><meta name="robots" content="noindex,nofollow"><meta name="…. Further failures will be aggregated and reported every 60 minutes.
+2026-10-13 13:38:20.674 INFO   [F18A9E\AEBCB0] Loading board file 'm1_ours.dsn'...
+2026-10-13 13:38:20.724 INFO   New version available: v2.5.0
+2026-10-13 13:38:20.812 INFO   [F18A9E\AEBCB0] Job 'F18A9E\AEBCB0' started at 2026-10-13T17:38:20.812058500Z.
+2026-10-13 13:38:21.278 INFO   [F18A9E\AEBCB0] Fanout stage started on board 'c81aa657944199db4236d89c2bcf5722' with 338 of 452 SMD pins needing fanout (96 already connected, 18 netless).
+2026-10-13 13:38:28.003 INFO   [F18A9E\AEBCB0] Fanout pass #1 on board 'a3a7a8a90eb707e14410dab3edcbe28a' completed in 6.41 seconds with 132 SMD pins fanouted, 202 not routed, 0 insert errors, +42 extra vias (0 SMD pins still to check in pass, ripup costs=100).
+2026-10-13 13:38:32.068 INFO   [F18A9E\AEBCB0] Fanout pass #2 on board '5b3a24aa285750c248ea91de2c6fd76f' completed in 4.04 seconds with 15 SMD pins fanouted, 233 not routed, 0 insert errors, +5 extra vias (0 SMD pins still to check in pass, ripup costs=200).
+2026-10-13 13:38:35.139 INFO   [F18A9E\AEBCB0] Fanout pass #3 on board '9f17e6ed85a9fc4f77e0d442f898cff4' completed in 3.04 seconds with 1 SMD pin fanouted, 233 not routed, 0 insert errors, +1 extra via (0 SMD pins still to check in pass, ripup costs=300).
+2026-10-13 13:38:38.325 INFO   [F18A9E\AEBCB0] Fanout pass #4 on board '9f17e6ed85a9fc4f77e0d442f898cff4' completed in 3.16 seconds with 0 SMD pins fanouted, 233 not routed, 0 insert errors, +0 extra vias (0 SMD pins still to check in pass, ripup costs=400).
+2026-10-13 13:38:38.648 INFO   [F18A9E\AEBCB0] Fanout stage completed: started with 434 total SMD pins, completed in 17.10 seconds, escaped pins: 261/434 (60.1%), using 16.84 total CPU seconds, 40.61 GB total allocated, and 436.7 MB peak heap usage.
+2026-10-13 13:38:38.668 INFO   [F18A9E\AEBCB0] Auto-routing stage started on board '9f17e6ed85a9fc4f77e0d442f898cff4' for 183 unrouted items.
+2026-10-13 13:41:41.617 INFO   [F18A9E\AEBCB0] Auto-routing pass #1 on board '9f17e6ed85a9fc4f77e0d442f898cff4' was completed in 182.31 seconds with the score of 799.48 (79 unrouted and 0 violations), using 195.20 CPU seconds and the job allocated 430.66 GB of memory so far.
+2026-10-13 13:43:25.013 INFO   [F18A9E\AEBCB0] Auto-routing pass #2 on board '2538a2f32655976d3d6b3da3c7c5d487' was completed in 102.26 seconds with the score of 865.47 (53 unrouted and 0 violations), using 295.69 CPU seconds and the job allocated 643.57 GB of memory so far.
+2026-10-13 13:44:36.319 INFO   [F18A9E\AEBCB0] Auto-routing pass #3 on board '8eff1410acb50aeb6eda40d77668dd74' was completed in 70.03 seconds with the score of 888.31 (44 unrouted and 0 violations), using 365.75 CPU seconds and the job allocated 794.48 GB of memory so far.
+2026-10-13 13:45:31.567 INFO   [F18A9E\AEBCB0] Auto-routing pass #4 on board '2bdfd237a1f334c0b07dd01ee47d4049' was completed in 53.67 seconds with the score of 903.54 (38 unrouted and 0 violations), using 419.69 CPU seconds and the job allocated 912.92 GB of memory so far.
+2026-10-13 13:46:14.563 INFO   [F18A9E\AEBCB0] Auto-routing pass #5 on board 'd59301dc5be0e591d72578daaa1bd572' was completed in 41.86 seconds with the score of 911.16 (35 unrouted and 0 violations), using 461.94 CPU seconds and the job allocated 1020.81 GB of memory so far.
+2026-10-13 13:47:00.186 INFO   [F18A9E\AEBCB0] Auto-routing pass #6 on board '225ea37f636a1467738b68064c29fd93' was completed in 44.27 seconds with the score of 915.72 (33 unrouted and 1 violation), using 505.98 CPU seconds and the job allocated 1114.67 GB of memory so far.
+2026-10-13 13:47:42.951 INFO   [F18A9E\AEBCB0] Auto-routing pass #7 on board '05b35c8d901070d7b20a170761e8f18a' was completed in 41.42 seconds with the score of 926.38 (29 unrouted and 0 violations), using 548.09 CPU seconds and the job allocated 1200.82 GB of memory so far.
+2026-10-13 13:48:12.934 INFO   [F18A9E\AEBCB0] Auto-routing pass #8 on board '2022acf4bed8f70ed569911f62b45eb6' was completed in 28.34 seconds with the score of 934.00 (26 unrouted and 0 violations), using 577.44 CPU seconds and the job allocated 1262.54 GB of memory so far.
+2026-10-13 13:48:39.927 INFO   [F18A9E\AEBCB0] Auto-routing pass #9 on board 'aba7a4799e4328989fe3502baceaf4c2' was completed in 25.36 seconds with the score of 934.00 (26 unrouted and 0 violations), using 603.80 CPU seconds and the job allocated 1313.92 GB of memory so far.
+2026-10-13 13:49:06.720 INFO   [F18A9E\AEBCB0] Auto-routing pass #10 on board 'aba7a4799e4328989fe3502baceaf4c2' was completed in 26.02 seconds with the score of 934.00 (26 unrouted and 0 violations), using 630.03 CPU seconds and the job allocated 1364.66 GB of memory so far.
+2026-10-13 13:49:08.212 INFO   [F18A9E\AEBCB0] Auto-routing stage completed: started with 277 unrouted nets, completed in 646.64 seconds, final score: 934.00 (26 unrouted and 0 violations), using 631.05 total CPU seconds, 1366.22 GB total allocated, and 795.5 MB peak heap usage.
+2026-10-13 13:49:08.880 INFO   [F18A9E\AEBCB0] Optimization stage started on board 'aba7a4799e4328989fe3502baceaf4c2' with score 934.00 (26 unrouted and 0 violations).
+2026-10-13 13:50:26.777 INFO   [F18A9E\AEBCB0] Stopping optimization pass #1 early after 50 consecutive items could not be improved.
+2026-10-13 13:50:27.466 INFO   [F18A9E\AEBCB0] Optimizer pass #1 on board '1bb3836a0967cb6b4b50182a5ec78f75' was completed in 76.39 seconds with the score of 934.00 (26 unrouted and 0 violations).
+2026-10-13 13:50:28.153 INFO   [F18A9E\AEBCB0] Stopping optimizer because the improvement in this pass (0.0000%) is below the threshold (1.00%).
+2026-10-13 13:50:28.897 INFO   [F18A9E\AEBCB0] Optimization stage completed: started with score 934.00 (26 unrouted and 0 violations), completed in 79.28 seconds, final score: 934.00 (26 unrouted and 0 violations), using 77.69 total CPU seconds, 148.76 GB total allocated, and 508.1 MB peak heap usage.
+2026-10-13 13:50:28.900 INFO   [F18A9E\AEBCB0] Job 'F18A9E\AEBCB0' finished with state: COMPLETED (elapsed: 12 minutes 8.09 seconds, finished at UTC: 2026-10-13T17:50:28.898146700Z).
+
+????????????????????????????????????????????????????????????????????
+?           Thank you for using Freerouting!                       ?
+?                                                                  ?
+?  If you would like to support the project, please consider       ?
+?  sponsoring me at https://github.com/sponsors/andrasfuchs        ?
+?  Even a small monthly donation is greatly appreciated!           ?
+????????????????????????????????????????????????????????????????????

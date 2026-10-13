@@ -1,0 +1,2965 @@
+** Drc report for m1_ours_placed.kicad_pcb **
+** Created on 2026-10-13T13:35:52-0400 **
+
+** Found 389 DRC violations **
+[clearance]: Clearance violation (netclass 'Power' clearance 0.2500 mm; actual 0.2000 mm)
+    Rule: netclass 'Power'; error
+    @(95.2500 mm, 97.1000 mm): Pad 5 [N$16] of U1 on F.Cu
+    @(95.2500 mm, 97.5000 mm): Pad 6 [+1V1] of U1 on F.Cu
+[clearance]: Clearance violation (netclass 'Power' clearance 0.2500 mm; actual 0.2000 mm)
+    Rule: netclass 'Power'; error
+    @(95.2500 mm, 97.5000 mm): Pad 6 [+1V1] of U1 on F.Cu
+    @(95.2500 mm, 97.9000 mm): Pad 7 [N$14] of U1 on F.Cu
+[clearance]: Clearance violation (netclass 'Power' clearance 0.2500 mm; actual 0.2000 mm)
+    Rule: netclass 'Power'; error
+    @(98.3000 mm, 101.7500 mm): Pad 22 [N$3] of U1 on F.Cu
+    @(98.7000 mm, 101.7500 mm): Pad 23 [+1V1] of U1 on F.Cu
+[clearance]: Clearance violation (netclass 'Power' clearance 0.2500 mm; actual 0.2000 mm)
+    Rule: netclass 'Power'; error
+    @(98.7000 mm, 101.7500 mm): Pad 23 [+1V1] of U1 on F.Cu
+    @(99.1000 mm, 101.7500 mm): Pad 24 [N$86] of U1 on F.Cu
+[clearance]: Clearance violation (netclass 'Power' clearance 0.2500 mm; actual 0.2000 mm)
+    Rule: netclass 'Power'; error
+    @(102.1500 mm, 98.3000 mm): Pad 38 [+3V3] of U1 on F.Cu
+    @(102.1500 mm, 97.9000 mm): Pad 39 [+1V1] of U1 on F.Cu
+[clearance]: Clearance violation (netclass 'Power' clearance 0.2500 mm; actual 0.2000 mm)
+    Rule: netclass 'Power'; error
+    @(102.1500 mm, 97.9000 mm): Pad 39 [+1V1] of U1 on F.Cu
+    @(102.1500 mm, 97.5000 mm): Pad 40 [N$51] of U1 on F.Cu
+[clearance]: Clearance violation (netclass 'Power' clearance 0.2500 mm; actual 0.2000 mm)
+    Rule: netclass 'Power'; error
+    @(102.1500 mm, 96.3000 mm): Pad 43 [N$74] of U1 on F.Cu
+    @(102.1500 mm, 95.9000 mm): Pad 44 [+3V3_ADC] of U1 on F.Cu
+[clearance]: Clearance violation (netclass 'Power' clearance 0.2500 mm; actual 0.2000 mm)
+    Rule: netclass 'Power'; error
+    @(102.1500 mm, 95.9000 mm): Pad 44 [+3V3_ADC] of U1 on F.Cu
+    @(102.1500 mm, 95.5000 mm): Pad 45 [+3V3] of U1 on F.Cu
+[clearance]: Clearance violation (netclass 'Power' clearance 0.2500 mm; actual 0.2000 mm)
+    Rule: netclass 'Power'; error
+    @(101.5000 mm, 94.8500 mm): Pad 46 [VREG_AVDD_F] of U1 on F.Cu
+    @(101.1000 mm, 94.8500 mm): Pad 47 [GND] of U1 on F.Cu
+[clearance]: Clearance violation (netclass 'Power' clearance 0.2500 mm; actual 0.2000 mm)
+    Rule: netclass 'Power'; error
+    @(100.3000 mm, 94.8500 mm): Pad 49 [+3V3] of U1 on F.Cu
+    @(99.9000 mm, 94.8500 mm): Pad 50 [+1V1] of U1 on F.Cu
+[clearance]: Clearance violation (netclass 'Power' clearance 0.2500 mm; actual 0.2000 mm)
+    Rule: netclass 'Power'; error
+    @(99.9000 mm, 94.8500 mm): Pad 50 [+1V1] of U1 on F.Cu
+    @(99.5000 mm, 94.8500 mm): Pad 51 [N$81] of U1 on F.Cu
+[courtyards_overlap]: Courtyards overlap
+    Rule: board setup constraints courtyard; error
+    @(137.7000 mm, 86.5400 mm): Footprint J2
+    @(137.7000 mm, 56.0600 mm): Footprint J3
+[courtyards_overlap]: Courtyards overlap
+    Rule: board setup constraints courtyard; error
+    @(70.3000 mm, 88.5400 mm): Footprint J1
+    @(70.3000 mm, 58.0600 mm): Footprint J4
+[silk_edge_clearance]: Silkscreen clipped by board edge
+    Rule: board setup constraints silk; warning
+    @(50.0000 mm, 50.0000 mm): Segment on Edge.Cuts
+    @(152.9000 mm, 49.9000 mm): Reference field of H2
+[silk_edge_clearance]: Silkscreen clipped by board edge
+    Rule: board setup constraints silk; warning
+    @(50.0000 mm, 50.0000 mm): Segment on Edge.Cuts
+    @(55.1000 mm, 49.9000 mm): Reference field of H1
+[hole_to_hole]: Drilled hole too close to other hole (board setup constraints min 0.4995 mm; actual 0.4500 mm)
+    Rule: board setup constraints; warning
+    @(90.8500 mm, 110.0000 mm): PTH pad A4 [VBUS] of J10
+    @(90.0000 mm, 110.0000 mm): PTH pad A1 [GND] of J10
+[hole_to_hole]: Drilled hole too close to other hole (board setup constraints min 0.4995 mm; actual 0.4500 mm)
+    Rule: board setup constraints; warning
+    @(91.7000 mm, 110.0000 mm): PTH pad A5 [N$82] of J10
+    @(90.8500 mm, 110.0000 mm): PTH pad A4 [VBUS] of J10
+[hole_to_hole]: Drilled hole too close to other hole (board setup constraints min 0.4995 mm; actual 0.4500 mm)
+    Rule: board setup constraints; warning
+    @(91.7000 mm, 110.0000 mm): PTH pad A5 [N$82] of J10
+    @(92.5500 mm, 110.0000 mm): PTH pad A6 [N$80] of J10
+[hole_to_hole]: Drilled hole too close to other hole (board setup constraints min 0.4995 mm; actual 0.4500 mm)
+    Rule: board setup constraints; warning
+    @(93.4000 mm, 110.0000 mm): PTH pad A7 [N$81] of J10
+    @(92.5500 mm, 110.0000 mm): PTH pad A6 [N$80] of J10
+[hole_to_hole]: Drilled hole too close to other hole (board setup constraints min 0.4995 mm; actual 0.4500 mm)
+    Rule: board setup constraints; warning
+    @(93.4000 mm, 110.0000 mm): PTH pad A7 [N$81] of J10
+    @(94.2500 mm, 110.0000 mm): PTH pad A8 [<no net>] of J10
+[hole_to_hole]: Drilled hole too close to other hole (board setup constraints min 0.4995 mm; actual 0.4500 mm)
+    Rule: board setup constraints; warning
+    @(95.1000 mm, 110.0000 mm): PTH pad A9 [VBUS] of J10
+    @(94.2500 mm, 110.0000 mm): PTH pad A8 [<no net>] of J10
+[hole_to_hole]: Drilled hole too close to other hole (board setup constraints min 0.4995 mm; actual 0.4500 mm)
+    Rule: board setup constraints; warning
+    @(95.9500 mm, 110.0000 mm): PTH pad A12 [GND] of J10
+    @(95.1000 mm, 110.0000 mm): PTH pad A9 [VBUS] of J10
+[hole_to_hole]: Drilled hole too close to other hole (board setup constraints min 0.4995 mm; actual 0.4500 mm)
+    Rule: board setup constraints; warning
+    @(95.1000 mm, 111.3500 mm): PTH pad B4 [VBUS] of J10
+    @(95.9500 mm, 111.3500 mm): PTH pad B1 [GND] of J10
+[hole_to_hole]: Drilled hole too close to other hole (board setup constraints min 0.4995 mm; actual 0.4500 mm)
+    Rule: board setup constraints; warning
+    @(95.1000 mm, 111.3500 mm): PTH pad B4 [VBUS] of J10
+    @(94.2500 mm, 111.3500 mm): PTH pad B5 [N$83] of J10
+[hole_to_hole]: Drilled hole too close to other hole (board setup constraints min 0.4995 mm; actual 0.4500 mm)
+    Rule: board setup constraints; warning
+    @(93.4000 mm, 111.3500 mm): PTH pad B6 [N$80] of J10
+    @(94.2500 mm, 111.3500 mm): PTH pad B5 [N$83] of J10
+[hole_to_hole]: Drilled hole too close to other hole (board setup constraints min 0.4995 mm; actual 0.4500 mm)
+    Rule: board setup constraints; warning
+    @(92.5500 mm, 111.3500 mm): PTH pad B7 [N$81] of J10
+    @(93.4000 mm, 111.3500 mm): PTH pad B6 [N$80] of J10
+[hole_to_hole]: Drilled hole too close to other hole (board setup constraints min 0.4995 mm; actual 0.4500 mm)
+    Rule: board setup constraints; warning
+    @(92.5500 mm, 111.3500 mm): PTH pad B7 [N$81] of J10
+    @(91.7000 mm, 111.3500 mm): PTH pad B8 [<no net>] of J10
+[hole_to_hole]: Drilled hole too close to other hole (board setup constraints min 0.4995 mm; actual 0.4500 mm)
+    Rule: board setup constraints; warning
+    @(91.7000 mm, 111.3500 mm): PTH pad B8 [<no net>] of J10
+    @(90.8500 mm, 111.3500 mm): PTH pad B9 [VBUS] of J10
+[hole_to_hole]: Drilled hole too close to other hole (board setup constraints min 0.4995 mm; actual 0.4500 mm)
+    Rule: board setup constraints; warning
+    @(90.0000 mm, 111.3500 mm): PTH pad B12 [GND] of J10
+    @(90.8500 mm, 111.3500 mm): PTH pad B9 [VBUS] of J10
+[lib_footprint_issues]: The current configuration does not include the footprint library 'portcullis'.
+    Local override; warning
+    @(137.7000 mm, 86.5400 mm): Footprint J2
+[lib_footprint_issues]: Footprint 'MountingHole_4.0mm_Pad' not found in library 'MountingHole'.
+    Local override; warning
+    @(152.9000 mm, 114.8500 mm): Footprint H4
+[lib_footprint_issues]: Footprint 'MountingHole_4.0mm_Pad' not found in library 'MountingHole'.
+    Local override; warning
+    @(152.9000 mm, 55.1500 mm): Footprint H2
+[lib_footprint_issues]: Footprint 'MountingHole_4.0mm_Pad' not found in library 'MountingHole'.
+    Local override; warning
+    @(55.1000 mm, 114.8500 mm): Footprint H3
+[lib_footprint_issues]: The current configuration does not include the footprint library 'portcullis'.
+    Local override; warning
+    @(137.7000 mm, 56.0600 mm): Footprint J3
+[lib_footprint_issues]: The current configuration does not include the footprint library 'portcullis'.
+    Local override; warning
+    @(70.3000 mm, 88.5400 mm): Footprint J1
+[lib_footprint_issues]: The current configuration does not include the footprint library 'portcullis'.
+    Local override; warning
+    @(70.3000 mm, 58.0600 mm): Footprint J4
+[lib_footprint_issues]: The current configuration does not include the footprint library 'portcullis'.
+    Local override; warning
+    @(61.8900 mm, 109.8500 mm): Footprint J5
+[lib_footprint_issues]: Footprint 'MountingHole_4.0mm_Pad' not found in library 'MountingHole'.
+    Local override; warning
+    @(55.1000 mm, 55.1500 mm): Footprint H1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 96.7000 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 73.3000 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 83.4600 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 106.8600 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 71.3000 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 91.6200 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 98.7000 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 56.0600 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 93.6200 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(66.9700 mm, 107.2000 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 86.5400 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 81.4600 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 88.5400 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(61.8900 mm, 107.2000 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 66.2200 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 111.9400 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 58.0600 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 101.7800 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 68.2200 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 76.3800 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 78.3800 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 63.1400 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 61.1400 mm): Segment on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(66.9700 mm, 106.0000 mm): PCB text 'GND' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(73.7500 mm, 98.7000 mm): PCB text 'GND' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(73.7500 mm, 83.4600 mm): PCB text 'VO' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(126.8500 mm, 116.4000 mm): PCB text 'FAULT' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 100.5161 mm): PCB text '6  TAMPER' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(111.8500 mm, 116.4000 mm): PCB text 'HEARTBEAT' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(73.7500 mm, 85.8615 mm): PCB text 'J1' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(73.7500 mm, 88.5400 mm): PCB text 'TR+' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(74.4550 mm, 116.4000 mm): PCB text 'MODE' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 98.7036 mm): PCB text '5  NO KEYS YET' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(127.9500 mm, 101.7800 mm): PCB text 'I2' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 105.9536 mm): PCB text '9  RDR OVERLOAD' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(84.4550 mm, 116.4000 mm): PCB text 'BOOT' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(121.8500 mm, 116.4000 mm): PCB text 'UPLINK' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(73.7500 mm, 93.6200 mm): PCB text 'TR-' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 93.2661 mm): PCB text '2  SEC CHIP' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 96.8911 mm): PCB text '4  DEV KEYS' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(79.4550 mm, 116.4000 mm): PCB text 'IOX_CLOCK' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 102.3286 mm): PCB text '7  LOOP CUT/SHRT' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(73.7500 mm, 78.3800 mm): PCB text 'D0' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(101.8500 mm, 116.4000 mm): PCB text 'PWR_12V' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(116.8500 mm, 116.4000 mm): PCB text 'BUS' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(106.8500 mm, 116.4000 mm): PCB text 'PWR_3V3' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(131.8500 mm, 116.4000 mm): PCB text 'STATUS' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(127.9500 mm, 96.7000 mm): PCB text 'I2' on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(109.3500 mm, 110.6800 mm): Reference field of R37
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(70.7500 mm, 108.6800 mm): Reference field of R3
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(106.6500 mm, 91.0050 mm): Reference field of J11
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(87.3000 mm, 79.5900 mm): Reference field of C20
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(74.4350 mm, 111.9568 mm): Reference field of D24
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(105.1500 mm, 103.7000 mm): Reference field of SW2
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(103.2000 mm, 90.4800 mm): Reference field of R29
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(101.3000 mm, 86.9800 mm): Reference field of R41
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(89.1500 mm, 74.3800 mm): Reference field of R14
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(66.7500 mm, 104.3800 mm): Reference field of R21
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(107.7000 mm, 97.8800 mm): Reference field of R31
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(93.3500 mm, 80.6800 mm): Reference field of R18
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(102.1500 mm, 72.9000 mm): Reference field of D12
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(116.8300 mm, 111.9568 mm): Reference field of D21
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(69.5000 mm, 103.5700 mm): Reference field of R8
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(79.4350 mm, 111.9568 mm): Reference field of D26
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(77.6500 mm, 114.6300 mm): Reference field of R52
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(74.3000 mm, 88.0800 mm): Reference field of R16
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(108.5500 mm, 115.4800 mm): Reference field of R53
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(113.9500 mm, 110.0800 mm): Reference field of R42
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(111.1000 mm, 103.5800 mm): Reference field of R28
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(78.4000 mm, 72.0000 mm): Reference field of Q1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(103.3500 mm, 86.8800 mm): Reference field of R27
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(104.8500 mm, 110.6300 mm): Reference field of R51
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(80.2500 mm, 79.5500 mm): Reference field of D5
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(106.7874 mm, 96.5667 mm): Reference field of C16
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(84.2500 mm, 71.5000 mm): Reference field of D6
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(95.9000 mm, 73.0000 mm): Reference field of L2
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(100.9000 mm, 111.4300 mm): Reference field of R56
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(75.5500 mm, 114.2400 mm): Reference field of C35
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(76.4500 mm, 75.7500 mm): Reference field of D81
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(103.3808 mm, 61.3353 mm): Reference field of C39
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(103.5500 mm, 114.2000 mm): Reference field of D2
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(92.8648 mm, 91.4400 mm): Reference field of L1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(98.1000 mm, 84.5000 mm): Reference field of U2
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(108.3500 mm, 114.2300 mm): Reference field of R55
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(76.2000 mm, 98.8700 mm): Reference field of C28
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(75.8500 mm, 80.0000 mm): Reference field of Q4
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(83.0000 mm, 94.2267 mm): Reference field of SW1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(82.5000 mm, 114.5500 mm): Reference field of D30
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(78.8500 mm, 70.7300 mm): Reference field of R19
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(106.8300 mm, 111.9568 mm): Reference field of D27
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(107.1000 mm, 109.0300 mm): Reference field of R43
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(101.8000 mm, 109.1200 mm): Reference field of C26
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(84.3000 mm, 79.6500 mm): Reference field of D7
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(74.3500 mm, 92.8800 mm): Reference field of R39
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(74.2500 mm, 91.4300 mm): Reference field of R26
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(111.5500 mm, 110.0300 mm): Reference field of R54
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(114.9500 mm, 101.4300 mm): Reference field of R44
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(87.3000 mm, 80.6900 mm): Reference field of C17
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(118.5000 mm, 107.6800 mm): Reference field of R48
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(107.0500 mm, 99.8500 mm): Reference field of Y1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(101.8300 mm, 111.9568 mm): Reference field of D28
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(101.3518 mm, 89.5758 mm): Reference field of C1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(70.8500 mm, 110.1300 mm): Reference field of R5
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(74.5000 mm, 93.6200 mm): Reference field of J1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(74.3500 mm, 90.0300 mm): Reference field of R13
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(77.6000 mm, 116.0300 mm): Reference field of R50
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(74.8000 mm, 74.4800 mm): Reference field of R22
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(113.7000 mm, 104.8000 mm): Reference field of D1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(103.7000 mm, 75.2500 mm): Reference field of L3
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(74.5000 mm, 70.7600 mm): Reference field of J4
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(89.9000 mm, 76.1200 mm): Reference field of R7
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(84.4350 mm, 111.9568 mm): Reference field of D25
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(151.5000 mm, 58.3500 mm): Reference field of D11
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(115.3000 mm, 108.6800 mm): Reference field of R46
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(75.7500 mm, 111.3300 mm): Reference field of R4
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(90.3000 mm, 78.0500 mm): Reference field of D8
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(83.2000 mm, 83.9500 mm): Reference field of U4
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(71.4000 mm, 106.2300 mm): Reference field of R6
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(113.7000 mm, 111.2900 mm): Reference field of C18
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(111.8300 mm, 111.9568 mm): Reference field of D19
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(91.3000 mm, 74.6800 mm): Reference field of R25
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(101.8000 mm, 88.2700 mm): Reference field of C25
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(100.5500 mm, 71.7800 mm): Reference field of R17
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(111.5500 mm, 108.6800 mm): Reference field of R47
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(97.9000 mm, 80.6500 mm): Reference field of Q6
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(71.3000 mm, 111.5900 mm): Reference field of C24
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(82.7530 mm, 105.3650 mm): Reference field of C22
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(72.0069 mm, 103.1238 mm): Segment of C22 on F.Silkscreen
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(111.1000 mm, 114.3800 mm): Reference field of R45
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(117.9500 mm, 109.0400 mm): Reference field of C33
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(106.5500 mm, 96.0700 mm): Reference field of FB1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(89.8218 mm, 105.8000 mm): Reference field of D90
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(75.2500 mm, 115.4900 mm): Reference field of C27
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(107.2000 mm, 110.4800 mm): Reference field of R38
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(109.3000 mm, 109.4300 mm): Reference field of R36
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(70.8500 mm, 107.4300 mm): Reference field of R40
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(115.5000 mm, 102.7900 mm): Reference field of C34
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(106.0000 mm, 74.5300 mm): Reference field of R1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(76.8000 mm, 83.9500 mm): Reference field of D80
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(100.1333 mm, 107.6668 mm): Reference field of J10
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(106.4500 mm, 87.1500 mm): Reference field of D15
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(66.7500 mm, 102.4800 mm): Reference field of R9
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(116.0000 mm, 110.0900 mm): Reference field of C19
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(111.4500 mm, 111.3300 mm): Reference field of R58
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(73.5500 mm, 111.2800 mm): Reference field of R34
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(105.8500 mm, 71.9900 mm): Reference field of C32
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(102.7500 mm, 71.6400 mm): Reference field of C36
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(106.7303 mm, 94.4128 mm): Reference field of C14
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(105.9000 mm, 73.2400 mm): Reference field of C21
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(63.6000 mm, 55.5200 mm): Segment of J4 on F.Silkscreen
+    @(60.8000 mm, 58.0600 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(72.9000 mm, 55.5200 mm): Rectangle of J4 on F.Silkscreen
+    @(60.8000 mm, 58.0600 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(63.6000 mm, 55.5200 mm): Segment of J4 on F.Silkscreen
+    @(60.8000 mm, 68.2200 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(72.9000 mm, 55.5200 mm): Rectangle of J4 on F.Silkscreen
+    @(60.8000 mm, 68.2200 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(63.6000 mm, 55.5200 mm): Segment of J4 on F.Silkscreen
+    @(60.8000 mm, 63.1400 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(72.9000 mm, 55.5200 mm): Rectangle of J4 on F.Silkscreen
+    @(60.8000 mm, 63.1400 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(72.9000 mm, 55.5200 mm): Rectangle of J4 on F.Silkscreen
+    @(70.7500 mm, 55.8615 mm): PCB text 'J4' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(63.6000 mm, 55.5200 mm): Segment of J4 on F.Silkscreen
+    @(63.6000 mm, 86.0000 mm): Segment of J1 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(60.8000 mm, 73.3000 mm): Segment on F.Silkscreen
+    @(63.6000 mm, 55.5200 mm): Segment of J4 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(63.6000 mm, 55.5200 mm): Segment of J4 on F.Silkscreen
+    @(60.8000 mm, 83.4600 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(63.6000 mm, 55.5200 mm): Segment of J4 on F.Silkscreen
+    @(60.8000 mm, 78.3800 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(63.6000 mm, 55.5200 mm): Segment of J4 on F.Silkscreen
+    @(72.9000 mm, 86.0000 mm): Rectangle of J1 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(72.9000 mm, 55.5200 mm): Rectangle of J4 on F.Silkscreen
+    @(72.9000 mm, 86.0000 mm): Rectangle of J1 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(60.8000 mm, 73.3000 mm): Segment on F.Silkscreen
+    @(72.9000 mm, 55.5200 mm): Rectangle of J4 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(60.8000 mm, 83.4600 mm): Segment on F.Silkscreen
+    @(72.9000 mm, 55.5200 mm): Rectangle of J4 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(72.9000 mm, 55.5200 mm): Rectangle of J4 on F.Silkscreen
+    @(60.8000 mm, 78.3800 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(76.4500 mm, 75.7500 mm): Reference field of D81
+    @(75.2875 mm, 76.6400 mm): Polygon of D81 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(73.7500 mm, 73.3000 mm): PCB text 'D1' on F.Silkscreen
+    @(75.2000 mm, 73.1800 mm): Reference field of R24
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(77.9464 mm, 70.7300 mm): Segment of R12 on F.Silkscreen
+    @(78.8500 mm, 70.7300 mm): Reference field of R19
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(74.5000 mm, 70.7600 mm): Reference field of J4
+    @(75.2500 mm, 70.1700 mm): Reference field of R11
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(86.0000 mm, 70.2800 mm): Reference field of R15
+    @(83.6000 mm, 70.2800 mm): Reference field of R23
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(91.2000 mm, 73.5300 mm): Reference field of R2
+    @(89.7637 mm, 73.6100 mm): Segment of F1 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(78.4000 mm, 72.0000 mm): Reference field of Q1
+    @(78.6964 mm, 71.5200 mm): Segment of R19 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(78.4000 mm, 72.0000 mm): Reference field of Q1
+    @(78.6964 mm, 72.2800 mm): Segment of R19 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(83.4464 mm, 71.8300 mm): Segment of R23 on F.Silkscreen
+    @(84.2500 mm, 71.5000 mm): Reference field of D6
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(83.4464 mm, 71.0700 mm): Segment of R23 on F.Silkscreen
+    @(84.2500 mm, 71.5000 mm): Reference field of D6
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(80.7400 mm, 75.6500 mm): Segment of D6 on F.Silkscreen
+    @(81.5000 mm, 75.8000 mm): Reference field of Q2
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(80.7400 mm, 75.6500 mm): Segment of D6 on F.Silkscreen
+    @(85.8500 mm, 75.6500 mm): Reference field of Q3
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(81.5000 mm, 75.8000 mm): Reference field of Q2
+    @(80.7400 mm, 72.3500 mm): Segment of D6 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(107.7000 mm, 97.8800 mm): Reference field of R31
+    @(106.3872 mm, 98.0100 mm): Segment of FB1 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(107.7000 mm, 97.8800 mm): Reference field of R31
+    @(99.0000 mm, 96.8911 mm): PCB text '4  DEV KEYS' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 96.8911 mm): PCB text '4  DEV KEYS' on F.Silkscreen
+    @(106.5500 mm, 96.0700 mm): Reference field of FB1
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 96.8911 mm): PCB text '4  DEV KEYS' on F.Silkscreen
+    @(106.7874 mm, 96.5667 mm): Reference field of C16
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(106.7874 mm, 96.5667 mm): Reference field of C16
+    @(106.5500 mm, 96.0700 mm): Reference field of FB1
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.4900 mm, 96.0350 mm): Segment of J11 on F.Silkscreen
+    @(106.5500 mm, 96.0700 mm): Reference field of FB1
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.4900 mm, 93.5600 mm): Segment of J11 on F.Silkscreen
+    @(106.5500 mm, 96.0700 mm): Reference field of FB1
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on F.Silkscreen
+    @(106.5500 mm, 96.0700 mm): Reference field of FB1
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on F.Silkscreen
+    @(103.7500 mm, 95.4900 mm): Reference field of C3
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 98.7036 mm): PCB text '5  NO KEYS YET' on F.Silkscreen
+    @(103.7672 mm, 98.6600 mm): Segment of C16 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.0500 mm, 100.6500 mm): Segment of Y1 on F.Silkscreen
+    @(99.0000 mm, 102.3286 mm): PCB text '7  LOOP CUT/SHRT' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(107.5464 mm, 99.4300 mm): Segment of R31 on F.Silkscreen
+    @(107.0500 mm, 99.8500 mm): Reference field of Y1
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on F.Silkscreen
+    @(105.4900 mm, 93.5600 mm): Segment of J11 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(106.3872 mm, 96.9900 mm): Segment of FB1 on F.Silkscreen
+    @(99.0000 mm, 96.8911 mm): PCB text '4  DEV KEYS' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(106.3872 mm, 96.9900 mm): Segment of FB1 on F.Silkscreen
+    @(106.7874 mm, 96.5667 mm): Reference field of C16
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.4900 mm, 96.0350 mm): Segment of J11 on F.Silkscreen
+    @(106.7874 mm, 96.5667 mm): Reference field of C16
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(106.5500 mm, 96.0700 mm): Reference field of FB1
+    @(106.9679 mm, 96.0350 mm): Segment of J11 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 104.1411 mm): PCB text '8  POWER' on F.Silkscreen
+    @(102.7800 mm, 104.5300 mm): Segment of SW2 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 104.1411 mm): PCB text '8  POWER' on F.Silkscreen
+    @(105.0500 mm, 103.9500 mm): Segment of Y1 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 104.1411 mm): PCB text '8  POWER' on F.Silkscreen
+    @(105.1500 mm, 103.7000 mm): Reference field of SW2
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 104.1411 mm): PCB text '8  POWER' on F.Silkscreen
+    @(105.0500 mm, 100.6500 mm): Segment of Y1 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.1500 mm, 103.7000 mm): Reference field of SW2
+    @(105.0500 mm, 103.9500 mm): Segment of Y1 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(102.7800 mm, 107.9300 mm): Segment of SW2 on F.Silkscreen
+    @(99.0000 mm, 105.9536 mm): PCB text '9  RDR OVERLOAD' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(106.4465 mm, 105.7698 mm): Reference field of U1
+    @(99.0000 mm, 105.9536 mm): PCB text '9  RDR OVERLOAD' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 105.9536 mm): PCB text '9  RDR OVERLOAD' on F.Silkscreen
+    @(107.5200 mm, 107.9300 mm): Segment of SW2 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(107.1000 mm, 109.0300 mm): Reference field of R43
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(107.1000 mm, 109.0300 mm): Reference field of R43
+    @(109.3000 mm, 109.4300 mm): Reference field of R36
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(110.1900 mm, 105.6500 mm): Segment of D1 on F.Silkscreen
+    @(109.3000 mm, 109.4300 mm): Reference field of R36
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(110.1900 mm, 105.6500 mm): Segment of D1 on F.Silkscreen
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on F.Silkscreen
+    @(111.5500 mm, 108.6800 mm): Reference field of R47
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(110.1900 mm, 108.9500 mm): Segment of D1 on F.Silkscreen
+    @(111.5500 mm, 108.6800 mm): Reference field of R47
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(111.5500 mm, 110.0300 mm): Reference field of R54
+    @(111.3964 mm, 109.4700 mm): Segment of R47 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(110.1900 mm, 108.9500 mm): Segment of D1 on F.Silkscreen
+    @(109.3000 mm, 109.4300 mm): Reference field of R36
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(111.5500 mm, 108.6800 mm): Reference field of R47
+    @(109.3000 mm, 109.4300 mm): Reference field of R36
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(111.5500 mm, 110.0300 mm): Reference field of R54
+    @(109.3000 mm, 109.4300 mm): Reference field of R36
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(111.1000 mm, 103.5800 mm): Reference field of R28
+    @(111.8500 mm, 103.8100 mm): Segment of D16 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(111.1000 mm, 103.5800 mm): Reference field of R28
+    @(113.3000 mm, 103.5800 mm): Reference field of R49
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(111.1000 mm, 103.5800 mm): Reference field of R28
+    @(111.8500 mm, 103.8100 mm): Segment of D16 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(113.3000 mm, 103.5800 mm): Reference field of R49
+    @(111.8500 mm, 103.8100 mm): Segment of D16 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(115.5000 mm, 102.7900 mm): Reference field of C34
+    @(113.3000 mm, 103.5800 mm): Reference field of R49
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(115.5000 mm, 102.7900 mm): Reference field of C34
+    @(114.7964 mm, 102.2200 mm): Segment of R44 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(116.0000 mm, 110.0900 mm): Reference field of C19
+    @(117.9500 mm, 109.0400 mm): Reference field of C33
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(115.3000 mm, 108.6800 mm): Reference field of R46
+    @(117.9500 mm, 109.0400 mm): Reference field of C33
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(117.9500 mm, 109.0400 mm): Reference field of C33
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(117.9500 mm, 109.0400 mm): Reference field of C33
+    @(118.3464 mm, 108.4700 mm): Segment of R48 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(118.3464 mm, 109.2300 mm): Segment of R48 on F.Silkscreen
+    @(117.9500 mm, 109.0400 mm): Reference field of C33
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(120.5500 mm, 104.9200 mm): Reference field of R32
+    @(116.7400 mm, 105.1000 mm): Segment of D14 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(118.5000 mm, 107.6800 mm): Reference field of R48
+    @(119.8229 mm, 107.6600 mm): Segment of R32 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(115.5000 mm, 102.7900 mm): Reference field of C34
+    @(116.7400 mm, 100.8000 mm): Segment of D14 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on F.Silkscreen
+    @(107.8100 mm, 93.5600 mm): Segment of J11 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on F.Silkscreen
+    @(109.6500 mm, 76.8500 mm): Segment of K2 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(106.7874 mm, 96.5667 mm): Reference field of C16
+    @(106.9679 mm, 96.0350 mm): Segment of J11 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(106.7874 mm, 96.5667 mm): Reference field of C16
+    @(107.8100 mm, 93.5600 mm): Segment of J11 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(110.6875 mm, 100.7400 mm): Polygon of D16 on F.Silkscreen
+    @(111.8500 mm, 99.8500 mm): Reference field of D16
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(109.6500 mm, 99.5500 mm): Segment of K2 on F.Silkscreen
+    @(111.8500 mm, 99.8500 mm): Reference field of D16
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(107.7000 mm, 97.8800 mm): Reference field of R31
+    @(99.0000 mm, 98.7036 mm): PCB text '5  NO KEYS YET' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 98.7036 mm): PCB text '5  NO KEYS YET' on F.Silkscreen
+    @(107.5464 mm, 98.6700 mm): Segment of R31 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(115.0500 mm, 99.9800 mm): Reference field of R33
+    @(109.6500 mm, 99.5500 mm): Segment of K2 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(114.9500 mm, 101.4300 mm): Reference field of R44
+    @(114.8964 mm, 100.7700 mm): Segment of R33 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(114.8964 mm, 101.5300 mm): Segment of R33 on F.Silkscreen
+    @(114.9500 mm, 101.4300 mm): Reference field of R44
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(109.6500 mm, 99.5500 mm): Segment of K2 on F.Silkscreen
+    @(120.4000 mm, 99.9500 mm): Reference field of D14
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 100.5161 mm): PCB text '6  TAMPER' on F.Silkscreen
+    @(105.0500 mm, 100.6500 mm): Segment of Y1 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(101.8600 mm, 101.9100 mm): Segment of U1 on F.Silkscreen
+    @(99.0000 mm, 102.3286 mm): PCB text '7  LOOP CUT/SHRT' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 102.3286 mm): PCB text '7  LOOP CUT/SHRT' on F.Silkscreen
+    @(102.3100 mm, 101.9100 mm): Segment of U1 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.0500 mm, 100.6500 mm): Segment of Y1 on F.Silkscreen
+    @(105.1500 mm, 103.7000 mm): Reference field of SW2
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on F.Silkscreen
+    @(102.3100 mm, 94.6900 mm): Segment of U1 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on F.Silkscreen
+    @(101.8600 mm, 94.6900 mm): Segment of U1 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.4900 mm, 93.5600 mm): Segment of J11 on F.Silkscreen
+    @(99.0000 mm, 93.2661 mm): PCB text '2  SEC CHIP' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 93.2661 mm): PCB text '2  SEC CHIP' on F.Silkscreen
+    @(105.4900 mm, 93.5600 mm): Segment of J11 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 93.2661 mm): PCB text '2  SEC CHIP' on F.Silkscreen
+    @(105.4900 mm, 92.7500 mm): Segment of J11 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on F.Silkscreen
+    @(103.2000 mm, 90.4800 mm): Reference field of R29
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(101.5387 mm, 90.6850 mm): Segment of C25 on F.Silkscreen
+    @(103.2000 mm, 90.4800 mm): Reference field of R29
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(100.1333 mm, 107.6668 mm): Reference field of J10
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(101.8000 mm, 109.1200 mm): Reference field of C26
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(101.8000 mm, 109.1200 mm): Reference field of C26
+    @(102.7800 mm, 109.2700 mm): Segment of SW2 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on F.Silkscreen
+    @(99.4900 mm, 92.0421 mm): Segment of L1 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(103.3500 mm, 86.8800 mm): Reference field of R27
+    @(102.5000 mm, 87.0600 mm): Segment of Q7 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.2875 mm, 88.0400 mm): Polygon of D15 on F.Silkscreen
+    @(106.4500 mm, 87.1500 mm): Reference field of D15
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(101.8000 mm, 88.2700 mm): Reference field of C25
+    @(103.1964 mm, 88.4300 mm): Segment of R27 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(103.3500 mm, 86.8800 mm): Reference field of R27
+    @(101.3000 mm, 86.9800 mm): Reference field of R41
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(102.5000 mm, 87.0600 mm): Segment of Q7 on F.Silkscreen
+    @(101.3000 mm, 86.9800 mm): Reference field of R41
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(102.5000 mm, 87.0600 mm): Segment of Q7 on F.Silkscreen
+    @(103.3500 mm, 86.8800 mm): Reference field of R27
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(101.8000 mm, 88.2700 mm): Reference field of C25
+    @(101.1464 mm, 87.7700 mm): Segment of R41 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(101.8000 mm, 88.2700 mm): Reference field of C25
+    @(101.1464 mm, 88.5300 mm): Segment of R41 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(101.8000 mm, 88.2700 mm): Reference field of C25
+    @(101.3518 mm, 89.5758 mm): Reference field of C1
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(101.5387 mm, 89.2150 mm): Segment of C25 on F.Silkscreen
+    @(101.3518 mm, 89.5758 mm): Reference field of C1
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on F.Silkscreen
+    @(137.7000 mm, 91.6200 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 91.6200 mm): Segment on F.Silkscreen
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on F.Silkscreen
+    @(137.7000 mm, 86.5400 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on F.Silkscreen
+    @(137.7000 mm, 86.5400 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(127.9500 mm, 91.6200 mm): PCB text 'GND' on F.Silkscreen
+    @(126.3500 mm, 99.5500 mm): Segment of K2 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(128.0686 mm, 83.8615 mm): PCB text 'J2' on F.Silkscreen
+    @(126.3500 mm, 99.5500 mm): Segment of K2 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(127.9500 mm, 86.5400 mm): PCB text 'VIN' on F.Silkscreen
+    @(126.3500 mm, 99.5500 mm): Segment of K2 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on F.Silkscreen
+    @(137.7000 mm, 81.4600 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on F.Silkscreen
+    @(137.7000 mm, 81.4600 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on F.Silkscreen
+    @(137.7000 mm, 76.3800 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on F.Silkscreen
+    @(137.7000 mm, 76.3800 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on F.Silkscreen
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on F.Silkscreen
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on F.Silkscreen
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 96.7000 mm): Segment on F.Silkscreen
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 96.7000 mm): Segment on F.Silkscreen
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on F.Silkscreen
+    @(137.7000 mm, 101.7800 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on F.Silkscreen
+    @(137.7000 mm, 101.7800 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 106.8600 mm): Segment on F.Silkscreen
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on F.Silkscreen
+    @(137.7000 mm, 111.9400 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on F.Silkscreen
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 106.8600 mm): Segment on F.Silkscreen
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on F.Silkscreen
+    @(137.7000 mm, 111.9400 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.8300 mm, 111.9568 mm): Reference field of D22
+    @(127.9500 mm, 111.9400 mm): PCB text 'I1' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.8900 mm, 115.0500 mm): Segment of D2 on F.Silkscreen
+    @(101.8500 mm, 116.4000 mm): PCB text 'PWR_12V' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on F.Silkscreen
+    @(106.6500 mm, 91.0050 mm): Reference field of J11
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on F.Silkscreen
+    @(106.4500 mm, 91.1100 mm): Segment of D15 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(106.4500 mm, 91.1100 mm): Segment of D15 on F.Silkscreen
+    @(106.6500 mm, 91.0050 mm): Reference field of J11
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(106.6500 mm, 91.0050 mm): Reference field of J11
+    @(106.4500 mm, 91.1100 mm): Segment of D15 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(109.6500 mm, 76.8500 mm): Segment of K2 on F.Silkscreen
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(120.3650 mm, 114.7350 mm): Segment of D23 on F.Silkscreen
+    @(121.8500 mm, 116.4000 mm): PCB text 'UPLINK' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(121.8500 mm, 116.4000 mm): PCB text 'UPLINK' on F.Silkscreen
+    @(122.6500 mm, 113.2650 mm): Segment of D23 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(127.9500 mm, 76.3800 mm): PCB text 'NC' on F.Silkscreen
+    @(126.3500 mm, 76.8500 mm): Segment of K2 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.3500 mm, 75.5500 mm): Segment of K1 on F.Silkscreen
+    @(127.9500 mm, 71.3000 mm): PCB text 'NO' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 71.3000 mm): Segment on F.Silkscreen
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 71.3000 mm): Segment on F.Silkscreen
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on F.Silkscreen
+    @(137.7000 mm, 66.2200 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on F.Silkscreen
+    @(137.7000 mm, 66.2200 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on F.Silkscreen
+    @(137.7000 mm, 61.1400 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on F.Silkscreen
+    @(137.7000 mm, 61.1400 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on F.Silkscreen
+    @(137.7000 mm, 56.0600 mm): Segment on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.3500 mm, 75.5500 mm): Segment of K1 on F.Silkscreen
+    @(127.9500 mm, 56.0600 mm): PCB text 'NC' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.3500 mm, 75.5500 mm): Segment of K1 on F.Silkscreen
+    @(127.9500 mm, 66.2200 mm): PCB text 'NO' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.3500 mm, 75.5500 mm): Segment of K1 on F.Silkscreen
+    @(127.9500 mm, 52.7600 mm): PCB text 'J3' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 56.0600 mm): Segment on F.Silkscreen
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.3500 mm, 52.8500 mm): Segment of K1 on F.Silkscreen
+    @(127.9500 mm, 52.7600 mm): PCB text 'J3' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.8500 mm, 116.4000 mm): PCB text 'FAULT' on F.Silkscreen
+    @(125.3650 mm, 114.7350 mm): Segment of D22 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(130.3650 mm, 114.7350 mm): Segment of D20 on F.Silkscreen
+    @(131.8500 mm, 116.4000 mm): PCB text 'STATUS' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(132.6500 mm, 113.2650 mm): Segment of D20 on F.Silkscreen
+    @(131.8500 mm, 116.4000 mm): PCB text 'STATUS' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(131.8300 mm, 111.9568 mm): Reference field of D20
+    @(131.8500 mm, 116.4000 mm): PCB text 'STATUS' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.8500 mm, 116.4000 mm): PCB text 'FAULT' on F.Silkscreen
+    @(127.6500 mm, 113.2650 mm): Segment of D22 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(102.5000 mm, 83.1000 mm): Reference field of Q7
+    @(106.8000 mm, 82.9500 mm): Segment of L3 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(106.7000 mm, 83.5000 mm): Reference field of D18
+    @(106.8000 mm, 82.9500 mm): Segment of L3 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(106.8000 mm, 82.9500 mm): Segment of L3 on F.Silkscreen
+    @(106.7000 mm, 83.5000 mm): Reference field of D18
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.7922 mm, 74.7600 mm): Segment of C21 on F.Silkscreen
+    @(106.0000 mm, 74.5300 mm): Reference field of R1
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.7922 mm, 74.0400 mm): Segment of C21 on F.Silkscreen
+    @(106.0000 mm, 74.5300 mm): Reference field of R1
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.5375 mm, 84.3900 mm): Polygon of D18 on F.Silkscreen
+    @(106.7000 mm, 83.5000 mm): Reference field of D18
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(100.5500 mm, 71.7800 mm): Reference field of R17
+    @(102.1500 mm, 72.9000 mm): Reference field of D12
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(102.1500 mm, 72.9000 mm): Reference field of D12
+    @(102.6422 mm, 73.1600 mm): Segment of C36 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(102.6422 mm, 72.4400 mm): Segment of C36 on F.Silkscreen
+    @(102.1500 mm, 72.9000 mm): Reference field of D12
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(106.7000 mm, 87.4600 mm): Segment of D18 on F.Silkscreen
+    @(106.4500 mm, 87.1500 mm): Reference field of D15
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(106.7000 mm, 87.4600 mm): Segment of D18 on F.Silkscreen
+    @(106.4500 mm, 87.1500 mm): Reference field of D15
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(104.8422 mm, 72.4100 mm): Segment of C31 on F.Silkscreen
+    @(105.8500 mm, 71.9900 mm): Reference field of C32
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.9000 mm, 73.2400 mm): Reference field of C21
+    @(105.7422 mm, 72.7900 mm): Segment of C32 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.9000 mm, 73.2400 mm): Reference field of C21
+    @(105.7422 mm, 73.5100 mm): Segment of C32 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(102.7500 mm, 71.6400 mm): Reference field of C36
+    @(101.8922 mm, 72.0100 mm): Segment of C37 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(100.5500 mm, 71.7800 mm): Reference field of R17
+    @(102.7500 mm, 71.6400 mm): Reference field of C36
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(101.8922 mm, 71.2900 mm): Segment of C37 on F.Silkscreen
+    @(100.5500 mm, 71.7800 mm): Reference field of R17
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(101.8922 mm, 71.2900 mm): Segment of C37 on F.Silkscreen
+    @(102.7500 mm, 71.6400 mm): Reference field of C36
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(104.9500 mm, 70.8900 mm): Reference field of C31
+    @(105.8500 mm, 71.9900 mm): Reference field of C32
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(104.9500 mm, 70.8900 mm): Reference field of C31
+    @(102.7500 mm, 71.6400 mm): Reference field of C36
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(104.9500 mm, 70.8900 mm): Reference field of C31
+    @(106.9500 mm, 70.6900 mm): Reference field of C38
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.8500 mm, 71.9900 mm): Reference field of C32
+    @(106.8422 mm, 71.4900 mm): Segment of C38 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(106.8422 mm, 72.2100 mm): Segment of C38 on F.Silkscreen
+    @(105.8500 mm, 71.9900 mm): Reference field of C32
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(84.4550 mm, 116.4000 mm): PCB text 'BOOT' on F.Silkscreen
+    @(78.9900 mm, 115.4000 mm): Segment of D30 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(85.2550 mm, 113.2650 mm): Segment of D25 on F.Silkscreen
+    @(84.4550 mm, 116.4000 mm): PCB text 'BOOT' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(82.9700 mm, 114.7350 mm): Segment of D25 on F.Silkscreen
+    @(82.5000 mm, 114.5500 mm): Reference field of D30
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(82.9700 mm, 114.7350 mm): Segment of D25 on F.Silkscreen
+    @(84.4550 mm, 116.4000 mm): PCB text 'BOOT' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(78.9900 mm, 115.4000 mm): Segment of D30 on F.Silkscreen
+    @(79.4550 mm, 116.4000 mm): PCB text 'IOX_CLOCK' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(79.4550 mm, 116.4000 mm): PCB text 'IOX_CLOCK' on F.Silkscreen
+    @(78.9900 mm, 115.4000 mm): Segment of D30 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(79.4550 mm, 116.4000 mm): PCB text 'IOX_CLOCK' on F.Silkscreen
+    @(77.9700 mm, 114.7350 mm): Segment of D26 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(77.6500 mm, 114.6300 mm): Reference field of R52
+    @(79.4550 mm, 116.4000 mm): PCB text 'IOX_CLOCK' on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(77.6000 mm, 116.0300 mm): Reference field of R50
+    @(78.9900 mm, 115.4000 mm): Segment of D30 on F.Silkscreen
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(80.2550 mm, 113.2650 mm): Segment of D26 on F.Silkscreen
+    @(79.4550 mm, 116.4000 mm): PCB text 'IOX_CLOCK' on F.Silkscreen
+
+** Found 390 unconnected pads **
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.5375 mm, 102.9250 mm): Pad 2 [GND] of U8 on F.Cu
+    @(83.5375 mm, 102.2750 mm): Pad 1 [GND] of U8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.5375 mm, 103.5750 mm): Pad 3 [GND] of U8 on F.Cu
+    @(83.5375 mm, 102.9250 mm): Pad 2 [GND] of U8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(104.2300 mm, 96.6500 mm): Pad 2 [GND] of C3 on F.Cu
+    @(103.3379 mm, 96.1461 mm): Pad 2 [GND] of C14 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(87.7800 mm, 80.7500 mm): Pad 2 [GND] of C20 on F.Cu
+    @(87.7800 mm, 81.8500 mm): Pad 2 [GND] of C17 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.1000 mm, 94.8500 mm): Pad 47 [GND] of U1 on F.Cu
+    @(101.7206 mm, 93.8032 mm): Pad 2 [GND] of C2 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(106.3300 mm, 73.1500 mm): Pad 2 [GND] of C32 on F.Cu
+    @(106.3800 mm, 74.4000 mm): Pad 2 [GND] of C21 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(97.3850 mm, 101.6006 mm): Pad 2 [GND] of C6 on B.Cu
+    @(98.7000 mm, 101.6200 mm): Pad 2 [GND] of C11 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(71.9100 mm, 107.4000 mm): Pad 2 [GND] of R6 on F.Cu
+    @(71.3600 mm, 108.6000 mm): Pad 2 [GND] of R40 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(90.0000 mm, 111.3500 mm): PTH pad B12 [GND] of J10
+    @(90.0000 mm, 110.0000 mm): PTH pad A1 [GND] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.9500 mm, 111.3500 mm): PTH pad B1 [GND] of J10
+    @(95.9500 mm, 110.0000 mm): PTH pad A12 [GND] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(103.2300 mm, 72.8000 mm): Pad 2 [GND] of C36 on F.Cu
+    @(102.4800 mm, 71.6500 mm): Pad 2 [GND] of C37 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.7206 mm, 101.5418 mm): Pad 2 [GND] of C7 on B.Cu
+    @(101.5512 mm, 100.1760 mm): Pad 2 [GND] of C12 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(90.0000 mm, 111.3500 mm): PTH pad B12 [GND] of J10
+    @(88.6500 mm, 110.9800 mm): PTH pad S1 [GND] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.9500 mm, 111.3500 mm): PTH pad B1 [GND] of J10
+    @(97.3000 mm, 110.9800 mm): PTH pad S1 [GND] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(105.4300 mm, 72.0500 mm): Pad 2 [GND] of C31 on F.Cu
+    @(106.3300 mm, 73.1500 mm): Pad 2 [GND] of C32 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.4100 mm, 112.6000 mm): Pad 2 [GND] of R56 on F.Cu
+    @(101.0625 mm, 114.0000 mm): Pad 1 [GND] of D28 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(115.4600 mm, 102.6000 mm): Pad 2 [GND] of R44 on F.Cu
+    @(115.9800 mm, 103.9500 mm): Pad 2 [GND] of C34 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.3500 mm, 91.1500 mm): Pad 2 [GND] of C23 on F.Cu
+    @(96.2392 mm, 92.2930 mm): Pad 2 [GND] of C15 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(77.1500 mm, 100.5500 mm): Pad 2 [GND] of C28 on F.Cu
+    @(77.0000 mm, 102.0000 mm): Pad 1 [GND] of TP9 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(104.2300 mm, 96.6500 mm): Pad 2 [GND] of C3 on F.Cu
+    @(104.3550 mm, 98.3000 mm): Pad 2 [GND] of C16 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(107.4300 mm, 71.8500 mm): Pad 2 [GND] of C38 on F.Cu
+    @(106.3300 mm, 73.1500 mm): Pad 2 [GND] of C32 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.5625 mm, 86.4500 mm): Pad 2 [GND] of Q7 on F.Cu
+    @(101.8100 mm, 88.1500 mm): Pad 2 [GND] of R41 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(103.8600 mm, 88.0500 mm): Pad 2 [GND] of R27 on F.Cu
+    @(105.5125 mm, 88.6000 mm): Pad 1 [GND] of D15 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(111.9600 mm, 112.5000 mm): Pad 2 [GND] of R58 on F.Cu
+    @(111.0625 mm, 114.0000 mm): Pad 1 [GND] of D19 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.7531 mm, 94.5297 mm): Pad 2 [GND] of C13 on B.Cu
+    @(98.2984 mm, 93.5074 mm): Pad 2 [GND] of C9 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.5512 mm, 100.1760 mm): Pad 2 [GND] of C12 on B.Cu
+    @(102.0200 mm, 98.3000 mm): Pad 2 [GND] of C8 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.9625 mm, 85.9500 mm): Pad 1 [GND] of U2 on F.Cu
+    @(96.9625 mm, 84.0000 mm): Pad 2 [GND] of Q6 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.7500 mm, 89.9500 mm): Pad 2 [GND] of C25 on F.Cu
+    @(103.7100 mm, 91.6500 mm): Pad 2 [GND] of R29 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(87.7800 mm, 80.7500 mm): Pad 2 [GND] of C20 on F.Cu
+    @(89.3625 mm, 79.5000 mm): Pad 1 [GND] of D8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.7206 mm, 93.8032 mm): Pad 2 [GND] of C2 on B.Cu
+    @(101.3518 mm, 91.8070 mm): Pad 2 [GND] of C1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.8100 mm, 88.1500 mm): Pad 2 [GND] of R41 on F.Cu
+    @(102.7500 mm, 89.9500 mm): Pad 2 [GND] of C25 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.8100 mm, 88.1500 mm): Pad 2 [GND] of R41 on F.Cu
+    @(103.8600 mm, 88.0500 mm): Pad 2 [GND] of R27 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(94.4982 mm, 95.2794 mm): Pad 2 [GND] of C4 on B.Cu
+    @(94.4290 mm, 97.4209 mm): Pad 2 [GND] of C10 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(91.8100 mm, 75.8500 mm): Pad 2 [GND] of R25 on F.Cu
+    @(89.6600 mm, 75.5500 mm): Pad 2 [GND] of R14 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(94.4394 mm, 99.6150 mm): Pad 2 [GND] of C5 on B.Cu
+    @(94.4290 mm, 97.4209 mm): Pad 2 [GND] of C10 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(118.4300 mm, 110.2000 mm): Pad 2 [GND] of C33 on F.Cu
+    @(116.4800 mm, 111.2500 mm): Pad 2 [GND] of C19 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(114.1800 mm, 112.4500 mm): Pad 2 [GND] of C18 on F.Cu
+    @(111.9600 mm, 112.5000 mm): Pad 2 [GND] of R58 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.4100 mm, 112.6000 mm): Pad 2 [GND] of R56 on F.Cu
+    @(102.7500 mm, 110.8000 mm): Pad 2 [GND] of C26 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.7531 mm, 94.5297 mm): Pad 2 [GND] of C13 on B.Cu
+    @(96.2392 mm, 92.2930 mm): Pad 2 [GND] of C15 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(103.2300 mm, 72.8000 mm): Pad 2 [GND] of C36 on F.Cu
+    @(105.4300 mm, 72.0500 mm): Pad 2 [GND] of C31 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.7500 mm, 89.9500 mm): Pad 2 [GND] of C25 on F.Cu
+    @(101.3518 mm, 91.8070 mm): Pad 2 [GND] of C1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.0200 mm, 98.3000 mm): Pad 2 [GND] of C8 on B.Cu
+    @(104.3550 mm, 98.3000 mm): Pad 2 [GND] of C16 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(94.4982 mm, 95.2794 mm): Pad 2 [GND] of C4 on B.Cu
+    @(96.7531 mm, 94.5297 mm): Pad 2 [GND] of C13 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(71.5000 mm, 102.6500 mm): Pad 2 [GND] of C29 on F.Cu
+    @(69.1647 mm, 103.3467 mm): Pad 1 [GND] of TP3 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(114.1800 mm, 112.4500 mm): Pad 2 [GND] of C18 on F.Cu
+    @(116.0625 mm, 114.0000 mm): Pad 1 [GND] of D21 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(77.1500 mm, 100.5500 mm): Pad 2 [GND] of C28 on F.Cu
+    @(79.4000 mm, 99.5000 mm): Pad 2 [GND] of SW1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.1000 mm, 94.8500 mm): Pad 47 [GND] of U1 on F.Cu
+    @(103.3379 mm, 96.1461 mm): Pad 2 [GND] of C14 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(91.8500 mm, 99.7500 mm): Pad 5 [GND] of U9 on F.Cu
+    @(94.4394 mm, 99.6150 mm): Pad 2 [GND] of C5 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(116.4800 mm, 111.2500 mm): Pad 2 [GND] of C19 on F.Cu
+    @(114.1800 mm, 112.4500 mm): Pad 2 [GND] of C18 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(111.0625 mm, 114.0000 mm): Pad 1 [GND] of D19 on F.Cu
+    @(108.8600 mm, 115.4000 mm): Pad 2 [GND] of R55 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.5500 mm, 108.4000 mm): Pad 2 [GND] of SW2 on F.Cu
+    @(102.7500 mm, 110.8000 mm): Pad 2 [GND] of C26 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(73.6675 mm, 114.0000 mm): Pad 1 [GND] of D24 on F.Cu
+    @(76.0300 mm, 115.4000 mm): Pad 2 [GND] of C35 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(104.2300 mm, 96.6500 mm): Pad 2 [GND] of C3 on F.Cu
+    @(106.6500 mm, 95.2900 mm): PTH pad 3 [GND] of J11
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(105.9500 mm, 101.4500 mm): Pad 4 [GND] of Y1 on F.Cu
+    @(108.1500 mm, 103.1500 mm): Pad 2 [GND] of Y1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(77.4625 mm, 75.3500 mm): Pad 2 [GND] of Q1 on F.Cu
+    @(77.3875 mm, 78.1500 mm): Pad 3 [GND] of D81 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(76.2600 mm, 112.5000 mm): Pad 2 [GND] of R4 on F.Cu
+    @(76.0300 mm, 115.4000 mm): Pad 2 [GND] of C35 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.1125 mm, 110.2000 mm): Pad 1 [GND] of D17 on F.Cu
+    @(76.2600 mm, 112.5000 mm): Pad 2 [GND] of R4 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.7000 mm, 101.6200 mm): Pad 2 [GND] of C11 on B.Cu
+    @(101.7206 mm, 101.5418 mm): Pad 2 [GND] of C7 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(77.1500 mm, 100.5500 mm): Pad 2 [GND] of C28 on F.Cu
+    @(75.1625 mm, 98.2000 mm): Pad 2 [GND] of Q5 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.1000 mm, 94.8500 mm): Pad 47 [GND] of U1 on F.Cu
+    @(98.2984 mm, 93.5074 mm): Pad 2 [GND] of C9 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(106.0625 mm, 114.0000 mm): Pad 1 [GND] of D27 on F.Cu
+    @(108.8600 mm, 115.4000 mm): Pad 2 [GND] of R55 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(105.7000 mm, 117.2000 mm): Pad 2 [GND] of D2 on F.Cu
+    @(106.0625 mm, 114.0000 mm): Pad 1 [GND] of D27 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.5375 mm, 106.8250 mm): Pad 8 [GND] of U8 on F.Cu
+    @(83.5375 mm, 103.5750 mm): Pad 3 [GND] of U8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(85.0875 mm, 111.0500 mm): Pad 4 [GND] of U3 on F.Cu
+    @(83.6675 mm, 114.0000 mm): Pad 1 [GND] of D25 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(88.6500 mm, 114.3600 mm): PTH pad S1 [GND] of J10
+    @(90.0000 mm, 111.3500 mm): PTH pad B12 [GND] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(97.3000 mm, 114.3600 mm): PTH pad S1 [GND] of J10
+    @(95.9500 mm, 111.3500 mm): PTH pad B1 [GND] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.7000 mm, 101.6200 mm): Pad 2 [GND] of C11 on B.Cu
+    @(98.7000 mm, 98.3000 mm): Pad 61 [GND] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(108.1500 mm, 103.1500 mm): Pad 2 [GND] of Y1 on F.Cu
+    @(110.9125 mm, 101.3000 mm): Pad 1 [GND] of D16 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(80.5625 mm, 79.1500 mm): Pad 2 [GND] of Q2 on F.Cu
+    @(77.3875 mm, 78.1500 mm): Pad 3 [GND] of D81 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(80.5625 mm, 79.1500 mm): Pad 2 [GND] of Q2 on F.Cu
+    @(83.3625 mm, 81.1000 mm): Pad 1 [GND] of D7 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(104.3550 mm, 98.3000 mm): Pad 2 [GND] of C16 on F.Cu
+    @(105.9500 mm, 101.4500 mm): Pad 4 [GND] of Y1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(88.6500 mm, 110.9800 mm): PTH pad S1 [GND] of J10
+    @(85.0875 mm, 111.0500 mm): Pad 4 [GND] of U3 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(93.6750 mm, 87.9550 mm): Pad 5 [GND] of U5 on F.Cu
+    @(95.3500 mm, 91.1500 mm): Pad 2 [GND] of C23 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(103.8600 mm, 88.0500 mm): Pad 2 [GND] of R27 on F.Cu
+    @(105.7625 mm, 84.9500 mm): Pad 1 [GND] of D18 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.1250 mm, 94.3550 mm): Pad 4 [GND] of U7 on F.Cu
+    @(82.4750 mm, 93.6550 mm): Pad 5 [GND] of U6 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(97.3000 mm, 114.3600 mm): PTH pad S1 [GND] of J10
+    @(101.0625 mm, 114.0000 mm): Pad 1 [GND] of D28 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(77.0000 mm, 102.0000 mm): Pad 1 [GND] of TP9 on B.Cu
+    @(78.7506 mm, 105.3650 mm): Pad 2 [GND] of C22 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(93.6750 mm, 87.9550 mm): Pad 5 [GND] of U5 on F.Cu
+    @(96.9625 mm, 85.9500 mm): Pad 1 [GND] of U2 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.3000 mm, 105.5000 mm): Pad 2 [GND] of C30 on F.Cu
+    @(98.7000 mm, 101.6200 mm): Pad 2 [GND] of C11 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(89.3625 mm, 79.5000 mm): Pad 1 [GND] of D8 on F.Cu
+    @(89.6600 mm, 75.5500 mm): Pad 2 [GND] of R14 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(77.7375 mm, 86.3500 mm): Pad 3 [GND] of D80 on F.Cu
+    @(74.8100 mm, 89.2500 mm): Pad 2 [GND] of R16 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(71.5000 mm, 102.6500 mm): Pad 2 [GND] of C29 on F.Cu
+    @(70.3000 mm, 98.7000 mm): PTH pad 3 [GND] of J1
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.6000 mm, 99.5000 mm): Pad 2 [GND] of SW1 on F.Cu
+    @(83.5375 mm, 102.2750 mm): Pad 1 [GND] of U8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.9700 mm, 106.9375 mm): Pad 2 [GND] of D90 on F.Cu
+    @(90.0000 mm, 110.0000 mm): PTH pad A1 [GND] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.9700 mm, 106.9375 mm): Pad 2 [GND] of D90 on F.Cu
+    @(95.9500 mm, 110.0000 mm): PTH pad A12 [GND] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.3000 mm, 105.5000 mm): Pad 2 [GND] of C30 on F.Cu
+    @(101.5500 mm, 108.4000 mm): Pad 2 [GND] of SW2 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.3625 mm, 81.1000 mm): Pad 1 [GND] of D7 on F.Cu
+    @(87.7800 mm, 80.7500 mm): Pad 2 [GND] of C20 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(85.0875 mm, 111.0500 mm): Pad 4 [GND] of U3 on F.Cu
+    @(83.5375 mm, 106.8250 mm): Pad 8 [GND] of U8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(66.9700 mm, 109.8500 mm): PTH pad 2 [GND] of J5
+    @(71.3600 mm, 108.6000 mm): Pad 2 [GND] of R40 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(106.0625 mm, 114.0000 mm): Pad 1 [GND] of D27 on F.Cu
+    @(102.7500 mm, 110.8000 mm): Pad 2 [GND] of C26 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(118.4300 mm, 110.2000 mm): Pad 2 [GND] of C33 on F.Cu
+    @(121.0625 mm, 114.0000 mm): Pad 1 [GND] of D23 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(115.4600 mm, 102.6000 mm): Pad 2 [GND] of R44 on F.Cu
+    @(110.9125 mm, 101.3000 mm): Pad 1 [GND] of D16 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(71.5000 mm, 102.6500 mm): Pad 2 [GND] of C29 on F.Cu
+    @(71.9100 mm, 107.4000 mm): Pad 2 [GND] of R6 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.1125 mm, 110.2000 mm): Pad 1 [GND] of D17 on F.Cu
+    @(78.7506 mm, 105.3650 mm): Pad 2 [GND] of C22 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(75.1625 mm, 98.2000 mm): Pad 2 [GND] of Q5 on F.Cu
+    @(70.3000 mm, 98.7000 mm): PTH pad 3 [GND] of J1
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.5375 mm, 102.2750 mm): Pad 1 [GND] of U8 on F.Cu
+    @(79.4000 mm, 99.5000 mm): Pad 2 [GND] of SW1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(126.0625 mm, 114.0000 mm): Pad 1 [GND] of D22 on F.Cu
+    @(121.0625 mm, 114.0000 mm): Pad 1 [GND] of D23 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(126.0625 mm, 114.0000 mm): Pad 1 [GND] of D22 on F.Cu
+    @(131.0625 mm, 114.0000 mm): Pad 1 [GND] of D20 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.1250 mm, 94.3550 mm): Pad 4 [GND] of U7 on F.Cu
+    @(86.6000 mm, 99.5000 mm): Pad 2 [GND] of SW1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(111.9600 mm, 112.5000 mm): Pad 2 [GND] of R58 on F.Cu
+    @(108.7500 mm, 108.4000 mm): Pad 2 [GND] of SW2 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(107.4300 mm, 71.8500 mm): Pad 2 [GND] of C38 on F.Cu
+    @(105.9183 mm, 66.1586 mm): Pad 2 [GND] of C39 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(84.3375 mm, 87.3000 mm): Pad 4 [GND] of U4 on F.Cu
+    @(83.3625 mm, 81.1000 mm): Pad 1 [GND] of D7 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(82.4750 mm, 93.6550 mm): Pad 5 [GND] of U6 on F.Cu
+    @(84.3375 mm, 87.3000 mm): Pad 4 [GND] of U4 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(84.3375 mm, 87.3000 mm): Pad 4 [GND] of U4 on F.Cu
+    @(77.7375 mm, 86.3500 mm): Pad 3 [GND] of D80 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(84.1100 mm, 71.4500 mm): Pad 2 [GND] of R23 on F.Cu
+    @(89.6600 mm, 75.5500 mm): Pad 2 [GND] of R14 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(137.7000 mm, 111.9400 mm): PTH pad 6 [GND] of J2
+    @(131.0625 mm, 114.0000 mm): Pad 1 [GND] of D20 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(137.7000 mm, 111.9400 mm): PTH pad 6 [GND] of J2
+    @(137.7000 mm, 101.7800 mm): PTH pad 4 [GND] of J2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(137.7000 mm, 101.7800 mm): PTH pad 4 [GND] of J2
+    @(137.7000 mm, 91.6200 mm): PTH pad 2 [GND] of J2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(105.7625 mm, 84.9500 mm): Pad 1 [GND] of D18 on F.Cu
+    @(106.3800 mm, 74.4000 mm): Pad 2 [GND] of C21 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(55.1000 mm, 114.8500 mm): PTH pad 1 [GND] of H3
+    @(66.9700 mm, 109.8500 mm): PTH pad 2 [GND] of J5
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3000 mm, 58.0600 mm): PTH pad 1 [GND] of J4
+    @(55.1000 mm, 55.1500 mm): PTH pad 1 [GND] of H1
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(152.9000 mm, 114.8500 mm): PTH pad 1 [GND] of H4
+    @(137.7000 mm, 111.9400 mm): PTH pad 6 [GND] of J2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(77.4625 mm, 75.3500 mm): Pad 2 [GND] of Q1 on F.Cu
+    @(70.3000 mm, 58.0600 mm): PTH pad 1 [GND] of J4
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(152.9000 mm, 55.1500 mm): PTH pad 1 [GND] of H2
+    @(137.7000 mm, 91.6200 mm): PTH pad 2 [GND] of J2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(111.6100 mm, 115.5500 mm): Pad 2 [N$63] of R45 on F.Cu
+    @(112.6375 mm, 114.0000 mm): Pad 2 [N$63] of D19 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(115.8100 mm, 109.8500 mm): Pad 2 [N$65] of R46 on F.Cu
+    @(132.6375 mm, 114.0000 mm): Pad 2 [N$65] of D20 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(112.0600 mm, 109.8500 mm): Pad 2 [N$67] of R47 on F.Cu
+    @(117.6375 mm, 114.0000 mm): Pad 2 [N$67] of D21 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(119.0100 mm, 108.8500 mm): Pad 2 [N$69] of R48 on F.Cu
+    @(127.6375 mm, 114.0000 mm): Pad 2 [N$69] of D22 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(113.8100 mm, 104.7500 mm): Pad 2 [N$71] of R49 on F.Cu
+    @(122.6375 mm, 114.0000 mm): Pad 2 [N$71] of D23 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(75.2425 mm, 114.0000 mm): Pad 2 [N$73] of D24 on F.Cu
+    @(78.1100 mm, 117.2000 mm): Pad 2 [N$73] of R50 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(85.2425 mm, 114.0000 mm): Pad 2 [N$75] of D25 on F.Cu
+    @(105.3600 mm, 111.8000 mm): Pad 2 [N$75] of R51 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.6675 mm, 114.0000 mm): Pad 1 [N$77] of D26 on F.Cu
+    @(83.5375 mm, 104.8750 mm): Pad 5 [N$77] of U8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.1600 mm, 115.8000 mm): Pad 2 [N$76] of R52 on F.Cu
+    @(80.2425 mm, 114.0000 mm): Pad 2 [N$76] of D26 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(107.6375 mm, 114.0000 mm): Pad 2 [N$78] of D27 on F.Cu
+    @(109.0600 mm, 116.6500 mm): Pad 2 [N$78] of R53 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.6375 mm, 114.0000 mm): Pad 2 [N$79] of D28 on F.Cu
+    @(112.0600 mm, 111.2000 mm): Pad 2 [N$79] of R54 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.5500 mm, 110.0000 mm): PTH pad A6 [N$80] of J10
+    @(93.4000 mm, 111.3500 mm): PTH pad B6 [N$80] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.0200 mm, 104.6625 mm): Pad 6 [N$80] of D90 on F.Cu
+    @(92.0200 mm, 106.9375 mm): Pad 1 [N$80] of D90 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.0200 mm, 106.9375 mm): Pad 1 [N$80] of D90 on F.Cu
+    @(92.5500 mm, 110.0000 mm): PTH pad A6 [N$80] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.1000 mm, 94.8500 mm): Pad 52 [N$80] of U1 on F.Cu
+    @(92.0200 mm, 104.6625 mm): Pad 6 [N$80] of D90 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.5500 mm, 111.3500 mm): PTH pad B7 [N$81] of J10
+    @(93.4000 mm, 110.0000 mm): PTH pad A7 [N$81] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(93.9200 mm, 106.9375 mm): Pad 3 [N$81] of D90 on F.Cu
+    @(93.9200 mm, 104.6625 mm): Pad 4 [N$81] of D90 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(93.4000 mm, 110.0000 mm): PTH pad A7 [N$81] of J10
+    @(93.9200 mm, 106.9375 mm): Pad 3 [N$81] of D90 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.5000 mm, 94.8500 mm): Pad 51 [N$81] of U1 on F.Cu
+    @(93.9200 mm, 104.6625 mm): Pad 4 [N$81] of D90 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.1000 mm, 111.3500 mm): PTH pad B4 [VBUS] of J10
+    @(95.1000 mm, 110.0000 mm): PTH pad A9 [VBUS] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(90.8500 mm, 110.0000 mm): PTH pad A4 [VBUS] of J10
+    @(90.8500 mm, 111.3500 mm): PTH pad B9 [VBUS] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.1000 mm, 110.0000 mm): PTH pad A9 [VBUS] of J10
+    @(90.8500 mm, 110.0000 mm): PTH pad A4 [VBUS] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.9700 mm, 104.6625 mm): Pad 5 [VBUS] of D90 on F.Cu
+    @(90.8500 mm, 110.0000 mm): PTH pad A4 [VBUS] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(84.5000 mm, 117.0500 mm): Pad 2 [VBUS] of D30 on F.Cu
+    @(90.8500 mm, 111.3500 mm): PTH pad B9 [VBUS] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(104.2900 mm, 110.4000 mm): Pad 1 [VBUS] of R57 on F.Cu
+    @(95.1000 mm, 110.0000 mm): PTH pad A9 [VBUS] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(75.8625 mm, 85.4000 mm): Pad 1 [UP_A] of D80 on F.Cu
+    @(70.3000 mm, 88.5400 mm): PTH pad 1 [UP_A] of J1
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(75.8625 mm, 85.4000 mm): Pad 1 [UP_A] of D80 on F.Cu
+    @(89.0750 mm, 77.5500 mm): Pad 1 [UP_A] of R7 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3000 mm, 88.5400 mm): PTH pad 1 [UP_A] of J1
+    @(66.2400 mm, 103.6500 mm): Pad 1 [UP_A] of R9 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(67.2600 mm, 103.6500 mm): Pad 2 [UP_B] of R9 on F.Cu
+    @(68.6750 mm, 105.0000 mm): Pad 1 [UP_B] of R8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(75.8625 mm, 87.3000 mm): Pad 2 [UP_B] of D80 on F.Cu
+    @(70.3000 mm, 93.6200 mm): PTH pad 2 [UP_B] of J1
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3000 mm, 93.6200 mm): PTH pad 2 [UP_B] of J1
+    @(67.2600 mm, 103.6500 mm): Pad 2 [UP_B] of R9 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(91.7000 mm, 110.0000 mm): PTH pad A5 [N$82] of J10
+    @(107.8400 mm, 115.4000 mm): Pad 1 [N$82] of R55 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(94.2500 mm, 111.3500 mm): PTH pad B5 [N$83] of J10
+    @(100.3900 mm, 112.6000 mm): Pad 1 [N$83] of R56 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(137.7000 mm, 86.5400 mm): PTH pad 1 [+12V_IN] of J2
+    @(133.2000 mm, 86.5400 mm): Pad 1 [+12V_IN] of TP7 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(133.2000 mm, 86.5400 mm): Pad 1 [+12V_IN] of TP7 on B.Cu
+    @(115.7000 mm, 107.3000 mm): Pad 2 [+12V_IN] of D1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(128.1875 mm, 96.3000 mm): Pad 1 [N$48] of R30 on F.Cu
+    @(137.7000 mm, 96.7000 mm): PTH pad 3 [N$48] of J2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(119.0875 mm, 106.7500 mm): Pad 1 [N$50] of R32 on F.Cu
+    @(137.7000 mm, 106.8600 mm): PTH pad 5 [N$50] of J2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(153.6500 mm, 61.3500 mm): Pad 2 [N$41] of D11 on F.Cu
+    @(137.7000 mm, 56.0600 mm): PTH pad 1 [N$41] of J3
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(137.7000 mm, 56.0600 mm): PTH pad 1 [N$41] of J3
+    @(124.0000 mm, 69.7000 mm): PTH pad 4 [N$41] of K1
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(137.7000 mm, 61.1400 mm): PTH pad 2 [N$39] of J3
+    @(149.3500 mm, 61.3500 mm): Pad 1 [N$39] of D11 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(118.0000 mm, 55.5000 mm): PTH pad 1 [N$39] of K1
+    @(102.7500 mm, 59.8000 mm): Pad 1 [N$39] of D10 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(137.7000 mm, 61.1400 mm): PTH pad 2 [N$39] of J3
+    @(118.0000 mm, 55.5000 mm): PTH pad 1 [N$39] of K1
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(107.0500 mm, 59.8000 mm): Pad 2 [N$40] of D10 on F.Cu
+    @(112.0000 mm, 69.7000 mm): PTH pad 3 [N$40] of K1
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(112.0000 mm, 69.7000 mm): PTH pad 3 [N$40] of K1
+    @(137.7000 mm, 66.2200 mm): PTH pad 3 [N$40] of J3
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(112.0000 mm, 93.7000 mm): PTH pad 3 [N$46] of K2
+    @(130.2500 mm, 102.8000 mm): Pad 2 [N$46] of D13 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(130.2500 mm, 102.8000 mm): Pad 2 [N$46] of D13 on F.Cu
+    @(137.7000 mm, 71.3000 mm): PTH pad 4 [N$46] of J3
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(124.0000 mm, 93.7000 mm): PTH pad 4 [N$47] of K2
+    @(122.5500 mm, 102.9500 mm): Pad 2 [N$47] of D14 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(137.7000 mm, 76.3800 mm): PTH pad 5 [N$47] of J3
+    @(124.0000 mm, 93.7000 mm): PTH pad 4 [N$47] of K2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(118.2500 mm, 102.9500 mm): Pad 1 [N$45] of D14 on F.Cu
+    @(125.9500 mm, 102.8000 mm): Pad 1 [N$45] of D13 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(137.7000 mm, 81.4600 mm): PTH pad 6 [N$45] of J3
+    @(118.0000 mm, 79.5000 mm): PTH pad 1 [N$45] of K2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(118.0000 mm, 79.5000 mm): PTH pad 1 [N$45] of K2
+    @(118.2500 mm, 102.9500 mm): Pad 1 [N$45] of D14 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3000 mm, 63.1400 mm): PTH pad 2 [N$20] of J4
+    @(79.3375 mm, 74.4000 mm): Pad 3 [N$20] of Q1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(82.4375 mm, 78.2000 mm): Pad 3 [N$23] of Q2 on F.Cu
+    @(86.7875 mm, 78.0500 mm): Pad 3 [N$23] of Q3 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3000 mm, 68.2200 mm): PTH pad 3 [N$23] of J4
+    @(82.4375 mm, 78.2000 mm): Pad 3 [N$23] of Q2 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(74.6900 mm, 74.3500 mm): Pad 1 [RDR_D1_B] of R24 on F.Cu
+    @(74.4250 mm, 71.6000 mm): Pad 1 [RDR_D1_B] of R11 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(74.4250 mm, 71.6000 mm): Pad 1 [RDR_D1_B] of R11 on F.Cu
+    @(70.3000 mm, 73.3000 mm): PTH pad 4 [RDR_D1_B] of J4
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(75.5125 mm, 79.1000 mm): Pad 2 [RDR_D1_B] of D81 on F.Cu
+    @(74.6900 mm, 74.3500 mm): Pad 1 [RDR_D1_B] of R24 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(79.3000 mm, 60.6000 mm): PTH pad 2 [RDR_D1_B] of JP1
+    @(74.4250 mm, 71.6000 mm): Pad 1 [RDR_D1_B] of R11 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(75.5125 mm, 77.2000 mm): Pad 1 [RDR_D0_A] of D81 on F.Cu
+    @(74.2900 mm, 75.6500 mm): Pad 1 [RDR_D0_A] of R22 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(74.2900 mm, 75.6500 mm): Pad 1 [RDR_D0_A] of R22 on F.Cu
+    @(70.3000 mm, 78.3800 mm): PTH pad 5 [RDR_D0_A] of J4
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(77.5900 mm, 70.3500 mm): Pad 1 [RDR_D0_A] of R12 on F.Cu
+    @(74.2900 mm, 75.6500 mm): Pad 1 [RDR_D0_A] of R22 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(58.6750 mm, 89.2500 mm): Pad 1 [RDR_D0_A] of R10 on F.Cu
+    @(70.3000 mm, 78.3800 mm): PTH pad 5 [RDR_D0_A] of J4
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(76.7875 mm, 82.4000 mm): Pad 3 [N$29] of Q4 on F.Cu
+    @(70.3000 mm, 83.4600 mm): PTH pad 6 [N$29] of J4
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3000 mm, 83.4600 mm): PTH pad 6 [N$29] of J4
+    @(73.8400 mm, 94.0500 mm): Pad 1 [N$29] of R39 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(61.8900 mm, 109.8500 mm): PTH pad 1 [N$53] of J5
+    @(72.9375 mm, 110.5000 mm): Pad 1 [N$53] of R35 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.5000 mm, 99.0000 mm): Pad 1 [+12V_RDR] of TP8 on B.Cu
+    @(75.2500 mm, 100.5500 mm): Pad 1 [+12V_RDR] of C28 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.2000 mm, 72.8500 mm): Pad 1 [+12V_RDR] of D9 on F.Cu
+    @(100.5000 mm, 74.9000 mm): Pad 1 [+12V_RDR] of D12 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(75.2500 mm, 100.5500 mm): Pad 1 [+12V_RDR] of C28 on F.Cu
+    @(69.6000 mm, 102.6500 mm): Pad 1 [+12V_RDR] of C29 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.2000 mm, 72.8500 mm): Pad 1 [+12V_RDR] of D9 on F.Cu
+    @(89.0125 mm, 71.9000 mm): Pad 1 [+12V_RDR] of F1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(105.7750 mm, 79.8500 mm): Pad 2 [+12V_RDR] of L3 on F.Cu
+    @(112.0000 mm, 81.5000 mm): PTH pad 2 [+12V_RDR] of K2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(105.7750 mm, 79.8500 mm): Pad 2 [+12V_RDR] of L3 on F.Cu
+    @(100.5000 mm, 74.9000 mm): Pad 1 [+12V_RDR] of D12 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(69.6000 mm, 102.6500 mm): Pad 1 [+12V_RDR] of C29 on F.Cu
+    @(70.3400 mm, 111.3000 mm): Pad 1 [+12V_RDR] of R5 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.5000 mm, 74.9000 mm): Pad 1 [+12V_RDR] of D12 on F.Cu
+    @(112.0000 mm, 57.5000 mm): PTH pad 2 [+12V_RDR] of K1
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.5000 mm, 99.0000 mm): Pad 1 [+12V_RDR] of TP8 on B.Cu
+    @(89.0125 mm, 71.9000 mm): Pad 1 [+12V_RDR] of F1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.5000 mm, 72.8500 mm): Pad 2 [N$38] of D9 on F.Cu
+    @(98.8375 mm, 83.0500 mm): Pad 3 [N$38] of Q6 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(124.0000 mm, 57.5000 mm): PTH pad 5 [N$38] of K1
+    @(98.5000 mm, 72.8500 mm): Pad 2 [N$38] of D9 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(63.1647 mm, 103.3467 mm): Pad 1 [N$38] of TP17 on B.Cu
+    @(98.8375 mm, 83.0500 mm): Pad 3 [N$38] of Q6 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(103.8000 mm, 74.9000 mm): Pad 2 [N$44] of D12 on F.Cu
+    @(103.4375 mm, 85.5000 mm): Pad 3 [N$44] of Q7 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(103.4375 mm, 85.5000 mm): Pad 3 [N$44] of Q7 on F.Cu
+    @(124.0000 mm, 81.5000 mm): PTH pad 5 [N$44] of K2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(103.4375 mm, 85.5000 mm): Pad 3 [N$44] of Q7 on F.Cu
+    @(66.1647 mm, 103.3467 mm): Pad 1 [N$44] of TP18 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.1300 mm, 92.8400 mm): Pad 1 [N$1] of L1 on F.Cu
+    @(100.7000 mm, 94.8500 mm): Pad 48 [N$1] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.2500 mm, 97.5000 mm): Pad 6 [+1V1] of U1 on F.Cu
+    @(95.3890 mm, 97.4209 mm): Pad 1 [+1V1] of C10 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.7000 mm, 102.5800 mm): Pad 1 [+1V1] of C11 on B.Cu
+    @(98.7000 mm, 101.7500 mm): Pad 23 [+1V1] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 97.9000 mm): Pad 39 [+1V1] of U1 on F.Cu
+    @(103.3950 mm, 98.3000 mm): Pad 1 [+1V1] of C16 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.5112 mm, 100.1760 mm): Pad 1 [+1V1] of C12 on B.Cu
+    @(103.3950 mm, 98.3000 mm): Pad 1 [+1V1] of C16 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.9000 mm, 94.8500 mm): Pad 50 [+1V1] of U1 on F.Cu
+    @(102.1500 mm, 97.9000 mm): Pad 39 [+1V1] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.7000 mm, 101.7500 mm): Pad 23 [+1V1] of U1 on F.Cu
+    @(102.5112 mm, 100.1760 mm): Pad 1 [+1V1] of C12 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.9000 mm, 94.8500 mm): Pad 50 [+1V1] of U1 on F.Cu
+    @(98.1300 mm, 90.0400 mm): Pad 2 [+1V1] of L1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.3890 mm, 97.4209 mm): Pad 1 [+1V1] of C10 on B.Cu
+    @(99.9000 mm, 94.8500 mm): Pad 50 [+1V1] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.1300 mm, 90.0400 mm): Pad 2 [+1V1] of L1 on F.Cu
+    @(107.1820 mm, 88.1820 mm): Pad 1 [+1V1] of TP6 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.8200 mm, 81.8500 mm): Pad 1 [+1V1] of C17 on F.Cu
+    @(98.1300 mm, 90.0400 mm): Pad 2 [+1V1] of L1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.9625 mm, 87.8500 mm): Pad 2 [N$4] of U2 on F.Cu
+    @(104.0000 mm, 88.0000 mm): Pad 1 [N$4] of TP12 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(79.4000 mm, 96.5000 mm): Pad 1 [N$4] of SW1 on F.Cu
+    @(86.6000 mm, 96.5000 mm): Pad 1 [N$4] of SW1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(91.7100 mm, 74.7000 mm): Pad 2 [N$4] of R2 on F.Cu
+    @(86.8200 mm, 80.7500 mm): Pad 1 [N$4] of C20 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.9625 mm, 87.8500 mm): Pad 2 [N$4] of U2 on F.Cu
+    @(86.8200 mm, 80.7500 mm): Pad 1 [N$4] of C20 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.9625 mm, 87.8500 mm): Pad 2 [N$4] of U2 on F.Cu
+    @(86.6000 mm, 96.5000 mm): Pad 1 [N$4] of SW1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.9000 mm, 101.7500 mm): Pad 26 [N$4] of U1 on F.Cu
+    @(96.9625 mm, 87.8500 mm): Pad 2 [N$4] of U2 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.3994 mm, 99.6150 mm): Pad 1 [+3V3] of C5 on B.Cu
+    @(95.2500 mm, 99.5000 mm): Pad 11 [+3V3] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.4582 mm, 95.2794 mm): Pad 1 [+3V3] of C4 on B.Cu
+    @(95.2500 mm, 95.5000 mm): Pad 1 [+3V3] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.3000 mm, 94.8500 mm): Pad 54 [+3V3] of U1 on F.Cu
+    @(98.7000 mm, 94.8500 mm): Pad 53 [+3V3] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.5000 mm, 101.7500 mm): Pad 30 [+3V3] of U1 on F.Cu
+    @(101.7206 mm, 102.5018 mm): Pad 1 [+3V3] of C7 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(97.3850 mm, 102.5606 mm): Pad 1 [+3V3] of C6 on B.Cu
+    @(97.5000 mm, 101.7500 mm): Pad 20 [+3V3] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.9800 mm, 98.3000 mm): Pad 1 [+3V3] of C8 on B.Cu
+    @(102.1500 mm, 98.3000 mm): Pad 38 [+3V3] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(105.3700 mm, 73.1500 mm): Pad 1 [+3V3] of C32 on F.Cu
+    @(105.4200 mm, 74.4000 mm): Pad 1 [+3V3] of C21 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(108.7900 mm, 110.6000 mm): Pad 1 [+3V3] of R36 on F.Cu
+    @(108.8400 mm, 111.8500 mm): Pad 1 [+3V3] of R37 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(105.4900 mm, 75.7000 mm): Pad 1 [+3V3] of R1 on F.Cu
+    @(105.4200 mm, 74.4000 mm): Pad 1 [+3V3] of C21 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.7531 mm, 95.4897 mm): Pad 1 [+3V3] of C13 on B.Cu
+    @(95.4582 mm, 95.2794 mm): Pad 1 [+3V3] of C4 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.2700 mm, 72.8000 mm): Pad 1 [+3V3] of C36 on F.Cu
+    @(101.5200 mm, 71.6500 mm): Pad 1 [+3V3] of C37 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(104.4700 mm, 72.0500 mm): Pad 1 [+3V3] of C31 on F.Cu
+    @(105.3700 mm, 73.1500 mm): Pad 1 [+3V3] of C32 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.7000 mm, 94.8500 mm): Pad 53 [+3V3] of U1 on F.Cu
+    @(99.2584 mm, 93.5074 mm): Pad 1 [+3V3] of C9 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.3000 mm, 94.8500 mm): Pad 49 [+3V3] of U1 on F.Cu
+    @(98.7000 mm, 94.8500 mm): Pad 53 [+3V3] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.3000 mm, 94.8500 mm): Pad 54 [+3V3] of U1 on F.Cu
+    @(96.7531 mm, 95.4897 mm): Pad 1 [+3V3] of C13 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(105.3700 mm, 73.1500 mm): Pad 1 [+3V3] of C32 on F.Cu
+    @(106.4700 mm, 71.8500 mm): Pad 1 [+3V3] of C38 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.3518 mm, 93.3570 mm): Pad 1 [+3V3] of C1 on F.Cu
+    @(100.3000 mm, 94.8500 mm): Pad 49 [+3V3] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 95.5000 mm): Pad 45 [+3V3] of U1 on F.Cu
+    @(100.3000 mm, 94.8500 mm): Pad 49 [+3V3] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(108.8400 mm, 111.8500 mm): Pad 1 [+3V3] of R37 on F.Cu
+    @(106.6900 mm, 111.6500 mm): Pad 1 [+3V3] of R38 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.2392 mm, 93.2530 mm): Pad 1 [+3V3] of C15 on B.Cu
+    @(95.4582 mm, 95.2794 mm): Pad 1 [+3V3] of C4 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(93.8600 mm, 81.8500 mm): Pad 2 [+3V3] of R18 on F.Cu
+    @(93.6750 mm, 84.1450 mm): Pad 8 [+3V3] of U5 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.2700 mm, 72.8000 mm): Pad 1 [+3V3] of C36 on F.Cu
+    @(104.4700 mm, 72.0500 mm): Pad 1 [+3V3] of C31 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.0000 mm, 85.0000 mm): Pad 1 [+3V3] of TP2 on B.Cu
+    @(99.2375 mm, 86.9000 mm): Pad 3 [+3V3] of U2 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 98.3000 mm): Pad 38 [+3V3] of U1 on F.Cu
+    @(102.1500 mm, 95.5000 mm): Pad 45 [+3V3] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.9800 mm, 98.3000 mm): Pad 1 [+3V3] of C8 on B.Cu
+    @(105.7625 mm, 97.5000 mm): Pad 1 [+3V3] of FB1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.3994 mm, 99.6150 mm): Pad 1 [+3V3] of C5 on B.Cu
+    @(97.5000 mm, 101.7500 mm): Pad 20 [+3V3] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.3518 mm, 93.3570 mm): Pad 1 [+3V3] of C1 on F.Cu
+    @(100.8500 mm, 89.9500 mm): Pad 1 [+3V3] of C25 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.2375 mm, 86.9000 mm): Pad 3 [+3V3] of U2 on F.Cu
+    @(100.8500 mm, 89.9500 mm): Pad 1 [+3V3] of C25 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.5000 mm, 101.7500 mm): Pad 30 [+3V3] of U1 on F.Cu
+    @(102.1500 mm, 98.3000 mm): Pad 38 [+3V3] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(105.7625 mm, 86.8500 mm): Pad 2 [+3V3] of D18 on F.Cu
+    @(105.5125 mm, 90.5000 mm): Pad 2 [+3V3] of D15 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(91.8500 mm, 97.9500 mm): Pad 7 [+3V3] of U9 on F.Cu
+    @(95.2500 mm, 99.5000 mm): Pad 11 [+3V3] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.2400 mm, 109.8500 mm): Pad 1 [+3V3] of R3 on F.Cu
+    @(73.0400 mm, 112.4500 mm): Pad 1 [+3V3] of R34 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.1125 mm, 112.1000 mm): Pad 2 [+3V3] of D17 on F.Cu
+    @(77.1400 mm, 115.8000 mm): Pad 1 [+3V3] of R52 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(97.5000 mm, 101.7500 mm): Pad 20 [+3V3] of U1 on F.Cu
+    @(101.5000 mm, 101.7500 mm): Pad 30 [+3V3] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(79.3125 mm, 81.0000 mm): Pad 1 [+3V3] of D5 on F.Cu
+    @(83.3625 mm, 83.0000 mm): Pad 2 [+3V3] of D7 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(93.8600 mm, 81.8500 mm): Pad 2 [+3V3] of R18 on F.Cu
+    @(89.3625 mm, 81.4000 mm): Pad 2 [+3V3] of D8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(108.8400 mm, 111.8500 mm): Pad 1 [+3V3] of R37 on F.Cu
+    @(113.4400 mm, 111.2500 mm): Pad 1 [+3V3] of R42 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.8500 mm, 89.9500 mm): Pad 1 [+3V3] of C25 on F.Cu
+    @(105.5125 mm, 90.5000 mm): Pad 2 [+3V3] of D15 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(108.8400 mm, 111.8500 mm): Pad 1 [+3V3] of R37 on F.Cu
+    @(108.0400 mm, 116.6500 mm): Pad 1 [+3V3] of R53 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(91.8500 mm, 97.9500 mm): Pad 7 [+3V3] of U9 on F.Cu
+    @(89.2625 mm, 102.2750 mm): Pad 16 [+3V3] of U8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(73.0400 mm, 112.4500 mm): Pad 1 [+3V3] of R34 on F.Cu
+    @(78.1125 mm, 112.1000 mm): Pad 2 [+3V3] of D17 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(91.0750 mm, 90.5450 mm): Pad 8 [+3V3] of U7 on F.Cu
+    @(96.2392 mm, 93.2530 mm): Pad 1 [+3V3] of C15 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.8500 mm, 110.8000 mm): Pad 1 [+3V3] of C26 on F.Cu
+    @(106.6900 mm, 111.6500 mm): Pad 1 [+3V3] of R38 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(97.9750 mm, 77.6000 mm): Pad 2 [+3V3] of L2 on F.Cu
+    @(93.8600 mm, 81.8500 mm): Pad 2 [+3V3] of R18 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(93.6750 mm, 84.1450 mm): Pad 8 [+3V3] of U5 on F.Cu
+    @(99.2375 mm, 86.9000 mm): Pad 3 [+3V3] of U2 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(89.3625 mm, 81.4000 mm): Pad 2 [+3V3] of D8 on F.Cu
+    @(83.3625 mm, 83.0000 mm): Pad 2 [+3V3] of D7 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.2700 mm, 72.8000 mm): Pad 1 [+3V3] of C36 on F.Cu
+    @(97.9750 mm, 77.6000 mm): Pad 2 [+3V3] of L2 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(90.6900 mm, 74.7000 mm): Pad 1 [+3V3] of R2 on F.Cu
+    @(89.3625 mm, 81.4000 mm): Pad 2 [+3V3] of D8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.3625 mm, 83.0000 mm): Pad 2 [+3V3] of D7 on F.Cu
+    @(82.4750 mm, 89.8450 mm): Pad 8 [+3V3] of U6 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(110.9125 mm, 103.2000 mm): Pad 2 [+3V3] of D16 on F.Cu
+    @(105.7625 mm, 97.5000 mm): Pad 1 [+3V3] of FB1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(108.7900 mm, 110.6000 mm): Pad 1 [+3V3] of R36 on F.Cu
+    @(110.9125 mm, 103.2000 mm): Pad 2 [+3V3] of D16 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.1125 mm, 112.1000 mm): Pad 2 [+3V3] of D17 on F.Cu
+    @(89.2625 mm, 102.2750 mm): Pad 16 [+3V3] of U8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(88.7250 mm, 87.9550 mm): Pad 4 [N$11] of U5 on F.Cu
+    @(95.2500 mm, 95.9000 mm): Pad 2 [N$11] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(88.7250 mm, 84.1450 mm): Pad 1 [N$12] of U5 on F.Cu
+    @(95.2500 mm, 96.3000 mm): Pad 3 [N$12] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(88.7250 mm, 85.4150 mm): Pad 2 [N$13] of U5 on F.Cu
+    @(88.7250 mm, 86.6850 mm): Pad 3 [N$13] of U5 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(88.7250 mm, 86.6850 mm): Pad 3 [N$13] of U5 on F.Cu
+    @(95.2500 mm, 96.7000 mm): Pad 4 [N$13] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(77.5250 mm, 91.1150 mm): Pad 2 [N$16] of U6 on F.Cu
+    @(77.5250 mm, 92.3850 mm): Pad 3 [N$16] of U6 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(77.5250 mm, 92.3850 mm): Pad 3 [N$16] of U6 on F.Cu
+    @(95.2500 mm, 97.1000 mm): Pad 5 [N$16] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(77.5250 mm, 93.6550 mm): Pad 4 [N$14] of U6 on F.Cu
+    @(95.2500 mm, 97.9000 mm): Pad 7 [N$14] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(77.5250 mm, 89.8450 mm): Pad 1 [N$15] of U6 on F.Cu
+    @(95.2500 mm, 98.3000 mm): Pad 8 [N$15] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.0900 mm, 71.4500 mm): Pad 1 [N$34] of R23 on F.Cu
+    @(75.3100 mm, 75.6500 mm): Pad 2 [N$34] of R22 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(85.2375 mm, 82.0500 mm): Pad 3 [N$34] of D7 on F.Cu
+    @(83.0900 mm, 71.4500 mm): Pad 1 [N$34] of R23 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.2500 mm, 98.7000 mm): Pad 9 [N$34] of U1 on F.Cu
+    @(85.2375 mm, 82.0500 mm): Pad 3 [N$34] of D7 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(91.2375 mm, 80.4500 mm): Pad 3 [N$35] of D8 on F.Cu
+    @(90.7900 mm, 75.8500 mm): Pad 1 [N$35] of R25 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(90.7900 mm, 75.8500 mm): Pad 1 [N$35] of R25 on F.Cu
+    @(75.7100 mm, 74.3500 mm): Pad 2 [N$35] of R24 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.2500 mm, 99.1000 mm): Pad 10 [N$35] of U1 on F.Cu
+    @(91.2375 mm, 80.4500 mm): Pad 3 [N$35] of D8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(73.7400 mm, 92.6000 mm): Pad 1 [N$36] of R26 on F.Cu
+    @(95.2500 mm, 99.9000 mm): Pad 12 [N$36] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.2500 mm, 100.3000 mm): Pad 13 [N$42] of U1 on F.Cu
+    @(110.5900 mm, 104.7500 mm): Pad 1 [N$42] of R28 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(85.4900 mm, 71.4500 mm): Pad 1 [N$21] of R15 on F.Cu
+    @(95.2500 mm, 100.7000 mm): Pad 14 [N$21] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(73.8400 mm, 91.2000 mm): Pad 1 [N$18] of R13 on F.Cu
+    @(95.2500 mm, 101.1000 mm): Pad 15 [N$18] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(75.8625 mm, 110.5000 mm): Pad 2 [N$52] of R35 on F.Cu
+    @(74.0600 mm, 112.4500 mm): Pad 2 [N$52] of R34 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(74.0600 mm, 112.4500 mm): Pad 2 [N$52] of R34 on F.Cu
+    @(75.0700 mm, 115.4000 mm): Pad 1 [N$52] of C35 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(79.9875 mm, 111.1500 mm): Pad 3 [N$52] of D17 on F.Cu
+    @(75.8625 mm, 110.5000 mm): Pad 2 [N$52] of R35 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.9000 mm, 101.7500 mm): Pad 16 [N$52] of U1 on F.Cu
+    @(79.9875 mm, 111.1500 mm): Pad 3 [N$52] of D17 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.7000 mm, 101.7500 mm): Pad 18 [N$62] of U1 on F.Cu
+    @(110.5900 mm, 115.5500 mm): Pad 1 [N$62] of R45 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(97.1000 mm, 101.7500 mm): Pad 19 [N$64] of U1 on F.Cu
+    @(114.7900 mm, 109.8500 mm): Pad 1 [N$64] of R46 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(105.9500 mm, 103.1500 mm): Pad 1 [N$2] of Y1 on F.Cu
+    @(97.9000 mm, 101.7500 mm): Pad 21 [N$2] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(113.2200 mm, 112.4500 mm): Pad 1 [N$2] of C18 on F.Cu
+    @(105.9500 mm, 103.1500 mm): Pad 1 [N$2] of Y1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(108.1500 mm, 101.4500 mm): Pad 3 [N$3] of Y1 on F.Cu
+    @(98.3000 mm, 101.7500 mm): Pad 22 [N$3] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(115.5200 mm, 111.2500 mm): Pad 1 [N$3] of C19 on F.Cu
+    @(108.1500 mm, 101.4500 mm): Pad 3 [N$3] of Y1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(106.6500 mm, 94.0200 mm): PTH pad 2 [N$86] of J11
+    @(107.0000 mm, 85.0000 mm): Pad 1 [N$86] of TP11 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.1000 mm, 101.7500 mm): Pad 24 [N$86] of U1 on F.Cu
+    @(106.6500 mm, 94.0200 mm): PTH pad 2 [N$86] of J11
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(106.6500 mm, 92.7500 mm): PTH pad 1 [N$85] of J11
+    @(104.0000 mm, 85.0000 mm): Pad 1 [N$85] of TP10 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.5000 mm, 101.7500 mm): Pad 25 [N$85] of U1 on F.Cu
+    @(106.6500 mm, 92.7500 mm): PTH pad 1 [N$85] of J11
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(90.5500 mm, 99.7500 mm): Pad 4 [N$54] of U9 on F.Cu
+    @(89.2625 mm, 102.9250 mm): Pad 15 [N$54] of U8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(90.5500 mm, 99.7500 mm): Pad 4 [N$54] of U9 on F.Cu
+    @(91.0750 mm, 94.3550 mm): Pad 5 [N$54] of U7 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.3000 mm, 101.7500 mm): Pad 27 [N$54] of U1 on F.Cu
+    @(90.5500 mm, 99.7500 mm): Pad 4 [N$54] of U9 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(109.8100 mm, 110.6000 mm): Pad 2 [N$54] of R36 on F.Cu
+    @(100.3000 mm, 101.7500 mm): Pad 27 [N$54] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(90.5500 mm, 98.8500 mm): Pad 3 [N$55] of U9 on F.Cu
+    @(89.2625 mm, 103.5750 mm): Pad 14 [N$55] of U8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(91.0750 mm, 93.0850 mm): Pad 6 [N$55] of U7 on F.Cu
+    @(90.5500 mm, 98.8500 mm): Pad 3 [N$55] of U9 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.7000 mm, 101.7500 mm): Pad 28 [N$55] of U1 on F.Cu
+    @(90.5500 mm, 98.8500 mm): Pad 3 [N$55] of U9 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(109.8600 mm, 111.8500 mm): Pad 2 [N$55] of R37 on F.Cu
+    @(100.7000 mm, 101.7500 mm): Pad 28 [N$55] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(90.5500 mm, 97.9500 mm): Pad 2 [N$58] of U9 on F.Cu
+    @(101.1000 mm, 101.7500 mm): Pad 29 [N$58] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(105.3100 mm, 110.4000 mm): Pad 2 [N$84] of R57 on F.Cu
+    @(110.9400 mm, 112.5000 mm): Pad 1 [N$84] of R58 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 101.1000 mm): Pad 31 [N$84] of U1 on F.Cu
+    @(105.3100 mm, 110.4000 mm): Pad 2 [N$84] of R57 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 100.7000 mm): Pad 32 [N$66] of U1 on F.Cu
+    @(111.0400 mm, 109.8500 mm): Pad 1 [N$66] of R47 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 100.3000 mm): Pad 33 [N$68] of U1 on F.Cu
+    @(117.9900 mm, 108.8500 mm): Pad 1 [N$68] of R48 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 99.9000 mm): Pad 34 [N$60] of U1 on F.Cu
+    @(101.5500 mm, 105.4000 mm): Pad 1 [N$60] of SW2 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.5500 mm, 105.4000 mm): Pad 1 [N$60] of SW2 on F.Cu
+    @(108.7500 mm, 105.4000 mm): Pad 1 [N$60] of SW2 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(114.4600 mm, 111.2500 mm): Pad 2 [N$60] of R42 on F.Cu
+    @(108.7500 mm, 105.4000 mm): Pad 1 [N$60] of SW2 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.0400 mm, 72.9500 mm): Pad 1 [N$24] of R17 on F.Cu
+    @(102.1500 mm, 99.5000 mm): Pad 35 [N$24] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 99.1000 mm): Pad 36 [N$70] of U1 on F.Cu
+    @(112.7900 mm, 104.7500 mm): Pad 1 [N$70] of R49 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(77.0900 mm, 117.2000 mm): Pad 1 [N$72] of R50 on F.Cu
+    @(102.1500 mm, 98.7000 mm): Pad 37 [N$72] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(112.7875 mm, 102.2500 mm): Pad 3 [N$51] of D16 on F.Cu
+    @(115.0200 mm, 103.9500 mm): Pad 1 [N$51] of C34 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(115.0200 mm, 103.9500 mm): Pad 1 [N$51] of C34 on F.Cu
+    @(115.5600 mm, 101.1500 mm): Pad 2 [N$51] of R33 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(115.0200 mm, 103.9500 mm): Pad 1 [N$51] of C34 on F.Cu
+    @(122.0125 mm, 106.7500 mm): Pad 2 [N$51] of R32 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 97.5000 mm): Pad 40 [N$51] of U1 on F.Cu
+    @(112.7875 mm, 102.2500 mm): Pad 3 [N$51] of D16 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 97.1000 mm): Pad 41 [N$49] of U1 on F.Cu
+    @(108.2100 mm, 99.0500 mm): Pad 2 [N$49] of R31 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(107.3875 mm, 89.5500 mm): Pad 3 [N$49] of D15 on F.Cu
+    @(102.1500 mm, 97.1000 mm): Pad 41 [N$49] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(117.4700 mm, 110.2000 mm): Pad 1 [N$49] of C33 on F.Cu
+    @(108.2100 mm, 99.0500 mm): Pad 2 [N$49] of R31 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(117.4700 mm, 110.2000 mm): Pad 1 [N$49] of C33 on F.Cu
+    @(131.1125 mm, 96.3000 mm): Pad 2 [N$49] of R30 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(107.6100 mm, 110.2000 mm): Pad 2 [N$61] of R43 on F.Cu
+    @(114.4400 mm, 102.6000 mm): Pad 1 [N$61] of R44 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(107.6375 mm, 85.9000 mm): Pad 3 [N$61] of D18 on F.Cu
+    @(102.1500 mm, 96.7000 mm): Pad 42 [N$61] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 96.7000 mm): Pad 42 [N$61] of U1 on F.Cu
+    @(114.4400 mm, 102.6000 mm): Pad 1 [N$61] of R44 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 96.3000 mm): Pad 43 [N$74] of U1 on F.Cu
+    @(104.3400 mm, 111.8000 mm): Pad 1 [N$74] of R51 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(104.2979 mm, 96.1461 mm): Pad 1 [+3V3_ADC] of C14 on B.Cu
+    @(103.2700 mm, 96.6500 mm): Pad 1 [+3V3_ADC] of C3 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 95.9000 mm): Pad 44 [+3V3_ADC] of U1 on F.Cu
+    @(103.2700 mm, 96.6500 mm): Pad 1 [+3V3_ADC] of C3 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(107.1900 mm, 99.0500 mm): Pad 1 [+3V3_ADC] of R31 on F.Cu
+    @(107.3375 mm, 97.5000 mm): Pad 2 [+3V3_ADC] of FB1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(107.3375 mm, 97.5000 mm): Pad 2 [+3V3_ADC] of FB1 on F.Cu
+    @(104.2979 mm, 96.1461 mm): Pad 1 [+3V3_ADC] of C14 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(107.1900 mm, 99.0500 mm): Pad 1 [+3V3_ADC] of R31 on F.Cu
+    @(114.5400 mm, 101.1500 mm): Pad 1 [+3V3_ADC] of R33 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(104.0000 mm, 82.0000 mm): Pad 1 [+3V3_ADC] of TP5 on B.Cu
+    @(102.1500 mm, 95.9000 mm): Pad 44 [+3V3_ADC] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.5000 mm, 94.8500 mm): Pad 46 [VREG_AVDD_F] of U1 on F.Cu
+    @(101.7206 mm, 95.3532 mm): Pad 1 [VREG_AVDD_F] of C2 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(106.5100 mm, 75.7000 mm): Pad 2 [VREG_AVDD_F] of R1 on F.Cu
+    @(101.5000 mm, 94.8500 mm): Pad 46 [VREG_AVDD_F] of U1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.5375 mm, 104.2250 mm): Pad 4 [N$57] of U8 on F.Cu
+    @(74.8600 mm, 94.0500 mm): Pad 2 [N$57] of R39 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3400 mm, 108.6000 mm): Pad 1 [N$57] of R40 on F.Cu
+    @(83.5375 mm, 104.2250 mm): Pad 4 [N$57] of U8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(66.2400 mm, 105.5500 mm): Pad 1 [N$32] of R21 on F.Cu
+    @(83.5375 mm, 105.5250 mm): Pad 6 [N$32] of U8 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(89.2625 mm, 104.2250 mm): Pad 13 [N$56] of U8 on F.Cu
+    @(107.7100 mm, 111.6500 mm): Pad 2 [N$56] of R38 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(93.6750 mm, 86.6850 mm): Pad 6 [UP_A_IC] of U5 on F.Cu
+    @(90.7250 mm, 77.5500 mm): Pad 2 [UP_A_IC] of R7 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.0000 mm, 99.0000 mm): Pad 1 [UP_A_IC] of TP13 on B.Cu
+    @(93.6750 mm, 86.6850 mm): Pad 6 [UP_A_IC] of U5 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.0000 mm, 99.0000 mm): Pad 1 [UP_B_IC] of TP14 on B.Cu
+    @(93.6750 mm, 85.4150 mm): Pad 7 [UP_B_IC] of U5 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3250 mm, 105.0000 mm): Pad 2 [UP_B_IC] of R8 on F.Cu
+    @(98.0000 mm, 99.0000 mm): Pad 1 [UP_B_IC] of TP14 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(60.3250 mm, 89.2500 mm): Pad 2 [DN_A_IC] of R10 on F.Cu
+    @(56.0000 mm, 99.0000 mm): Pad 1 [DN_A_IC] of TP15 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(82.4750 mm, 92.3850 mm): Pad 6 [DN_A_IC] of U6 on F.Cu
+    @(60.3250 mm, 89.2500 mm): Pad 2 [DN_A_IC] of R10 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(82.4750 mm, 91.1150 mm): Pad 7 [DN_B_IC] of U6 on F.Cu
+    @(76.0750 mm, 71.6000 mm): Pad 2 [DN_B_IC] of R11 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(59.0000 mm, 99.0000 mm): Pad 1 [DN_B_IC] of TP16 on B.Cu
+    @(82.4750 mm, 91.1150 mm): Pad 7 [DN_B_IC] of U6 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(71.2600 mm, 109.8500 mm): Pad 2 [N$7] of R3 on F.Cu
+    @(75.2400 mm, 112.5000 mm): Pad 1 [N$7] of R4 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(75.2400 mm, 112.5000 mm): Pad 1 [N$7] of R4 on F.Cu
+    @(82.8125 mm, 109.1500 mm): Pad 1 [N$7] of U3 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(82.8125 mm, 111.0500 mm): Pad 3 [+12V] of U3 on F.Cu
+    @(82.8125 mm, 110.1000 mm): Pad 2 [+12V] of U3 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(82.0625 mm, 87.3000 mm): Pad 3 [+12V] of U4 on F.Cu
+    @(82.0625 mm, 86.3500 mm): Pad 2 [+12V] of U4 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(111.0400 mm, 111.2000 mm): Pad 1 [+12V] of R54 on F.Cu
+    @(111.7000 mm, 107.3000 mm): Pad 1 [+12V] of D1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(106.5900 mm, 110.2000 mm): Pad 1 [+12V] of R43 on F.Cu
+    @(111.0400 mm, 111.2000 mm): Pad 1 [+12V] of R54 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(82.8125 mm, 111.0500 mm): Pad 3 [+12V] of U3 on F.Cu
+    @(80.5000 mm, 117.0500 mm): Pad 1 [+12V] of D30 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.4000 mm, 117.2000 mm): Pad 1 [+12V] of D2 on F.Cu
+    @(106.5900 mm, 110.2000 mm): Pad 1 [+12V] of R43 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(93.4500 mm, 91.1500 mm): Pad 1 [+12V] of C23 on F.Cu
+    @(89.0000 mm, 99.0000 mm): Pad 1 [+12V] of TP1 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.4000 mm, 105.5000 mm): Pad 1 [+12V] of C30 on F.Cu
+    @(89.0000 mm, 99.0000 mm): Pad 1 [+12V] of TP1 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(82.8125 mm, 110.1000 mm): Pad 2 [+12V] of U3 on F.Cu
+    @(73.3506 mm, 105.3650 mm): Pad 1 [+12V] of C22 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.4000 mm, 105.5000 mm): Pad 1 [+12V] of C30 on F.Cu
+    @(106.5900 mm, 110.2000 mm): Pad 1 [+12V] of R43 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(93.4500 mm, 91.1500 mm): Pad 1 [+12V] of C23 on F.Cu
+    @(82.0625 mm, 87.3000 mm): Pad 3 [+12V] of U4 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(82.8125 mm, 110.1000 mm): Pad 2 [+12V] of U3 on F.Cu
+    @(89.0000 mm, 99.0000 mm): Pad 1 [+12V] of TP1 on B.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(71.7800 mm, 112.7500 mm): Pad 2 [N$5] of C24 on F.Cu
+    @(85.0875 mm, 110.1000 mm): Pad 5 [N$5] of U3 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(85.0875 mm, 110.1000 mm): Pad 5 [N$5] of U3 on F.Cu
+    @(93.8250 mm, 77.6000 mm): Pad 1 [N$5] of L2 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.8200 mm, 112.7500 mm): Pad 1 [N$6] of C24 on F.Cu
+    @(85.0875 mm, 109.1500 mm): Pad 6 [N$6] of U3 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.8900 mm, 107.4000 mm): Pad 1 [N$10] of R6 on F.Cu
+    @(71.3600 mm, 111.3000 mm): Pad 2 [N$10] of R5 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(82.0625 mm, 85.4000 mm): Pad 1 [N$10] of U4 on F.Cu
+    @(70.8900 mm, 107.4000 mm): Pad 1 [N$10] of R6 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.6250 mm, 79.8500 mm): Pad 1 [N$8] of L3 on F.Cu
+    @(84.3375 mm, 86.3500 mm): Pad 5 [N$8] of U4 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(84.3375 mm, 86.3500 mm): Pad 5 [N$8] of U4 on F.Cu
+    @(75.7300 mm, 116.6500 mm): Pad 2 [N$8] of C27 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(74.7700 mm, 116.6500 mm): Pad 1 [N$9] of C27 on F.Cu
+    @(84.3375 mm, 85.4000 mm): Pad 6 [N$9] of U4 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(75.5000 mm, 99.0000 mm): Pad 1 [VBAT] of TP4 on B.Cu
+    @(91.8500 mm, 98.8500 mm): Pad 6 [VBAT] of U9 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(91.8500 mm, 98.8500 mm): Pad 6 [VBAT] of U9 on F.Cu
+    @(100.8433 mm, 66.1586 mm): Pad 1 [VBAT] of C39 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(91.8500 mm, 97.0500 mm): Pad 8 [N$59] of U9 on F.Cu
+    @(100.7900 mm, 88.1500 mm): Pad 1 [N$59] of R41 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(82.2500 mm, 74.0000 mm): Pad 1 [N$28] of D6 on F.Cu
+    @(78.3400 mm, 71.9000 mm): Pad 1 [N$28] of R19 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(74.9125 mm, 83.3500 mm): Pad 2 [N$28] of Q4 on F.Cu
+    @(82.2500 mm, 74.0000 mm): Pad 1 [N$28] of D6 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.2500 mm, 74.0000 mm): Pad 2 [N$27] of D6 on F.Cu
+    @(93.2875 mm, 71.9000 mm): Pad 2 [N$27] of F1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.6100 mm, 70.3500 mm): Pad 2 [N$17] of R12 on F.Cu
+    @(79.3000 mm, 58.0600 mm): PTH pad 1 [N$17] of JP1
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(81.1875 mm, 81.9500 mm): Pad 3 [N$26] of D5 on F.Cu
+    @(84.9125 mm, 79.0000 mm): Pad 2 [N$26] of Q3 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(88.6400 mm, 75.5500 mm): Pad 1 [N$19] of R14 on F.Cu
+    @(77.4625 mm, 73.4500 mm): Pad 1 [N$19] of Q1 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(77.4625 mm, 73.4500 mm): Pad 1 [N$19] of Q1 on F.Cu
+    @(74.8600 mm, 91.2000 mm): Pad 2 [N$19] of R13 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.5100 mm, 71.4500 mm): Pad 2 [N$22] of R15 on F.Cu
+    @(80.5625 mm, 77.2500 mm): Pad 1 [N$22] of Q2 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(80.5625 mm, 77.2500 mm): Pad 1 [N$22] of Q2 on F.Cu
+    @(73.7900 mm, 89.2500 mm): Pad 1 [N$22] of R16 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(84.9125 mm, 77.1000 mm): Pad 1 [N$25] of Q3 on F.Cu
+    @(92.8400 mm, 81.8500 mm): Pad 1 [N$25] of R18 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.8400 mm, 81.8500 mm): Pad 1 [N$25] of R18 on F.Cu
+    @(101.0600 mm, 72.9500 mm): Pad 2 [N$25] of R17 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(79.3600 mm, 71.9000 mm): Pad 2 [N$30] of R19 on F.Cu
+    @(74.9125 mm, 81.4500 mm): Pad 1 [N$30] of Q4 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(74.9125 mm, 81.4500 mm): Pad 1 [N$30] of Q4 on F.Cu
+    @(66.9900 mm, 102.3500 mm): Pad 1 [N$30] of R20 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(67.2600 mm, 105.5500 mm): Pad 2 [N$33] of R21 on F.Cu
+    @(75.1625 mm, 96.3000 mm): Pad 1 [N$33] of Q5 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(68.0100 mm, 102.3500 mm): Pad 2 [N$31] of R20 on F.Cu
+    @(77.0375 mm, 97.2500 mm): Pad 3 [N$31] of Q5 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.8400 mm, 88.0500 mm): Pad 1 [N$37] of R27 on F.Cu
+    @(96.9625 mm, 82.1000 mm): Pad 1 [N$37] of Q6 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.9625 mm, 82.1000 mm): Pad 1 [N$37] of Q6 on F.Cu
+    @(74.7600 mm, 92.6000 mm): Pad 2 [N$37] of R26 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.5625 mm, 84.5500 mm): Pad 1 [N$43] of Q7 on F.Cu
+    @(102.6900 mm, 91.6500 mm): Pad 1 [N$43] of R29 on F.Cu
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.6900 mm, 91.6500 mm): Pad 1 [N$43] of R29 on F.Cu
+    @(111.6100 mm, 104.7500 mm): Pad 2 [N$43] of R28 on F.Cu
+
+** Found 0 Footprint errors **
+
+** End of Report **
