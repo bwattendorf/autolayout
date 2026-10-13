@@ -1,0 +1,1 @@
+C:\jenkins\workspace\build-win-9.0-stable\.build\kicad\libs\kimath\src\geometry\shape_poly_set.cpp(555): assert ""aOutline.IsClosed()"" failed in SHAPE_POLY_SET::AddOutline(): Warning: non-closed outline added to SHAPE_POLY_SET
