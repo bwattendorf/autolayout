@@ -3,7 +3,7 @@
 Run under KiCad's bundled Python (needs pcbnew), after `cargo build --release`:
 
     "C:/Program Files/KiCad/9.0/bin/python.exe" tools/m7_batch.py OUT_DIR \
-        [--boards GLOB ...] [--skip SUBSTR[,SUBSTR...]] [--limit N] [--freerouting]
+        [--boards GLOB ...] [--skip SUBSTR[,SUBSTR...]] [--limit N] [--freerouting] [--fr-timeout SECONDS] [--fr-passes N]
 
 OUT_DIR must not exist yet (nothing is ever overwritten). Boards default to
 every `.kicad_pcb` under $AUTOLAYOUT_CORPUS/quilter/{fab,returned,finish,routed}
@@ -67,9 +67,16 @@ NON_ROUTING = {"courtyards_overlap", "silk_edge_clearance", "lib_footprint_issue
                "missing_footprint", "extra_footprint", "duplicate_footprints", "padstack"}
 
 
-def run(cmd, timeout=None, cwd=None):
+# Freerouting bounds: --fr-timeout SECONDS (default 3600) and --fr-passes N
+# (default 10). io timed out at the old fixed 3600 s in round 8; a longer
+# bound or fewer passes is now a flag, and a timeout is reported as one.
+FR_TIMEOUT = 3600
+FR_PASSES = 10
+
+
+def run(cmd, timeout=None, cwd=None, env=None):
     t = time.time()
-    p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=cwd,
+    p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=cwd, env=env,
                        encoding="utf-8", errors="replace")
     return p.returncode, p.stdout + p.stderr, time.time() - t
 
@@ -227,7 +234,8 @@ def do_board(src, work, freerouting):
     if freerouting and len(pairs) >= 2:
         fr_dir = os.path.join(work, "fr")
         code, out, secs = run([sys.executable, os.path.join(HERE, "route_check.py"), stripped, fr_dir,
-                               pairs[0][1], pairs[1][1], "10"], timeout=3600)
+                               pairs[0][1], pairs[1][1], str(FR_PASSES)],
+                              timeout=FR_TIMEOUT + 600, env={**os.environ, "FREEROUTING_TIMEOUT": str(FR_TIMEOUT)})
         open(stem + "_freerouting.log", "w", encoding="utf-8").write(out)
         row["freerouting_s"] = round(secs, 1)
         m = re.search(r'"unconnected_after_routing":\s*(\d+)', out)
@@ -256,7 +264,7 @@ def write_all(out_dir, rows):
 
 
 def main(argv):
-    global CORPUS
+    global CORPUS, FR_TIMEOUT, FR_PASSES
     if not argv or argv[0].startswith("--"):
         sys.exit(__doc__)
     out_dir, args = argv[0], argv[1:]
@@ -280,6 +288,14 @@ def main(argv):
             continue
         if args[i] == "--limit":
             limit = int(args[i + 1])
+            i += 2
+            continue
+        if args[i] == "--fr-timeout":
+            FR_TIMEOUT = int(args[i + 1])
+            i += 2
+            continue
+        if args[i] == "--fr-passes":
+            FR_PASSES = int(args[i + 1])
             i += 2
             continue
         if args[i] == "--freerouting":

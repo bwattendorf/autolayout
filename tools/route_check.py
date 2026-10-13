@@ -82,6 +82,42 @@ def pour(board, ground, plane, inset_mm=0.5):
     return made
 
 
+def close_outline(board, tol_mm=0.01):
+    """Make the Edge.Cuts outline of `board` closed IN MEMORY, for the DSN
+    export only. KiCad's Specctra exporter asserts on an outline whose pieces
+    do not join end to end (c2, 2026-10-13: no DSN at all). If exactly two
+    segment ends are unmatched, a closing segment joins them; the file that
+    is saved and later imported into is never touched. Returns a note for the
+    log: 'closed', 'already closed' or why it was left alone. UNTESTED on
+    Windows at the time of writing: c2 is the test."""
+    ends = []
+    for d in board.GetDrawings():
+        if d.GetLayer() != pcbnew.Edge_Cuts:
+            continue
+        if d.GetShape() in (pcbnew.SHAPE_T_CIRCLE, pcbnew.SHAPE_T_RECT, pcbnew.SHAPE_T_POLY):
+            continue  # closed by themselves
+        ends.append((pcbnew.ToMM(d.GetStart().x), pcbnew.ToMM(d.GetStart().y)))
+        ends.append((pcbnew.ToMM(d.GetEnd().x), pcbnew.ToMM(d.GetEnd().y)))
+    unmatched = []
+    for i, a in enumerate(ends):
+        mates = sum(1 for j, b in enumerate(ends)
+                    if j != i and abs(a[0] - b[0]) <= tol_mm and abs(a[1] - b[1]) <= tol_mm)
+        if mates == 0:
+            unmatched.append(a)
+    if not unmatched:
+        return "already closed"
+    if len(unmatched) != 2:
+        return f"left alone: {len(unmatched)} unmatched outline ends, expected 2"
+    seg = pcbnew.PCB_SHAPE(board)
+    seg.SetShape(pcbnew.SHAPE_T_SEGMENT)
+    seg.SetLayer(pcbnew.Edge_Cuts)
+    seg.SetStart(pcbnew.VECTOR2I(pcbnew.FromMM(unmatched[0][0]), pcbnew.FromMM(unmatched[0][1])))
+    seg.SetEnd(pcbnew.VECTOR2I(pcbnew.FromMM(unmatched[1][0]), pcbnew.FromMM(unmatched[1][1])))
+    seg.SetWidth(pcbnew.FromMM(0.05))
+    board.Add(seg)
+    return f"closed: joined {unmatched[0]} to {unmatched[1]}"
+
+
 def drc(pcb, report):
     subprocess.run([KICAD_CLI, "pcb", "drc", "-o", report, pcb], capture_output=True, text=True)
     text = open(report, encoding="utf-8", errors="replace").read()
@@ -130,6 +166,7 @@ def main(src, out_dir, ground, plane, passes):
     board.Save(prepared)
 
     dsn, ses = stem + ".dsn", stem + ".ses"
+    print("outline:", close_outline(board), file=sys.stderr)
     if not pcbnew.ExportSpecctraDSN(board, dsn):
         raise SystemExit("DSN export failed")
 
@@ -147,13 +184,24 @@ def main(src, out_dir, ground, plane, passes):
     # threw a NullPointerException from its plane-drawing code
     # (ConductionArea.draw on the AWT EventDispatchThread). The router thread
     # was unaffected, but a tool must not pop errors at the user.
-    proc = subprocess.run([JAVA, "-Djava.awt.headless=true", "-jar", JAR, "--gui.enabled=false",
-                           "-de", dsn, "-do", ses, "-mp", str(passes), "-mt", "1"],
-                          stdout=log, stderr=subprocess.STDOUT)
+    # FREEROUTING_TIMEOUT (seconds) bounds the run; unset = no bound. io hit the
+    # old fixed 3600 s in round 8 and produced no number at all; a timeout is
+    # now REPORTED as one ("timed_out": true) instead of looking like a crash.
+    limit = float(os.environ["FREEROUTING_TIMEOUT"]) if os.environ.get("FREEROUTING_TIMEOUT") else None
+    timed_out = False
+    try:
+        proc = subprocess.run([JAVA, "-Djava.awt.headless=true", "-jar", JAR, "--gui.enabled=false",
+                               "-de", dsn, "-do", ses, "-mp", str(passes), "-mt", "1"],
+                              stdout=log, stderr=subprocess.STDOUT, timeout=limit)
+    except subprocess.TimeoutExpired:
+        timed_out = True
     log.close()
     route_s = time.time() - t0
-    if not os.path.exists(ses):
-        raise SystemExit(f"Freerouting wrote no .ses (exit {proc.returncode}); see {stem}_freerouting.log")
+    if timed_out or not os.path.exists(ses):
+        print(json.dumps({"input": src, "passes": passes, "route_seconds": round(route_s, 1),
+                          "timed_out": timed_out, "unconnected_after_routing": None,
+                          "note": "Freerouting produced no .ses; see " + stem + "_freerouting.log"}, indent=2))
+        return
 
     routed = pcbnew.LoadBoard(prepared)
     if not pcbnew.ImportSpecctraSES(routed, ses):
