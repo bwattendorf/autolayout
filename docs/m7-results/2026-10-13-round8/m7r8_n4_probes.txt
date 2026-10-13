@@ -1,0 +1,45 @@
+out/m7r7/router/m1_ours_routed.kicad_pcb: 894 segments, 464 vias: unconnected 6, track_dangling 0, hole_to_hole 0, clearance 8, shorting 0, copper_edge 0, track_width 0, via_size 0
+  zone fills read: 2 polygons (each island is a component of its net)
+  clearance at (97.8282, 109.7408): VBUS vs GND: 0.1073 mm, rule 0.1300
+  clearance at (97.6504, 109.7408): VBUS vs GND: 0.1073 mm, rule 0.1300
+  clearance at (103.5178, 109.9186): VBUS vs GND: 0.1187 mm, rule 0.1300
+  clearance at (96.4058, 109.5630): VBUS vs GND: 0.1235 mm, rule 0.1300
+  clearance at (96.2280, 109.5630): VBUS vs GND: 0.1235 mm, rule 0.1300
+  clearance at (97.8282, 109.9186): VBUS vs GND: 0.1187 mm, rule 0.1300
+  clearance at (96.9392, 109.5630): VBUS vs GND: 0.1134 mm, rule 0.1300
+  clearance at (96.9392, 109.7408): VBUS vs GND: 0.1134 mm, rule 0.1300
+  unconnected at (96.9625, 87.8500): net N$4 part 2 of 7 (main part has 1 pads): pads [U2.2], 0 tracks, 0 vias
+  unconnected at (79.4000, 96.5000): net N$4 part 3 of 7 (main part has 1 pads): pads [SW1.1], 0 tracks, 0 vias
+  unconnected at (86.6000, 96.5000): net N$4 part 4 of 7 (main part has 1 pads): pads [SW1.1#2], 0 tracks, 0 vias
+  unconnected at (99.9000, 101.7500): net N$4 part 5 of 7 (main part has 1 pads): pads [U1.26], 0 tracks, 0 vias
+  unconnected at (91.7100, 74.7000): net N$4 part 6 of 7 (main part has 1 pads): pads [R2.2], 0 tracks, 0 vias
+  unconnected at (104.0000, 88.0000): net N$4 part 7 of 7 (main part has 1 pads): pads [TP12.1], 0 tracks, 0 vias
+probe (86.8200, 80.7500):
+  pad C20.1 net N$4 on F.Cu -> net N$4 part 1 of 7 (the main part)
+  fill In1.Cu net GND -> net GND: the only part
+  fill In2.Cu net +3V3 -> net +3V3: the only part
+probe (96.9625, 87.8500):
+  pad U2.2 net N$4 on F.Cu -> net N$4 part 2 of 7
+  fill In1.Cu net GND -> net GND: the only part
+  fill In2.Cu net +3V3 -> net +3V3: the only part
+probe (79.4000, 96.5000):
+  pad SW1.1 net N$4 on F.Cu -> net N$4 part 3 of 7
+  fill In1.Cu net GND -> net GND: the only part
+  fill In2.Cu net +3V3 -> net +3V3: the only part
+probe (86.6000, 96.5000):
+  pad SW1.1#2 net N$4 on F.Cu -> net N$4 part 4 of 7
+  fill In1.Cu net GND -> net GND: the only part
+  fill In2.Cu net +3V3 -> net +3V3: the only part
+probe (99.9000, 101.7500):
+  pad U1.26 net N$4 on F.Cu -> net N$4 part 5 of 7
+  fill In1.Cu net GND -> net GND: the only part
+  fill In2.Cu net +3V3 -> net +3V3: the only part
+probe (91.7100, 74.7000):
+  pad R2.2 net N$4 on F.Cu -> net N$4 part 6 of 7
+  fill In1.Cu net GND -> net GND: the only part
+  fill In2.Cu net +3V3 -> net +3V3: the only part
+probe (104.0000, 88.0000):
+  pad R27.2 net GND on F.Cu -> net GND: the only part
+  pad TP12.1 net N$4 on B.Cu -> net N$4 part 7 of 7
+  fill In1.Cu net GND -> net GND: the only part
+  fill In2.Cu net +3V3 -> net +3V3: the only part
