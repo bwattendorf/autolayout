@@ -7,6 +7,8 @@ license.workspace = true
 
 [dependencies]
 serde_json = "1"
+autolayout-sexpr = { path = "../sexpr" }
+autolayout-board = { path = "../board" }
 
 [lints]
 workspace = true

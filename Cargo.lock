@@ -41,6 +41,8 @@ dependencies = [
 name = "autolayout-route"
 version = "0.1.0"
 dependencies = [
+ "autolayout-board",
+ "autolayout-sexpr",
  "serde_json",
 ]
 

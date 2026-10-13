@@ -27,7 +27,7 @@ mod netlist;
 pub mod parity;
 
 pub use edit::{EditError, flip, set_pose};
-pub use geom::{BBox, Point, Seg, outlines_overlap, outlines_within};
+pub use geom::{BBox, Point, Seg, arc_points, outlines_overlap, outlines_within};
 pub use netlist::{Netlist, NetlistError};
 
 /// Copper side a footprint is mounted on.
@@ -87,6 +87,10 @@ pub struct Pad {
   /// the footprint (measured, see `tests/corpus.rs`).
   pub angle: f64,
   pub size: Point,
+  /// `circle`, `rect`, `roundrect`, `oval` or `custom`, as written (empty if absent).
+  pub shape: String,
+  /// Drill width and height; `None` for SMD pads. A round drill has both equal.
+  pub drill: Option<Point>,
   pub net: Option<u32>,
   pub layers: Vec<String>,
 }
@@ -230,6 +234,19 @@ impl Footprint {
       at: self.to_board(local),
       angle,
       size,
+      shape: list.atom(3).unwrap_or_default().into_owned(),
+      drill: list.child("drill").and_then(|d| {
+        // `(drill 1.2)` or `(drill oval 1.0 2.0)`
+        let at = |i| d.number(i);
+        match (at(1), at(2)) {
+          (Some(w), Some(h)) => Some(Point::new(w, h)),
+          (Some(w), None) => Some(Point::new(w, w)),
+          (None, _) => match (at(2), at(3)) {
+            (Some(w), Some(h)) => Some(Point::new(w, h)),
+            _ => None,
+          },
+        }
+      }),
       net: list.child("net").and_then(|n| n.number(1)).map(|c| c as u32),
       layers: list
         .child("layers")
