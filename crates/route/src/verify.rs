@@ -149,6 +149,8 @@ struct Item {
   anchor: Option<Point>,
   /// `REF.PIN` for pads, empty otherwise: names a component's members.
   label: String,
+  /// Local clearance override of a pad (its own or its footprint's).
+  clearance: Option<f64>,
   /// Via/track diameter or width, for the minimum checks.
   size: f64,
 }
@@ -249,6 +251,7 @@ pub fn verify_with_probes(
             ends: None,
             anchor: None,
             label: String::new(),
+            clearance: None,
             size: 0.0,
           });
         }
@@ -276,6 +279,7 @@ pub fn verify_with_probes(
         ends: None,
         anchor: Some(pad.at),
         label,
+        clearance: pad.clearance,
         size: 0.0,
       });
     }
@@ -317,6 +321,7 @@ pub fn verify_with_probes(
               ends: Some((*a, *b)),
               anchor: None,
               label: String::new(),
+              clearance: None,
               size: w,
             });
           }
@@ -338,6 +343,7 @@ pub fn verify_with_probes(
           ends: None,
           anchor: Some(at),
           label: String::new(),
+          clearance: None,
           size,
         });
       }
@@ -497,7 +503,13 @@ pub fn verify_with_probes(
       }
       // Clearance: only when this is the first time we see the pair.
       if clearance_check && (j > i || b.kind == Kind::Pad) && share(a, b) {
-        let need = rules.clearance_between(name(a.net), name(b.net));
+        // An item's local override replaces its class clearance; a pair needs the
+        // larger of the two, and never less than the board minimum.
+        let eff = |it: &Item| {
+          it.clearance
+            .unwrap_or_else(|| rules.class_for_net(name(it.net)).clearance)
+        };
+        let need = eff(a).max(eff(b)).max(rules.min.clearance);
         let g = match &a.shape {
           Shape::Capsule(p, q, r) => gap(*p, *q, *r, &b.shape),
           other => b.shape.sdf(match other {
@@ -1197,5 +1209,40 @@ mod tests {
       "{:?}",
       rep.probe_notes
     );
+  }
+
+  /// Regression (round 7, KiCad 9.0.1): J10 on m1 carries a footprint-level
+  /// `(clearance 0.13)`; our router and verifier ignored it and KiCad reported
+  /// 8 violations at gaps of 0.107-0.124 mm that the verifier called clean.
+  #[test]
+  fn a_footprint_clearance_override_is_honoured() {
+    // Net A's track runs 0.3 mm from net B's pad 3 (pad edge y = 7.6, track
+    // edge 7.3): fine under the 0.1 rule, a violation under a 0.5 override.
+    let copper = format!(
+      "{} {}",
+      seg((5.0, 5.0), (15.0, 5.0), 1),
+      seg((8.0, 7.25), (12.0, 7.25), 1)
+    );
+    let judge = |text: String| {
+      let doc = parse(&text).unwrap();
+      let b = Board::read(&doc).unwrap();
+      let mut r = DesignRules::explicit(0.1, 0.1, 0.4, 0.2).unwrap();
+      r.min.copper_edge_clearance = 0.3;
+      verify(&doc, &b, &r, &[])
+    };
+    let plain = judge(board(&copper));
+    assert_eq!(plain.clearance + plain.shorting, 0, "{plain:?}");
+    let strict = judge(board(&copper).replace(
+      "(property \"Reference\" \"U1\")",
+      "(property \"Reference\" \"U1\") (clearance 0.5)",
+    ));
+    assert!(strict.clearance >= 1, "{strict:?}");
+    // An override that is smaller than the rule does not relax it below the
+    // board minimum.
+    let loose = judge(board(&copper).replace(
+      "(property \"Reference\" \"U1\")",
+      "(property \"Reference\" \"U1\") (clearance 0.01)",
+    ));
+    assert_eq!(loose.clearance + loose.shorting, 0, "{loose:?}");
   }
 }

@@ -62,6 +62,9 @@ pub struct Footprint {
   /// `exclude_from_bom`, `exclude_from_pos_files`, `dnp`, …
   pub attrs: Vec<String>,
   pub pads: Vec<Pad>,
+  /// `(clearance X)` written directly in the footprint: a local override of
+  /// the clearance its pads demand (the USB-C receptacle J10 carries 0.13 mm).
+  pub clearance: Option<f64>,
   /// Courtyard extent in the footprint's own frame, from graphics on the
   /// courtyard layer of its side. `None` if the footprint has none.
   pub courtyard_local: Option<BBox>,
@@ -91,6 +94,9 @@ pub struct Pad {
   pub shape: String,
   /// `(roundrect_rratio r)` if the pad states one: corner radius = r x the shorter side.
   pub roundrect_rratio: Option<f64>,
+  /// Local clearance override that applies to this pad: its own `(clearance X)`
+  /// if it has one, else its footprint's. `None` means the net class rules.
+  pub clearance: Option<f64>,
   /// Drill width and height; `None` for SMD pads. A round drill has both equal.
   pub drill: Option<Point>,
   pub net: Option<u32>,
@@ -202,6 +208,7 @@ impl Footprint {
         })
         .unwrap_or_default(),
       pads: Vec::new(),
+      clearance: list.child("clearance").and_then(|c| c.number(1)),
       courtyard_local: None,
       courtyard_edges_local: Vec::new(),
     };
@@ -238,6 +245,10 @@ impl Footprint {
       size,
       shape: list.atom(3).unwrap_or_default().into_owned(),
       roundrect_rratio: list.child("roundrect_rratio").and_then(|r| r.number(1)),
+      clearance: list
+        .child("clearance")
+        .and_then(|c| c.number(1))
+        .or(self.clearance),
       drill: list.child("drill").and_then(|d| {
         // `(drill 1.2)` or `(drill oval 1.0 2.0)`
         let at = |i| d.number(i);

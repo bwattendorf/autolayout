@@ -474,6 +474,46 @@
   XY on any layer, not only the item's. Open for the verifier: `via_dangling`
   (KiCad 9 on Freerouting, 0 on ours), exact (not sampled) pad/fill overlap,
   and agreement on boards other than m1.
+- 2026-10-13 — **M7.5 round 7: our own placement, judged by KiCad 9.0.1**
+  (`docs/m7-results/2026-10-13-m7-5-placements.md`, commit 1e4fcf9, same fab
+  rules everywhere). m1's netlist is `controller.net` (no `m1.net` exists);
+  regenerated with Portcullis `run-checks.sh` (exit 0). `place`: 121/121 parts
+  placed, signal HPWL 15 741 -> 3 051 mm, only the 2 known locked overlaps.
+
+  | KiCad | unconnected | clearance | shorting | track_width | via_dangling | copper mm | vias |
+  |---|---|---|---|---|---|---|---|
+  | service placement + our router | **0** | 0 | 0 | 0 | 0 | 3 017 | 460 |
+  | service placement + Freerouting | 17 | 2 | 2 | 45 | 9 | 3 306 | 232 |
+  | our placement + our router | **6** | **8** | 0 | 0 | 0 | 2 978 | 464 |
+  | our placement + Freerouting | 68 | 4 | 0 | 22 | 7 | 3 261 | 231 |
+
+  Findings. (1) **Our router beats Freerouting on unconnected on both
+  placements** (0 vs 17, 6 vs 68) at the same rules; time 0.7 s / 16 s against
+  377 s / 732 s. (2) **Our placement is still worse than the service's for
+  either router** (6 vs 0, 68 vs 17): the placer, not the router, is behind;
+  this reproduces M6.2/M4.3's ranking. (3) **A real bug the verifier missed:**
+  the 8 clearance violations are VBUS tracks 0.107-0.124 mm from GND pads of
+  J10 (USB-C), whose footprint carries `(clearance 0.13)`; the router, its
+  stub check and the verifier all ignored footprint/pad clearance overrides, so
+  the verifier said 0 where KiCad said 8. Freerouting's 4 are the same J10
+  override (worst 0.095). The fab board has no such overrides (it was
+  reconciled); the freeplace board, our input, has them (31 at 0.13, 4 at
+  0.156776, 2 at 0.05 across 30 corpus files). Fixed: `Pad.clearance` (own
+  override, else its footprint's) is read, the model keeps max(rule, override)
+  around those pads, tap/off-grid stubs respect it, and the verifier uses
+  max(override-or-class of each item, board minimum). NOT yet re-judged by
+  KiCad. (4) Open: 103/104 nets complete on our placement, all 6 unconnected
+  on net N$4 -- cause unknown, needs the board (Round 8, part B). Housekeeping
+  for the owner: running `run-checks.sh` rewrote tracked `*_skidl.log` files in
+  Portcullis; they were not reviewed or committed.
+  Also found in a local dry run of strip/plan/route/verify over the 37
+  service-placed boards (cloud, no KiCad, partial): `finish/g2i` gave 18
+  verifier clearance findings because `+12V` is in a 0.25 mm Power class
+  while every net is routed under Default (0.2 mm). Now the spacing satisfies
+  the largest class clearance (conservative; Power nets still get Default
+  track widths, so current capacity is not honoured). Unit-tested, not
+  KiCad-judged. The local dry run was stopped after 6 boards to commit; it is
+  not a result.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

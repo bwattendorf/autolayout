@@ -427,3 +427,83 @@ command with exit code, the `place` report, the table, the first violation
 examples of any non-zero routing category, what failed, what was not run. Copy
 `*_drc.rpt` and `*_route.log` (no boards, nothing over 1 MB). Commit; `git push
 origin m7-router`; reply with the table and the hash.
+
+
+---
+
+# Round 8 (2026-10-13): every service-placed board, and why net N$4 fails
+
+Two jobs. **Part A** runs our router over all 37 service-placed boards in the
+corpus (fab, returned, finish, routed; all 4-layer, all with a project file)
+and lets KiCad judge each, so we get a comparison across the family, not just
+m1. **Part B** finds out why net N$4 stays unconnected on our own m1 placement.
+Code since round 7: footprint/pad `(clearance X)` overrides are now honoured by
+the router and the verifier; round 8 is the first KiCad judgement of that.
+
+## Prompt to paste
+
+> Follow "Round 8" in docs/windows-handoff.md exactly. Change no autolayout
+> code. `tools/m7_batch.py` has never been run: if it breaks, make the smallest
+> fix that lets it run, say precisely what you changed, and keep going; do not
+> change what it measures. Never overwrite a board; fresh output directories.
+> No PR. Do not commit boards, gerbers or anything over 1 MB.
+
+## Setup
+
+`git fetch origin && git checkout m7-router && git pull`; record the hash
+(later than 5da1710); `cargo build --release`. Same shell setup as before
+(`PATH`, `AUTOLAYOUT_CORPUS`, `KPY`).
+
+## Part A: the whole corpus
+
+1. Smoke test on two boards first (2-3 minutes):
+   `"$KPY" tools/m7_batch.py out/m7r8_smoke --limit 2`
+   Open `out/m7r8_smoke/summary.md`. If a step failed, fix only what is
+   needed, then use a NEW directory name for the next try.
+2. Full run, our router only (expect roughly 30-60 minutes; boards fail
+   independently):
+   `"$KPY" tools/m7_batch.py out/m7r8_all`
+   It prints one line per board and rewrites `summary.md`, `results.csv` and
+   `results.json` after each. Do not stop it for a failing board.
+3. Optional, only after step 2 is done and only if the machine is free: the
+   Freerouting baseline on the same boards is 6-12 minutes EACH. Run it for
+   the boards where our router left `kicad_unconnected_after` > 0 plus the five
+   smallest others, with
+   `"$KPY" tools/m7_batch.py out/m7r8_fr --freerouting --boards <globs>` and
+   say which boards you chose and why. Do not run it on all 37 unless asked.
+4. In the log, a table straight from `summary.md`, and then:
+   - boards where `status` is not `ok` and the error text;
+   - boards where `kicad_unconnected_after` > 0 or `kicad_clearance` > 0;
+   - every board where `verifier_unconnected` or `verifier_clearance` differs
+     from KiCad's count (the verifier-vs-KiCad column pair);
+   - the totals: boards ok, boards with 0 routing violations in KiCad.
+
+## Part B: net N$4 on our own placement
+
+On `out/m7r7/m1_ours.kicad_pcb` (round 7; if gone, regenerate as in round 7 --
+the placement is deterministic) with the fab `.kicad_pro` beside it:
+
+1. `./target/release/autolayout route out/m7r7/m1_ours.kicad_pcb --plane In1.Cu=GND --plane In2.Cu=+3V3 > out/m7r8_n4_route.txt`
+   (use a fresh `--out`-free run; it only prints). Paste the `incomplete:` lines
+   and the verifier line.
+2. Pad access of the N$4 pads: from the `incomplete:` line take each unreached
+   pad `REF.PIN`; for each, give its position (`./target/release/autolayout pads
+   out/m7r7/m1_ours.kicad_pcb | grep -P "^REF\tPIN\t"`) and run
+   `./target/release/autolayout model out/m7r7/m1_ours.kicad_pcb --plane In1.Cu=GND --plane In2.Cu=+3V3`
+   once and paste its `pad access` section.
+3. For each unreached pad, run `autolayout verify ... --probe X,Y` at the pad
+   position on the KiCad-saved routed board from round 7
+   (`out/m7r7/router/m1_ours_routed.kicad_pcb`, project beside it) and paste
+   which copper is within 0.005 mm. Say which neighbouring parts or tracks
+   box the pad in, if you can tell from the probes.
+4. No fix this round: only the facts.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-round8.md` with: hash; KiCad version; every command
+and exit code; Part A tables and lists; Part B outputs; what you changed in
+`m7_batch.py` (diff) and why; what you did not run. Copy `summary.md`,
+`results.csv`, `results.json` and the `*_drc.rpt` / `*_route.log` / `*_verify.txt`
+for any board with non-zero violations (no boards; nothing over 1 MB). Commit;
+`git push origin m7-router`; reply with the totals, the worst five boards and
+the hash.
