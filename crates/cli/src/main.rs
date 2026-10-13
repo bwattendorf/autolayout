@@ -562,7 +562,7 @@ fn verify(pcb: &str, args: &[String]) -> Result<bool, String> {
     .collect::<Result<_, _>>()?;
   let v = autolayout_route::verify::verify(&doc, &board, &rules, &codes);
   println!("{pcb}: {}", v.summary());
-  for i in v.issues.iter().take(40) {
+  for i in v.issues.iter().take(400) {
     println!("  {} at ({:.4}, {:.4}): {}", i.kind, i.at.x, i.at.y, i.detail);
   }
   Ok(v.clean())
