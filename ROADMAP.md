@@ -586,9 +586,24 @@
      so no point inside the pad lies in the fill. The verifier now joins a pad
      to a same-net fill that comes within the pad's outer radius + 0.05 mm.
      Whether that is KiCad's rule for those nine pads is for Windows to show.
+  5. *Stub length:* stubs now end just inside the pad's edge (half a track
+     width + 2 um in) on the line to the centre, not at the centre; shorter
+     stubs, smaller corridors.
   Measured locally after 1-3 (verifier = KiCad on these boards before), m1 fab
   104/104 clean; r 88/88 and c2 150/150 with 0 clearance/shorting; c4/3p5mil
-  189/190. Local run of all 37 follows below.
+  189/190. Local run of 36 of the 37 boards (the local script's glob misses
+  `returned/m1-2026-08-06-candidate5`), before the stub-length change, versus
+  KiCad's round 8: nets complete 4 497 vs 4 534 on the same boards; verifier
+  unconnected 209 vs KiCad 307; verifier clearance 1 (KiCad's new ones were
+  14, pad-vs-pad ones are ignored by design). Boards with MORE nets complete:
+  g2, m1 3p5mil-candidate1, radialv2, m2, locked-candidate5, routed/m1.
+  Boards with FEWER: the older candidate placements (c4/candidate2 168 -> 158,
+  emu/candidate2 188 -> 182, m1 candidate4/6/doublesided/tp18 by 2-6) and
+  finish/g2i (31 -> 25), the price of keeping stubs clear of other nets and the
+  max_error margin. After the stub-length change, spot checks: m1 candidate4
+  unconnected 25 -> 12 (87 of 99 nets), g2i 8 -> 6 (26 of 32), m1 fab, r, c2,
+  g2 clean. g2i's 31 -> 26 stays a real cost of the corridor on a coarse-rule
+  board (0.505 mm pitch, 23 of 88 pads need a stub).
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss
