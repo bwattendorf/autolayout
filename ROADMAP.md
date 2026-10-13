@@ -604,6 +604,50 @@
   unconnected 25 -> 12 (87 of 99 nets), g2i 8 -> 6 (26 of 32), m1 fab, r, c2,
   g2 clean. g2i's 31 -> 26 stays a real cost of the corridor on a coarse-rule
   board (0.505 mm pitch, 23 of 88 pads need a stub).
+- 2026-10-13 — **M7.5 round 10: KiCad judges the round-9 fixes; Freerouting on
+  the service-final boards** (`docs/m7-results/2026-10-13-round10.md`; steps
+  1-4 on commit `d0a443e`, **not** the later stub-length change `8d610bc`).
+  Whole corpus, our router, KiCad 9.0.1: boards with 0 routing violations
+  16 -> **18**; boards with 0 unconnected and 0 *new* violations **22 of 37**;
+  KiCad unconnected 307 -> **216**; **new** clearance **1** (was 14 on the ten
+  boards of round 9), new shorting **0** (was 2), new hole_to_hole 0; nets
+  complete 4 616 -> 4 574 (fewer: unconnected counts fell because hard-mode
+  repair now leaves partial nets connected, while nets that cannot land a
+  stub clear of others now stay incomplete). The one new clearance is
+  m1/candidate4 (14 pre-existing + 1). The verifier now agrees with KiCad on
+  unconnected and on every new violation on **37 of 37** boards (and the
+  thermal-relief rule removed g2i's nine phantom GND parts; KiCad's own g2i
+  count rose 1 -> 8 with the router at 25 of 32 nets). Worse than round 8, all
+  small: c4/3p5mil-candidate3 0 -> 2 (U1.2 cannot land a stub), m1-2026-08-06-
+  candidate5 0 -> 5, g2i 1 -> 8, r 0 -> 1. **Local check on the current build
+  (`8d610bc`):** m1-2026-08-06-candidate5 back to 82/82, g2i 26/32, r 88/88,
+  c4/3p5 still 189/190 (net N$41, U1.2). **New KiCad finding, a model gap:** r
+  has one unconnected item and one via_dangling, c4/3p5 one via_dangling: a
+  +3V3 plane-tap via (and with it pad U1.38 / U1.44) sits on a piece of the
+  In2 pour that the neighbouring vias' antipads have cut off. The router's
+  in-process verifier assumes planes are solid (LIMIT line) and cannot see
+  it; only a verify run on the KiCad-filled board does (it said 1, matching
+  KiCad). Plane integrity under via fields is not modelled; open.
+
+  **Freerouting vs ours, same boards, same rules, KiCad unconnected** (10
+  passes; single runs):
+
+  | board | ours | Freerouting | ours s | Freerouting s |
+  |---|---|---|---|---|
+  | returned/m1/3p5mil-candidate1 | 0 | 13 | 1.1 | 282 |
+  | returned/emu/3p5mil-candidate3 | 0 | 36 | 9.5 | 2 326 |
+  | returned/g2/3p5mil-candidate6 | 0 | 27 | 6.6 | 745 |
+  | returned/t/3p5mil-candidate6 | 0 | 12 | 0.4 | 118 |
+  | returned/c2/3p5mil-candidate2 | 0 | no number | 13.0 | KiCad assert: non-closed outline, no DSN |
+  | returned/io/3p5mil-candidate4 | 0 (197/197, from an earlier run) | no number | 19 | timed out at 3 600 s (log shows done ~70 s later) |
+
+  So on the four boards where both produced a number, **our router left 0
+  unconnected where Freerouting left 12-36**, in a thousandth to a hundredth
+  of the time. Not compared: clearance/width counts for Freerouting on these
+  boards (round 2 on fab m1: 2 clearance, 2 shorting, 45 track_width, 9
+  via_dangling), and the older candidate placements, where our router still
+  leaves 15-36 unconnected (m1/candidate4 25, emu/candidate2 36, c4/candidate2
+  29, locked-candidate5 29): the MCU pins those placements wall in.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

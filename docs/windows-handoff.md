@@ -623,3 +623,49 @@ tables from 2-4, the answers to 3 and 4, step 5 if run, what changed in the
 script, what was not run. Copy `summary.md`, `results.csv`, `results.json`. Commit;
 `git push origin m7-router`; reply with the new totals, any board that got worse,
 and the hash.
+
+
+---
+
+# Round 11 (2026-10-13): judge the current branch (stub-length change) and one plane check
+
+Round 10 ran on `d0a443e`. Commit `8d610bc` (stubs end just inside the pad edge)
+and later improve m1-2026-08-06-candidate5 (local: 77 -> 82 of 82 nets), g2i
+(25 -> 26 of 32, unconnected 8 -> 6) and m1 candidate4 (unconnected 25 -> 12),
+by the verifier. This round has KiCad judge them. No code change.
+
+## Prompt to paste
+
+> Follow "Round 11" in docs/windows-handoff.md exactly. Change no autolayout
+> code. If `tools/m7_batch.py` breaks, make the smallest fix and say what you
+> changed. Fresh output directories; never overwrite a board; no PR; no boards
+> or files over 1 MB committed.
+
+## Steps
+
+`git fetch origin && git checkout m7-router && git pull`; record the hash
+(must be later than c2c4c73 and include `8d610bc`); `cargo build --release`.
+
+1. `"$KPY" tools/m7_batch.py out/m7r11_all`
+2. Totals vs round 10 (`docs/m7-results/2026-10-13-round10/results.csv`):
+   boards with 0 routing violations; boards with 0 unconnected and 0 new
+   violations; KiCad unconnected summed; new clearance / shorting / hole_to_hole
+   summed; nets complete / total. Then per board, only those where KiCad
+   unconnected or any new violation changed, with both numbers.
+3. The four boards the change was aimed at, KiCad numbers: `returned/m1/candidate4`,
+   `finish/g2i`, `returned/m1-2026-08-06-candidate5`, `returned/c4/3p5mil-candidate3`.
+4. Plane islands (the r and c4/3p5 findings): for `returned/r/3p5mil-candidate2`
+   and `returned/c4/3p5mil-candidate3`, list KiCad's `unconnected_items` and
+   `via_dangling` entries (whole), and run
+   `./target/release/autolayout verify <dir>/b_routed.kicad_pcb --plane In1.Cu=GND --plane In2.Cu=+3V3 --probe X,Y`
+   at each via/pad coordinate KiCad lists, pasting what the probe finds and
+   which fill (layer, part) covers the point. Say whether the via sits in a
+   fill polygon that holds no other pad.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-round11.md`: hash, commands and exit codes, the
+totals comparison, the per-board changes, the four-board table, the step 4
+entries and probes, what was not run. Copy `summary.md`, `results.csv`,
+`results.json`. Commit; `git push origin m7-router`; reply with the new totals,
+any board that got worse, and the hash.
