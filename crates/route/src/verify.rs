@@ -49,9 +49,36 @@ const LAND_SLACK: f64 = 0.01;
 /// A probe point matches copper within this distance (KiCad prints 4 decimals).
 const PROBE_REACH: f64 = 0.005;
 
-/// KiCad did not flag a 0.0001 mm clearance shortfall (m1, same run). Shortfalls
-/// below this are not counted; it can hide a real violation of up to 1 um.
-const CLEARANCE_SLACK: f64 = 0.001;
+/// How far past a pad's outer radius a same-net fill may stop and still count as
+/// touching it (spokes of a thermal relief end at the pad edge).
+const RELIEF_REACH: f64 = 0.05;
+
+/// Distance from `p` to the nearest edge of `poly`; 0 if `p` is inside it.
+fn polygon_distance(poly: &[Point], p: Point) -> f64 {
+  if crate::shape::polygon_contains(poly, p) {
+    return 0.0;
+  }
+  let mut d = f64::INFINITY;
+  for i in 0..poly.len() {
+    if let (Some(&a), Some(&b)) = (poly.get(i), poly.get((i + 1) % poly.len())) {
+      d = d.min(crate::shape::seg_dist(p, a, b));
+    }
+  }
+  d
+}
+
+/// Largest half-extent of a pad from its centre (its radius if round).
+fn outer_radius(s: &Shape) -> f64 {
+  match s {
+    Shape::RoundRect(_, h, _, _) => h.x.max(h.y),
+    Shape::Capsule(a, b, r) => r + (*b - *a).length() / 2.0,
+    Shape::Union(_) | Shape::Polygon(_) => s.bbox().map_or(0.0, |b| b.width().max(b.height()) / 2.0),
+  }
+}
+
+/// Shortfalls below this are not counted (float noise). KiCad flags 0.0006 mm
+/// (round 9), so this must stay far below a micrometre.
+const CLEARANCE_SLACK: f64 = 0.0002;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Issue {
@@ -585,8 +612,19 @@ pub fn verify_with_probes(
                 .any(|(dx, dy)| hit(Point::new(p.x + r * dx, p.y + r * dy))))
         }
         Shape::Polygon(_) => false,
+        // A custom pad: its centre stands for it.
+        Shape::Union(_) => it.anchor.is_some_and(hit),
       };
-      if touches {
+      // A through-hole pad with thermal relief is reached by spokes across a gap
+      // (g2i's connector pins, round 9: the verifier had them 9 parts apart and
+      // KiCad one): the pour then stops short of the pad's own copper, so no
+      // point inside the pad lies in the fill. A same-net fill that comes within
+      // a hair of the pad's outer radius touches it.
+      let near_pad = it.kind == Kind::Pad
+        && it
+          .anchor
+          .is_some_and(|c| polygon_distance(poly, c) <= outer_radius(&it.shape) + RELIEF_REACH);
+      if touches || near_pad {
         uf.union(i, node);
       }
       if it.kind == Kind::Track
@@ -1244,5 +1282,55 @@ mod tests {
       "(property \"Reference\" \"U1\") (clearance 0.01)",
     ));
     assert_eq!(loose.clearance + loose.shorting, 0, "{loose:?}");
+  }
+
+  /// Regression (round 9, board r): U6 pads 15/16 are `custom` pads, a 0.115 mm
+  /// anchor plus a polygon 0.845 mm long. Modelled as the anchor alone, a track
+  /// beside the polygon looked clear and KiCad reported a short and a 0.015 mm
+  /// clearance violation.
+  #[test]
+  fn a_custom_pad_is_its_primitives_not_just_its_anchor() {
+    let custom = |prims: &str| {
+      format!(
+        r#"(kicad_pcb
+  (layers (0 "F.Cu" signal) (2 "B.Cu" signal) (25 "Edge.Cuts" user))
+  (net 0 "") (net 1 "A") (net 2 "B")
+  (gr_line (start 0 0) (end 20 0) (layer "Edge.Cuts"))
+  (gr_line (start 20 0) (end 20 10) (layer "Edge.Cuts"))
+  (gr_line (start 20 10) (end 0 10) (layer "Edge.Cuts"))
+  (gr_line (start 0 10) (end 0 0) (layer "Edge.Cuts"))
+  (footprint "X" (layer "F.Cu") (at 0 0) (property "Reference" "U6")
+    (pad "15" smd custom (at 10 8 0) (size 0.1 0.1) (layers "F.Cu") (net 2 "B")
+      (options (clearance outline) (anchor circle)) {prims}))
+  (segment (start 10.3 8.2) (end 10.6 8.2) (width 0.1) (layer "F.Cu") (net 1)))"#
+      )
+    };
+    let judge = |text: String| {
+      let doc = parse(&text).unwrap();
+      let b = Board::read(&doc).unwrap();
+      let mut r = DesignRules::explicit(0.1, 0.1, 0.4, 0.2).unwrap();
+      r.min.copper_edge_clearance = 0.3;
+      verify(&doc, &b, &r, &[])
+    };
+    let anchor_only = judge(custom(""));
+    assert_eq!(anchor_only.clearance + anchor_only.shorting, 0, "{anchor_only:?}");
+    let poly = "(primitives (gr_poly (pts (xy -0.6 -0.06) (xy 0.6 -0.06) (xy 0.6 0.06) (xy -0.6 0.06)) (width 0.08) (fill yes)))";
+    let full = judge(custom(poly));
+    assert!(full.clearance >= 1, "{full:?}");
+  }
+
+  /// Regression (round 9, g2i): a through-hole pad with thermal relief is
+  /// joined to its pour by spokes, so the fill stops a gap short of the pad.
+  /// Net A's pad 1 (3.5 x 1.6 roundrect at (5,5)) is the pad here; a fill whose
+  /// edge is 0.02 beyond the pad's right edge touches it, one 0.5 beyond does not.
+  #[test]
+  fn a_fill_that_stops_at_the_pad_edge_still_touches_it() {
+    let near = "(zone (net 1) (net_name \"n\") (layer \"F.Cu\") (filled_polygon (layer \"F.Cu\") (pts (xy 6.77 3) (xy 17 3) (xy 17 7) (xy 6.77 7))))".to_string();
+    let far = near.replace("6.77", "7.25");
+    let r_near = run(&near);
+    let r_far = run(&far);
+    // Pad 2 at (15,5) lies inside both fills; pad 1 joins only through the near one.
+    assert_eq!(r_near.unconnected, 0, "{r_near:?}");
+    assert_eq!(r_far.unconnected, 1, "{r_far:?}");
   }
 }

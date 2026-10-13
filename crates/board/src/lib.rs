@@ -30,6 +30,15 @@ pub use edit::{EditError, flip, set_pose};
 pub use geom::{BBox, Point, Seg, arc_points, outlines_overlap, outlines_within};
 pub use netlist::{Netlist, NetlistError};
 
+/// A polygon primitive of a `custom` pad: points relative to the pad centre,
+/// before the pad's rotation, drawn with a stroke of `width` (and filled if `fill`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct PolyPrim {
+  pub pts: Vec<Point>,
+  pub width: f64,
+  pub fill: bool,
+}
+
 /// Copper side a footprint is mounted on.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Side {
@@ -94,6 +103,13 @@ pub struct Pad {
   pub shape: String,
   /// `(roundrect_rratio r)` if the pad states one: corner radius = r x the shorter side.
   pub roundrect_rratio: Option<f64>,
+  /// `gr_poly` primitives of a `custom` pad (empty for other shapes).
+  pub primitives: Vec<PolyPrim>,
+  /// `(options (anchor rect))` of a custom pad; the default anchor is a circle.
+  pub anchor_rect: bool,
+  /// Primitives of a `custom` pad that are not `gr_poly` (lines, circles,
+  /// rectangles, arcs): present in the file, not modelled.
+  pub unmodelled_primitives: usize,
   /// Local clearance override that applies to this pad: its own `(clearance X)`
   /// if it has one, else its footprint's. `None` means the net class rules.
   pub clearance: Option<f64>,
@@ -245,6 +261,19 @@ impl Footprint {
       size,
       shape: list.atom(3).unwrap_or_default().into_owned(),
       roundrect_rratio: list.child("roundrect_rratio").and_then(|r| r.number(1)),
+      primitives: custom_polys(list),
+      anchor_rect: list
+        .child("options")
+        .and_then(|o| o.child("anchor"))
+        .and_then(|a| a.atom(1))
+        .is_some_and(|v| v == "rect"),
+      unmodelled_primitives: list.child("primitives").map_or(0, |p| {
+        p.items
+          .iter()
+          .filter_map(|n| n.as_list())
+          .filter(|l| !l.is("gr_poly"))
+          .count()
+      }),
       clearance: list
         .child("clearance")
         .and_then(|c| c.number(1))
@@ -289,6 +318,32 @@ impl Footprint {
     // 10 of 523 m1 pads disagreed in the fourth decimal before this.
     Point::new((p.x * 1e6).round() / 1e6, (p.y * 1e6).round() / 1e6)
   }
+}
+
+/// `(primitives (gr_poly (pts (xy …)…) (width w) (fill yes)))` of a custom pad.
+fn custom_polys(pad: &List) -> Vec<PolyPrim> {
+  let Some(prims) = pad.child("primitives") else {
+    return Vec::new();
+  };
+  prims
+    .children("gr_poly")
+    .map(|g| PolyPrim {
+      pts: g
+        .child("pts")
+        .map(|p| {
+          p.children("xy")
+            .filter_map(|l| Some(Point::new(l.number(1)?, l.number(2)?)))
+            .collect()
+        })
+        .unwrap_or_default(),
+      width: g.child("width").and_then(|w| w.number(1)).unwrap_or(0.0),
+      fill: g
+        .child("fill")
+        .and_then(|f| f.atom(1))
+        .is_none_or(|v| v != "no" && v != "none"),
+    })
+    .filter(|p| p.pts.len() >= 2)
+    .collect()
 }
 
 fn read_at(at: Option<&List>) -> (Point, f64) {

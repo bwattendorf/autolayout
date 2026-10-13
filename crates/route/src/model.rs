@@ -111,6 +111,8 @@ pub struct RoutingModel {
   /// `min_hole_to_hole`. Two vias one pitch apart broke this on m1 (KiCad
   /// hole_to_hole, 2026-10-13).
   pub via_spacing: f64,
+  /// Extra clearance kept on top of every rule: the project's `max_error`.
+  pub margin: f64,
   pub stats: ModelStats,
 }
 
@@ -303,11 +305,13 @@ impl RoutingModel {
     // class (g2i's `+12V`, 0.25 mm against Default's 0.2) would otherwise sit
     // too near its neighbours (18 KiCad-style findings on that board, round 8
     // dry run). Net-class-specific widths and spacing are not routed yet.
+    let margin = rules.min.max_error;
     let base_cl = rules
       .classes
       .iter()
       .map(|c| c.clearance)
-      .fold(profile.clearance.max(rules.min.clearance), f64::max);
+      .fold(profile.clearance.max(rules.min.clearance), f64::max)
+      + margin;
     let pitch = profile.track_width + base_cl;
     let nx = ((outline.width() / pitch).floor() as usize).saturating_add(1);
     let ny = ((outline.height() / pitch).floor() as usize).saturating_add(1);
@@ -328,6 +332,7 @@ impl RoutingModel {
       planes: plane_list,
       profile: profile.clone(),
       via_spacing: profile.via_drill + rules.min.hole_to_hole,
+      margin: rules.min.max_error,
       stats: ModelStats::default(),
     };
 
@@ -337,7 +342,8 @@ impl RoutingModel {
         .map(String::as_str)
         .unwrap_or("")
     };
-    let cl_for = |owner_net: Option<u32>| base_cl.max(rules.class_for_net(name(owner_net)).clearance);
+    let cl_for =
+      |owner_net: Option<u32>| base_cl.max(rules.class_for_net(name(owner_net)).clearance + margin);
     let (tr, vr) = (profile.track_width / 2.0, profile.via_diameter / 2.0);
     let (mut track_maps, mut via_map) = (std::mem::take(&mut m.track), std::mem::take(&mut m.via));
 
@@ -352,7 +358,7 @@ impl RoutingModel {
         // A local override replaces the class clearance for this pad's copper
         // (KiCad takes the larger of the two items' clearances for a pair).
         let cl = match pad.clearance {
-          Some(o) => base_cl.max(o),
+          Some(o) => base_cl.max(o + margin),
           None => cl_for(pad.net),
         };
         // np_thru_hole pads carry no copper on the layers they list; the hole
@@ -590,7 +596,8 @@ mod tests {
   #[test]
   fn pitch_is_track_plus_clearance() {
     let (_, m) = build(&[]);
-    assert!((m.pitch - 0.4).abs() < 1e-12);
+    // track 0.2 + clearance 0.2 + the project's max_error margin 0.005
+    assert!((m.pitch - 0.405).abs() < 1e-12, "{}", m.pitch);
     assert_eq!(m.layers, vec!["F.Cu", "In1.Cu", "B.Cu"]);
   }
 
@@ -826,6 +833,6 @@ mod tests {
     let board = Board::read(&doc).unwrap();
     let default = r.classes[0].clone();
     let m = RoutingModel::build(&doc, &board, &r, &default, &[]).unwrap();
-    assert!((m.pitch - (0.2 + 0.5)).abs() < 1e-12, "pitch {}", m.pitch);
+    assert!((m.pitch - (0.2 + 0.5 + 0.005)).abs() < 1e-12, "pitch {}", m.pitch);
   }
 }

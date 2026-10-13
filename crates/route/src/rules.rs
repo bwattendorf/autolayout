@@ -28,6 +28,9 @@ use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
+/// `max_error` used when a project does not state one (the value every corpus project has).
+pub const DEFAULT_MAX_ERROR: f64 = 0.005;
+
 /// Dimensions of one net class, millimetres.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NetClass {
@@ -48,6 +51,12 @@ pub struct Minimums {
   pub copper_edge_clearance: f64,
   pub hole_clearance: f64,
   pub hole_to_hole: f64,
+  /// KiCad's curve-approximation tolerance (`max_error`): 0.005 mm in all 32
+  /// corpus projects. KiCad polygonises round pads within this, so copper kept
+  /// exactly `clearance` from a true circle can measure a few micrometres
+  /// short (0.0006-0.0027 mm on c2, c4, m1, r, round 9). Routing keeps this
+  /// much extra. If a project omits it the corpus value is used.
+  pub max_error: f64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -200,6 +209,10 @@ impl DesignRules {
       )?,
       hole_clearance: non_negative(m("min_hole_clearance"), &path("min_hole_clearance"))?,
       hole_to_hole: non_negative(m("min_hole_to_hole"), &path("min_hole_to_hole"))?,
+      max_error: m("max_error")
+        .and_then(Value::as_f64)
+        .filter(|v| v.is_finite() && *v >= 0.0)
+        .unwrap_or(DEFAULT_MAX_ERROR),
     };
 
     Ok(DesignRules {
@@ -252,6 +265,7 @@ impl DesignRules {
       copper_edge_clearance: class.clearance,
       hole_clearance: class.clearance,
       hole_to_hole: class.clearance,
+      max_error: DEFAULT_MAX_ERROR,
     };
     Ok(DesignRules {
       classes: vec![class],

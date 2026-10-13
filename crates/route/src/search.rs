@@ -445,6 +445,7 @@ impl<'a> Router<'a> {
           if d.length() <= reach
             && self.cell_free(l, ix, iy, net)
             && self.stub_clear(board, fi, pi, m.centre(ix, iy), l, net)
+            && self.corridor_free(l, m.centre(ix, iy), pad.at, net)
           {
             found.push(((d.length() * 1e6) as u64, l, ix, iy));
           }
@@ -454,6 +455,57 @@ impl<'a> Router<'a> {
     found.sort_unstable();
     found.truncate(4);
     found.into_iter().map(|(_, l, x, y)| (l, x, y)).collect()
+  }
+
+  /// Grid cells (ix, iy) whose centre lies within one pitch of the segment
+  /// `from..to`: where another net's centre-line would sit too near a stub of
+  /// this profile (adjacent centre-lines are exactly one pitch apart). Cells
+  /// are the right unit because every track and via halo is claimed in cells,
+  /// so a stub that claims its corridor conflicts with them in the ordinary way.
+  fn corridor(&self, from: Point, to: Point) -> Vec<(usize, usize)> {
+    let m = self.model;
+    let reach = m.pitch;
+    let lo = |v: f64, o: f64| ((v - o) / m.pitch).floor().max(0.0) as usize;
+    let (x0, x1) = (
+      lo(from.x.min(to.x) - reach, m.origin.x),
+      lo(from.x.max(to.x) + reach, m.origin.x) + 1,
+    );
+    let (y0, y1) = (
+      lo(from.y.min(to.y) - reach, m.origin.y),
+      lo(from.y.max(to.y) + reach, m.origin.y) + 1,
+    );
+    let mut out = Vec::new();
+    for iy in y0..=y1.min(m.ny.saturating_sub(1)) {
+      for ix in x0..=x1.min(m.nx.saturating_sub(1)) {
+        if crate::shape::seg_dist(m.centre(ix, iy), from, to) < reach - 1e-9 {
+          out.push((ix, iy));
+        }
+      }
+    }
+    out
+  }
+
+  /// No other net holds any cell of this stub's corridor on `layer` (hard
+  /// `usage` only; while negotiating, conflicts are priced by occupancy).
+  fn corridor_free(&self, layer: usize, from: Point, to: Point, net: u32) -> bool {
+    let nx = self.model.nx;
+    self.corridor(from, to).iter().all(|&(ix, iy)| {
+      self
+        .usage
+        .get(layer)
+        .and_then(|u| u.get(iy * nx + ix))
+        .is_some_and(|&o| o == FREE || o == net + 1)
+    })
+  }
+
+  /// Make a stub part of the net's footprint: its corridor cells are claimed
+  /// (hard) and listed in the route's cells (so occupancy sees them).
+  fn adopt_stub(&mut self, stub: Stub, net: u32, out: &mut NetRoute) {
+    for (ix, iy) in self.corridor(stub.from, stub.to) {
+      self.claim_cell(stub.layer, ix, iy, net);
+      out.cells.push((stub.layer, ix, iy));
+    }
+    out.stubs.push(stub);
   }
 
   /// Is the straight stub from `from` to the centre of pad (`fi`, `pi`) clear
@@ -469,7 +521,7 @@ impl<'a> Router<'a> {
       return false;
     };
     let half = self.model.profile.track_width / 2.0;
-    let need = self.model.profile.clearance;
+    let need = self.model.profile.clearance + self.model.margin;
     for (qf, fp) in board.footprints.iter().enumerate() {
       for (qp, q) in fp.pads.iter().enumerate() {
         if (qf, qp) == (fi, pi)
@@ -484,7 +536,7 @@ impl<'a> Router<'a> {
         });
         if on_layer
           && crate::shape::capsule_gap(from, pad.at, half, &crate::shape::pad_copper(q))
-            < need.max(q.clearance.unwrap_or(0.0))
+            < need.max(q.clearance.map_or(0.0, |o| o + self.model.margin))
         {
           return false;
         }
@@ -599,7 +651,13 @@ impl<'a> Router<'a> {
     None
   }
 
-  fn stub_if_off_pad(&self, board: &Board, t: &Terminal, cell: (usize, usize, usize), out: &mut NetRoute) {
+  fn stub_if_off_pad(
+    &mut self,
+    board: &Board,
+    t: &Terminal,
+    cell: (usize, usize, usize),
+    out: &mut NetRoute,
+  ) {
     let (l, x, y) = cell;
     let Some(pad) = board.footprints.get(t.pad.0).and_then(|f| f.pads.get(t.pad.1)) else {
       return;
@@ -617,7 +675,7 @@ impl<'a> Router<'a> {
       to: pad.at,
     };
     if !inside && !out.stubs.contains(&stub) {
-      out.stubs.push(stub);
+      self.adopt_stub(stub, out.net, out);
     }
   }
 
@@ -807,7 +865,9 @@ impl<'a> Router<'a> {
             && best.is_none_or(|b| key < b.0)
             && self.cell_free(l, ix, iy, net)
             && self.via_free(ix, iy, net)
-            && (on_pad.contains(&(l, ix, iy)) || self.stub_clear(board, fi, pi, m.centre(ix, iy), l, net))
+            && (on_pad.contains(&(l, ix, iy))
+              || (self.stub_clear(board, fi, pi, m.centre(ix, iy), l, net)
+                && self.corridor_free(l, m.centre(ix, iy), pad.at, net)))
           {
             best = Some((key, l, ix, iy));
           }
@@ -826,11 +886,15 @@ impl<'a> Router<'a> {
       .iter()
       .all(|&c| c != (l, ix, iy))
     {
-      out.stubs.push(Stub {
-        layer: l,
-        from: m.centre(ix, iy),
-        to: pad.at,
-      });
+      self.adopt_stub(
+        Stub {
+          layer: l,
+          from: m.centre(ix, iy),
+          to: pad.at,
+        },
+        net,
+        &mut out,
+      );
     }
     out.connected.push((fi, pi));
     Some(out)
