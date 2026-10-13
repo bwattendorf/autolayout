@@ -42,6 +42,12 @@ pub const TAP_REACH_PITCHES: f64 = 5.0;
 /// rules, 60 iterations).
 pub const PENALTY_CAP: u32 = 1_000_000;
 
+/// How far from a pad's centre (in pitches, beyond its half-size) to look for
+/// grid cells to land a stub on when no cell lies inside the pad. 1.5 -> 4.5
+/// moved the 37-board local sweep from 209 to 194 verifier-unconnected
+/// (measured here, not KiCad; the 1.5 run predates the shorter stubs).
+pub const NEAR_REACH_PITCHES: f64 = 4.5;
+
 /// Cost of one grid step in the layer's preferred direction.
 pub const STEP: u32 = 10;
 
@@ -419,13 +425,13 @@ impl<'a> Router<'a> {
     })
   }
 
-  /// Usable cells within 1.5 pitch of the pad's centre, nearest four, on the
+  /// Usable cells within `NEAR_REACH_PITCHES` of the pad's centre, nearest four, on the
   /// pad's own copper layers.
   fn near_cells(&self, board: &Board, fi: usize, pi: usize, net: u32) -> Vec<(usize, usize, usize)> {
     let Some(pad) = board.footprints.get(fi).and_then(|f| f.pads.get(pi)) else {
       return Vec::new();
     };
-    let reach = self.model.pitch * 1.5 + pad.size.x.max(pad.size.y) / 2.0;
+    let reach = self.model.pitch * NEAR_REACH_PITCHES + pad.size.x.max(pad.size.y) / 2.0;
     let layers = self.model.pad_layer_indices(&pad.layers);
     let m = self.model;
     let lo = |v: f64, o: f64| ((v - o) / m.pitch).floor().max(0.0) as usize;
