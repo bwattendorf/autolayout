@@ -458,6 +458,22 @@
   and duplicate pad numbers in one footprint now get distinct labels
   (`SW2.2`, `SW2.2#2` — the "SW2.2 in two parts" of round 5 was two pads both
   numbered 2). Round 6 asks Windows to probe KiCad's six +3V3 points.
+- 2026-10-13 — **M7.4b closed: round 6 probes (KiCad 9.0.1, verifier at
+  431e247, `docs/m7-results/2026-10-13-verify-probes.md`).** `verify --probe`
+  on KiCad's eight pair points on Freerouting's m1: every probe found the
+  item KiCad names, same net and layer; **all four pairs land in two
+  different verifier parts** — +3V3 #1 parts 1 and 2, #2 parts 3 and 2, #3
+  parts 3 and 4; GND pad pair C2.2 (main part) and U1.47 (part 15). With
+  round 4 (counts 17 = 14 + 3, clearance/shorting/track_width equal) this is
+  agreement with KiCad on component identity for 4 of 17 findings plus equal
+  counts for the other 13. Not matched, by the nature of KiCad's report: the
+  13 GND zone-vs-zone items (all printed at the zone anchor (50.425, 50.425),
+  where the probe finds no copper). Extra copper found at probe points but
+  not named by KiCad (other-layer tracks, other-net pads) is expected on a
+  4-layer board and was not judged. One probe quirk: fills are listed by
+  XY on any layer, not only the item's. Open for the verifier: `via_dangling`
+  (KiCad 9 on Freerouting, 0 on ours), exact (not sampled) pad/fill overlap,
+  and agreement on boards other than m1.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss
