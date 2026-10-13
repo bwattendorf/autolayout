@@ -278,6 +278,49 @@ mod negotiation_tests {
     (pad "10" thru_hole circle (at 8 5.75) (size 1.4 1.4) (drill 0.7) (layers "*.Cu") (net 3 "C")))
 )"#;
 
+  /// A 0.2 x 0.8 mm pad row at 0.5 mm pitch under 0.2 mm rules has no grid
+  /// cell inside its pads; the outer pads must still be escaped, with a
+  /// clean self-check.
+  const FINE: &str = r#"(kicad_pcb
+  (layers (0 "F.Cu" signal) (2 "B.Cu" signal) (25 "Edge.Cuts" user))
+  (net 0 "") (net 1 "A") (net 2 "B") (net 3 "C") (net 4 "D")
+  (gr_line (start 0 0) (end 14 0) (layer "Edge.Cuts"))
+  (gr_line (start 14 0) (end 14 10) (layer "Edge.Cuts"))
+  (gr_line (start 14 10) (end 0 10) (layer "Edge.Cuts"))
+  (gr_line (start 0 10) (end 0 0) (layer "Edge.Cuts"))
+  (footprint "Q" (layer "F.Cu") (at 0 0) (property "Reference" "U1")
+    (pad "1" smd rect (at 5.0 5) (size 0.2 0.8) (layers "F.Cu") (net 1 "A"))
+    (pad "2" smd rect (at 5.5 5) (size 0.2 0.8) (layers "F.Cu") (net 2 "B"))
+    (pad "3" smd rect (at 6.0 5) (size 0.2 0.8) (layers "F.Cu") (net 3 "C"))
+    (pad "4" smd rect (at 6.5 5) (size 0.2 0.8) (layers "F.Cu") (net 4 "D"))
+    (pad "5" smd rect (at 1 1) (size 0.8 0.8) (layers "F.Cu") (net 1 "A"))
+    (pad "6" smd rect (at 1 3) (size 0.8 0.8) (layers "F.Cu") (net 2 "B"))
+    (pad "7" smd rect (at 13 1) (size 0.8 0.8) (layers "F.Cu") (net 3 "C"))
+    (pad "8" smd rect (at 13 3) (size 0.8 0.8) (layers "F.Cu") (net 4 "D")))
+)"#;
+
+  #[test]
+  fn fine_pitch_pads_without_interior_cells_are_escaped() {
+    let doc = parse(FINE).unwrap();
+    let b = Board::read(&doc).unwrap();
+    let mut r = DesignRules::explicit(0.2, 0.2, 0.6, 0.3).unwrap();
+    r.min.copper_edge_clearance = 0.3;
+    let p = r.classes[0].clone();
+    let m = RoutingModel::build(&doc, &b, &r, &p, &[]).unwrap();
+    let (n, _) = route_negotiated(&b, &m, Costs::default(), Params::default());
+    // Known limit: the two middle pads of a 0.5 mm-pitch row lose to their
+    // neighbours' stub corridors (2 of 4 complete, measured); the point here
+    // is that what is written is legal.
+    assert!(n.nets_complete >= 2, "{}", n.nets_complete);
+    let c = judge(FINE, &b, &m, &n.routes);
+    assert_eq!(c.unconnected, 4 - n.nets_complete, "{c:?}");
+    assert_eq!(
+      c.dangling_tracks + c.hole_to_hole + c.clearance + c.shorting,
+      0,
+      "{c:?}"
+    );
+  }
+
   fn setup() -> (Board, RoutingModel) {
     let doc = parse(BOARD).unwrap();
     let b = Board::read(&doc).unwrap();
