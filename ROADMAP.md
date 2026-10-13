@@ -396,6 +396,26 @@
   "unconnected 0" cannot be read as covering plane islands. Still not
   implemented: via_dangling. Stress case at 0.2 mm (model only): 62/104 nets,
   verifier unconnected 57, clearance 2; not KiCad-judged.
+- 2026-10-13 — **M7.4b: the verifier reads zone fills** (round-3 data,
+  `docs/m7-results/2026-10-13-zone-data.md`, KiCad 9.0.1). What the files
+  show: each `filled_polygon` is one island of copper with its own `(layer)` and
+  `(pts)`; a hole is a slit in the same ring (even-odd containment handles it);
+  no `(island)` token is ever written (so it cannot be relied on); KiCad's 13
+  zone-vs-zone findings on Freerouting's m1 are 13 GND fill polygons (F: 13, B:
+  3, In1: 3 in the file) with nothing tying them together. Our board has two
+  single-polygon zones. Implementation: every fill polygon is a node of its
+  net; a same-net pad, via or track lying on it (sampled points) joins it; a
+  track end inside it is not dangling; components = those holding a pad, a
+  fill or an assumed plane. A declared plane that has a fill in the file is
+  read, not assumed; one without (a stripped board, as in the router's own
+  in-process check) still falls back to the assumption and prints LIMIT.
+  Unit tests: one fill joins two pads, two fills leave the net split, a lone
+  island is a component, a track repairs it, wrong net/layer joins nothing, a
+  slit ring excludes its hole. **Not yet checked against KiCad**: the
+  acceptance test is `autolayout verify` on the round-2 Freerouting board
+  saying about 17 unconnected (14 GND + 3 +3V3) and 0 on ours; pad/via/track
+  overlap is by sample points, not exact, and thermal-relief rules are not
+  modelled. Round 4 in docs/windows-handoff.md.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss
