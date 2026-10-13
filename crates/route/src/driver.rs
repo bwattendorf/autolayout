@@ -288,6 +288,22 @@ mod negotiation_tests {
   }
 
   #[test]
+  fn huge_penalties_and_many_iterations_cannot_overflow_or_hang() {
+    // Regression: the present penalty used to overflow u32 near iteration 50
+    // and the search ran away (8 GB allocation on m1 at 0.2 mm rules).
+    let (b, m) = setup();
+    let p = Params {
+      max_iterations: 200,
+      present_first: u32::MAX,
+      present_growth: (3, 1),
+      history_step: u32::MAX,
+    };
+    let (n, st) = route_negotiated(&b, &m, Costs::default(), p);
+    assert!(check(&b, &m, &n.routes).clean());
+    assert!(st.iterations >= 1);
+  }
+
+  #[test]
   fn zero_iterations_still_returns_a_legal_result() {
     let (b, m) = setup();
     let p = Params {

@@ -36,6 +36,12 @@ use crate::model::{FREE, RoutingModel};
 /// 1.5 left 4 of 104 m1 plane pads unreachable, 5 reaches all (2026-10-13).
 pub const TAP_REACH_PITCHES: f64 = 5.0;
 
+/// Present and history penalties stop growing here. Without a cap the
+/// present penalty (x1.5 per iteration) overflowed `u32` near iteration 50 and
+/// the search ran away until memory ran out (found 2026-10-13, m1 at 0.2 mm
+/// rules, 60 iterations).
+pub const PENALTY_CAP: u32 = 1_000_000;
+
 /// Cost of one grid step in the layer's preferred direction.
 pub const STEP: u32 = 10;
 
@@ -124,7 +130,7 @@ pub struct Router<'a> {
   pub soft: Option<Soft>,
   // Search scratch, stamped so a search never clears the whole grid.
   stamp: Vec<u32>,
-  cost: Vec<u32>,
+  cost: Vec<u64>,
   prev: Vec<u32>,
   epoch: u32,
   via_halo: Vec<(i64, i64)>,
@@ -236,13 +242,13 @@ impl<'a> Router<'a> {
     let i = iy * self.model.nx + ix;
     let h = s.hist.get(layer).and_then(|v| v.get(i)).copied().unwrap_or(0);
     let o = s.occ.get(layer).and_then(|v| v.get(i)).copied().unwrap_or(0);
-    h + s.pres * u32::from(o)
+    h.saturating_add(s.pres.saturating_mul(u32::from(o)))
   }
 
   /// Added cost of a via: the same, summed over the cells its halo takes.
   fn via_extra(&self, ix: usize, iy: usize) -> u32 {
     let Some(s) = &self.soft else { return 0 };
-    let mut sum = 0;
+    let mut sum: u32 = 0;
     for &(dx, dy) in &self.via_halo {
       let (x, y) = (ix as i64 + dx, iy as i64 + dy);
       if x < 0 || y < 0 || x >= self.model.nx as i64 || y >= self.model.ny as i64 {
@@ -251,7 +257,10 @@ impl<'a> Router<'a> {
       let i = y as usize * self.model.nx + x as usize;
       for l in 0..s.occ.len() {
         let o = s.occ.get(l).and_then(|v| v.get(i)).copied().unwrap_or(0);
-        sum += s.pres * u32::from(o) + s.hist.get(l).and_then(|v| v.get(i)).copied().unwrap_or(0) / 4;
+        let hist = s.hist.get(l).and_then(|v| v.get(i)).copied().unwrap_or(0) / 4;
+        sum = sum
+          .saturating_add(s.pres.saturating_mul(u32::from(o)))
+          .saturating_add(hist);
       }
     }
     sum
@@ -308,7 +317,7 @@ impl<'a> Router<'a> {
       for (h, o) in s.hist.iter_mut().zip(&s.occ) {
         for (h, &o) in h.iter_mut().zip(o) {
           if o > 1 {
-            *h = h.saturating_add(inc);
+            *h = h.saturating_add(inc).min(PENALTY_CAP);
           }
         }
       }
@@ -324,7 +333,9 @@ impl<'a> Router<'a> {
 
   pub fn grow_present(&mut self, factor_num: u32, factor_den: u32) {
     if let Some(s) = &mut self.soft {
-      s.pres = (s.pres.saturating_mul(factor_num) / factor_den.max(1)).max(s.pres + 1);
+      s.pres = (s.pres.saturating_mul(factor_num) / factor_den.max(1))
+        .max(s.pres.saturating_add(1))
+        .min(PENALTY_CAP);
     }
   }
 
@@ -536,7 +547,7 @@ impl<'a> Router<'a> {
         goal.entry(self.state(l, x, y)).or_insert(ti);
       }
     }
-    let h = |x: usize, y: usize| -> u32 {
+    let h = |x: usize, y: usize| -> u64 {
       let mut best = u32::MAX;
       for t in terms {
         let (x0, x1, y0, y1) = t.bbox;
@@ -544,11 +555,11 @@ impl<'a> Router<'a> {
         let dy = y0.saturating_sub(y).max(y.saturating_sub(y1));
         best = best.min((dx + dy) as u32);
       }
-      best.saturating_mul(STEP)
+      u64::from(best) * u64::from(STEP)
     };
 
     // Heap entries: (Reverse f, Reverse state) → smallest f, then smallest state.
-    let mut heap: BinaryHeap<(std::cmp::Reverse<u32>, std::cmp::Reverse<u32>)> = BinaryHeap::new();
+    let mut heap: BinaryHeap<(std::cmp::Reverse<u64>, std::cmp::Reverse<u32>)> = BinaryHeap::new();
     for &s in tree {
       let (_, x, y) = self.unstate(s);
       self.stamp[s] = self.epoch;
@@ -561,7 +572,7 @@ impl<'a> Router<'a> {
       let s = s32 as usize;
       let g = self.cost[s];
       let (l, x, y) = self.unstate(s);
-      if f > g.saturating_add(h(x, y)) {
+      if f > g + h(x, y) {
         continue; // a cheaper way to this state was found after this entry
       }
       if let Some(&ti) = goal.get(&s)
@@ -580,7 +591,7 @@ impl<'a> Router<'a> {
         return Some((path, ti));
       }
       let mut relax = |me: &mut Self, ns: usize, step: u32, nxx: usize, nyy: usize| {
-        let ng = g + step;
+        let ng = g + u64::from(step);
         if me.stamp[ns] != me.epoch || ng < me.cost[ns] {
           me.stamp[ns] = me.epoch;
           me.cost[ns] = ng;
@@ -604,14 +615,14 @@ impl<'a> Router<'a> {
         };
         let ns = self.state(l, xx, yy);
         let extra = self.cell_extra(l, xx, yy);
-        relax(self, ns, step + extra, xx, yy);
+        relax(self, ns, step.saturating_add(extra), xx, yy);
       }
       if nl > 1 && self.via_free(x, y, net) {
         for l2 in 0..nl {
           if l2 != l && self.cell_free(l2, x, y, net) {
             let ns = self.state(l2, x, y);
-            let extra = self.via_extra(x, y) + self.cell_extra(l2, x, y);
-            relax(self, ns, self.costs.via + extra, x, y);
+            let extra = self.via_extra(x, y).saturating_add(self.cell_extra(l2, x, y));
+            relax(self, ns, self.costs.via.saturating_add(extra), x, y);
           }
         }
       }
