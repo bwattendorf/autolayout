@@ -14,6 +14,7 @@
 //!   autolayout model <file.kicad_pcb> [--class NAME] [--plane LAYER=NET]... [explicit rules]   build the routing grid, report obstacles and pad access
 //!   autolayout route <file.kicad_pcb> [--out NEW.kicad_pcb] [--greedy] [--iters N] [model flags]   route every net (PathFinder, or greedy baseline); with --out, write tracks and vias to a NEW file
 //!   autolayout verify <file.kicad_pcb> [--plane LAYER=NET]... [--probe X,Y]...   judge existing copper from the file alone (unconnected, dangling, hole-to-hole, clearance); not KiCad
+//!   autolayout planes <file.kicad_pcb>   which nets would take the inner layers as planes (by pad count, not by name); prints tab-separated FLAGS
 //!   autolayout unlock <in> <out> <REF>...            unlock footprints for an experiment (NEW file)
 
 use std::collections::BTreeMap;
@@ -591,6 +592,35 @@ fn verify(pcb: &str, args: &[String]) -> Result<bool, String> {
   Ok(v.clean())
 }
 
+/// Print which nets would take the inner layers as planes, chosen from the
+/// board's own pad counts (see `route::planes`), plus ready-made flags.
+fn planes(pcb: &str) -> Result<bool, String> {
+  let (_, doc) = load(pcb)?;
+  let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
+  let p = autolayout_route::planes::plan(&doc, &board);
+  println!(
+    "{pcb}: {} copper layer(s): {}",
+    p.copper.len(),
+    p.copper.join(" ")
+  );
+  for (layer, net, pads) in &p.assignments {
+    println!("  plane {layer} = {net} ({pads} pads)");
+  }
+  for layer in &p.unassigned {
+    println!(
+      "  {layer}: no net with {}+ pads; no plane",
+      autolayout_route::planes::PLANE_MIN_PADS
+    );
+  }
+  let flags: Vec<String> = p
+    .assignments
+    .iter()
+    .map(|(l, n, _)| format!("--plane\t{l}={n}"))
+    .collect();
+  println!("FLAGS\t{}", flags.join("\t"));
+  Ok(true)
+}
+
 /// Build the routing model for one net class and report what it blocks and
 /// which netted pads it can reach (M7.1). Nothing is written.
 fn model(pcb: &str, args: &[String]) -> Result<bool, String> {
@@ -702,6 +732,7 @@ fn main() -> ExitCode {
     Some((cmd, [pcb, flags @ ..])) if cmd == "model" => model(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "route" => route(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "verify" => verify(pcb, flags),
+    Some((cmd, [pcb])) if cmd == "planes" => planes(pcb),
     Some((cmd, [pcb, out])) if cmd == "strip" => strip(pcb, out),
     Some((cmd, files)) if cmd == "escape" && !files.is_empty() => escape(files),
     Some((cmd, [input, output, refs @ ..])) if cmd == "flip" && !refs.is_empty() => {

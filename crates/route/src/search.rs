@@ -465,7 +465,10 @@ impl<'a> Router<'a> {
         let on_layer = q.layers.iter().any(|l| {
           l == layer_name || l == "*.Cu" || (l == "F&B.Cu" && (layer_name == "F.Cu" || layer_name == "B.Cu"))
         });
-        if on_layer && crate::shape::capsule_gap(from, pad.at, half, &crate::shape::pad_copper(q)) < need {
+        if on_layer
+          && crate::shape::capsule_gap(from, pad.at, half, &crate::shape::pad_copper(q))
+            < need.max(q.clearance.unwrap_or(0.0))
+        {
           return false;
         }
       }

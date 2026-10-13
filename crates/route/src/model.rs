@@ -297,7 +297,17 @@ impl RoutingModel {
       .cloned()
       .collect();
 
-    let base_cl = profile.clearance.max(rules.min.clearance);
+    // Every net is routed under this one profile, so the spacing must satisfy
+    // the largest class clearance in the project: two nets are kept apart by
+    // the larger of their classes' clearances, and a net of a wider-clearance
+    // class (g2i's `+12V`, 0.25 mm against Default's 0.2) would otherwise sit
+    // too near its neighbours (18 KiCad-style findings on that board, round 8
+    // dry run). Net-class-specific widths and spacing are not routed yet.
+    let base_cl = rules
+      .classes
+      .iter()
+      .map(|c| c.clearance)
+      .fold(profile.clearance.max(rules.min.clearance), f64::max);
     let pitch = profile.track_width + base_cl;
     let nx = ((outline.width() / pitch).floor() as usize).saturating_add(1);
     let ny = ((outline.height() / pitch).floor() as usize).saturating_add(1);
@@ -339,7 +349,12 @@ impl RoutingModel {
           m.stats.custom_pads += 1;
         }
         let owner = owner_of(pad.net);
-        let cl = cl_for(pad.net);
+        // A local override replaces the class clearance for this pad's copper
+        // (KiCad takes the larger of the two items' clearances for a pair).
+        let cl = match pad.clearance {
+          Some(o) => base_cl.max(o),
+          None => cl_for(pad.net),
+        };
         // np_thru_hole pads carry no copper on the layers they list; the hole
         // itself is an obstacle below.
         let has_copper = pad.kind != "np_thru_hole";
@@ -743,5 +758,74 @@ mod tests {
     let corner = Point::new(10.0 + 1.72, 5.0 - 0.78);
     assert!(crate::shape::pad_obstacle(pad).sdf(corner) < 0.0);
     assert!(truth.sdf(corner) > 0.0);
+  }
+
+  /// Regression (round 7): a footprint-level `(clearance X)` raises the space
+  /// kept around every pad of that footprint, in the model as in the verifier.
+  #[test]
+  fn a_footprint_clearance_override_widens_the_keep_out() {
+    let src = |extra: &str| {
+      format!(
+        r#"(kicad_pcb
+  (layers (0 "F.Cu" signal) (2 "B.Cu" signal) (25 "Edge.Cuts" user))
+  (net 0 "") (net 1 "A") (net 2 "B")
+  (gr_line (start 0 0) (end 20 0) (layer "Edge.Cuts"))
+  (gr_line (start 20 0) (end 20 10) (layer "Edge.Cuts"))
+  (gr_line (start 20 10) (end 0 10) (layer "Edge.Cuts"))
+  (gr_line (start 0 10) (end 0 0) (layer "Edge.Cuts"))
+  (footprint "X" (layer "F.Cu") (at 0 0) (property "Reference" "J10") {extra}
+    (pad "1" smd rect (at 10 5) (size 1 1) (layers "F.Cu") (net 1 "A"))))"#
+      )
+    };
+    let build = |text: String| {
+      let doc = parse(&text).unwrap();
+      let board = Board::read(&doc).unwrap();
+      let mut r = DesignRules::explicit(0.2, 0.2, 0.6, 0.3).unwrap();
+      r.min.copper_edge_clearance = 0.3;
+      let p = r.classes[0].clone();
+      (
+        board.footprints[0].pads[0].clearance,
+        RoutingModel::build(&doc, &board, &r, &p, &[]).unwrap(),
+      )
+    };
+    let (none, plain) = build(src(""));
+    let (some, wide) = build(src("(clearance 1.0)"));
+    assert_eq!((none, some), (None, Some(1.0)));
+    // A cell 0.8 mm beyond the pad edge (centre-line, other net): free under
+    // the 0.2 rule (needs 0.3), blocked under the 1.0 override (needs 1.1).
+    let at = |m: &RoutingModel| {
+      let (ix, iy) = (
+        ((10.0 + 0.5 + 0.8 - m.origin.x) / m.pitch).round() as usize,
+        ((5.0 - m.origin.y) / m.pitch).round() as usize,
+      );
+      (m.centre(ix, iy).x - 10.5, m.track_ok(0, ix, iy, 2))
+    };
+    let (d1, free) = at(&plain);
+    let (d2, blocked) = at(&wide);
+    assert!(d1 > 0.5 && d2 > 0.5 && d1 < 1.1 && d2 < 1.1, "{d1} {d2}");
+    assert!(free, "free under the plain rule");
+    assert!(!blocked, "blocked under the override");
+  }
+
+  /// g2i: `+12V` is in a 0.25 mm "Power" class while the profile routed is
+  /// Default (0.2 mm); spacing must satisfy the largest class so a Power net
+  /// is never closer to its neighbours than its class allows.
+  #[test]
+  fn spacing_follows_the_largest_class_clearance() {
+    let json = r#"{
+      "board": {"design_settings": {"rules": {
+        "min_clearance": 0.1, "min_track_width": 0.1, "min_via_diameter": 0.4,
+        "min_through_hole_diameter": 0.2, "min_copper_edge_clearance": 0.3,
+        "min_hole_clearance": 0.1, "min_hole_to_hole": 0.2}}},
+      "net_settings": {"classes": [
+        {"name": "Default", "clearance": 0.2, "track_width": 0.2, "via_diameter": 0.6, "via_drill": 0.3},
+        {"name": "Power", "clearance": 0.5, "track_width": 0.5, "via_diameter": 0.8, "via_drill": 0.4}],
+        "netclass_patterns": [{"netclass": "Power", "pattern": "B"}]}}"#;
+    let r = DesignRules::from_json(json, "test").unwrap();
+    let doc = parse(BOARD).unwrap();
+    let board = Board::read(&doc).unwrap();
+    let default = r.classes[0].clone();
+    let m = RoutingModel::build(&doc, &board, &r, &default, &[]).unwrap();
+    assert!((m.pitch - (0.2 + 0.5)).abs() < 1e-12, "pitch {}", m.pitch);
   }
 }
