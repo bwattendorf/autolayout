@@ -27,7 +27,7 @@
 | M4 | Legal placer | rule-based initial placement + legalisation: no courtyard overlap, all on board, fixed parts untouched; beats the staging-grid input on every M2 metric |
 | M5 | Optimising placer | wirelength/congestion optimisation (analytical or annealing, seeded); compared against the commercial return on the corpus |
 | M6 | Routability | export DSN, route with Freerouting as an external process, report unconnected; placement scored by how well a router finishes it |
-| M7 | Own router | (scoped once M5 results are in) |
+| M7 | Own router | M7.0 rules → M7.1 grid model → M7.2 A* → M7.3 negotiated congestion → M7.4 write + KiCad DRC → M7.5 beat Freerouting on m1; steps in `docs/gaps.md`. Router results are unverified until KiCad DRC runs on the Windows machine |
 | M8 | RF checks | intended RF (antenna keepouts, matching-network order and length, feed lines, stitching) and unintended RF (switch loops, crystals, fast-edge nets, cable-connected nets, plane gaps) reported on every corpus board, each limit cited to a datasheet or app note; the placer gets them as constraints |
 
 ## Progress log
@@ -209,6 +209,20 @@
 - 2026-10-13 — **Decoupling record** (`place --pairs`): with the cap→pin
   record, 17 of 22 m1 caps within 3 mm of their pin, all on the front
   (without it 2 of 22; back-side ring 13 of 22). Escape unchanged (60.4 %).
+- 2026-10-13 — **M7.0: design rules from the project** (`autolayout rules`,
+  new `route` crate). Reads classes, patterns, assignments and
+  `design_settings.rules.min_*` from the `.kicad_pro` beside the board; a
+  missing project or a missing/non-positive field is an error that names it,
+  and explicit `--track --clearance --via D/DRILL` is the only alternative.
+  Measured on the corpus: 97 of 116 board files have a project beside them
+  and all 97 load; 19 have none and are refused. Finding: **the two m1
+  projects disagree.** `quilter/fab/m1`: track/clearance 0.0889 mm, via
+  0.25/0.15 (the fab numbers). `quilter/freeplace/m1` (our input): Default
+  0.25/0.2 with a 0.6/0.3 via, Power 0.5/0.25 with 0.8/0.4. Routing the
+  freeplace input honours the latter unless rules are given explicitly; which
+  to use for the M7.5 comparison is the owner's call. Unverified: pattern
+  semantics (`*`/`?` only, explicit assignment first, first pattern wins) are
+  assumed, not checked against KiCad; no corpus project uses assignments.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss
