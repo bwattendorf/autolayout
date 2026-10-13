@@ -437,6 +437,27 @@
   that C2.2 and U1.47 land in different GND parts and that each KiCad +3V3
   track coordinate falls in a listed part's box. Still not implemented:
   via_dangling (KiCad 9 on Freerouting, 0 on ours).
+- 2026-10-13 — **M7.4b round 5 (KiCad 9.0.1, verifier at 646d312,
+  `docs/m7-results/2026-10-13-verify-parts.md`): parts vs KiCad's items.**
+  Confirmed: GND pad pair — U1.47 is alone in GND part 15, at exactly KiCad's
+  U1.47 point, and C2.2 is in the main part, so KiCad's "C2.2 needs U1.47"
+  is the verifier's "part 15 needs the main part". Counts 14 GND + 3 +3V3 =
+  17 as before. **My expectation was wrong:** I predicted 13 fill-only GND
+  parts; there are none. All 13 fill islands hold pads (e.g. part 2:
+  C36.2 U7.4 D27.1 C26.2 C19.2; part 10: U1.61), so each part is an island
+  that holds GND pads but reaches no via or track to the rest. KiCad reports
+  those as zone-vs-zone at the zone anchor (50.425, 50.425) with no pad
+  named, so a one-to-one match of the 13 is impossible from the DRC report
+  alone: 13 = 13 is a count, not an identity. Not resolved: the +3V3 pairs.
+  Printed track-end boxes of parts 2 and 3 overlap, so for pair 2 and pair 3
+  a box test cannot say whether the two KiCad points sit in different parts
+  (pair 1 came out *both in part 2's box*, which a "two different parts"
+  reading would not predict; the box is of track ends, not of tracks).
+  Added: `autolayout verify --probe X,Y` (repeatable) prints, for each point,
+  every pad/track/via/fill within 0.005 mm and which part of its net it is in,
+  and duplicate pad numbers in one footprint now get distinct labels
+  (`SW2.2`, `SW2.2#2` — the "SW2.2 in two parts" of round 5 was two pads both
+  numbered 2). Round 6 asks Windows to probe KiCad's six +3V3 points.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

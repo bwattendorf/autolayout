@@ -317,3 +317,47 @@ that the members are the ones KiCad pointed at. No routing, no code change.
 `docs/m7-results/YYYY-MM-DD-verify-parts.md` with the hash, the commands and
 exit codes, the full verifier output, and the answers to 2-5 as short tables.
 Commit and `git push origin m7-router`; reply with the tables and the hash.
+
+
+---
+
+# Round 6 (2026-10-13): probe KiCad's points against the verifier's parts
+
+Why: round 5 could not tell whether the two points of each KiCad +3V3 pair lie
+in two different verifier parts, because the printed boxes overlap. `autolayout
+verify --probe X,Y` answers that exactly. No routing, no code change.
+
+## Prompt to paste
+
+> Follow "Round 6" in docs/windows-handoff.md. Change no code and no boards.
+> Report what each probe says, and any KiCad item whose probe finds no
+> copper or the wrong part, without reconciling. No PR.
+
+## Steps
+
+`git fetch origin && git checkout m7-router && git pull`; record the hash
+(later than d53fe79); `cargo build --release`.
+
+1. One command (exit 1 is expected), output kept whole:
+   ```
+   ./target/release/autolayout verify out/m7r2/fr/m1_fab_routed.kicad_pcb \
+     --plane In1.Cu=GND --plane F.Cu=GND --plane B.Cu=GND --plane In2.Cu=+3V3 \
+     --probe 95.4582,95.2794 --probe 95.25,95.5 \
+     --probe 102.6653,97.9853 --probe 101.8218,98.3 \
+     --probe 100.3,95.1956 --probe 101.3518,93.357 \
+     --probe 101.7206,93.8032 --probe 101.1,94.85 \
+     --probe 50.425,50.425 > out/m7r2/verify_fr_round6.txt
+   ```
+2. A table of KiCad's pairs from the probe lines: pair, the two points, the
+   copper found at each (kind, net, layers), and the part each belongs to. Say
+   for each +3V3 pair whether its two points are in different parts, and for
+   the GND pair (101.7206, 93.8032) / (101.1, 94.85) the same. Say what is at
+   (50.425, 50.425).
+3. Every probe that found no copper, or copper of a different net than KiCad
+   names, listed separately.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-verify-probes.md`: hash, the command and exit code,
+the whole output, the table, the list from step 3. Commit; `git push origin
+m7-router`; reply with the table and the hash.
