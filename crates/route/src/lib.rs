@@ -6,3 +6,4 @@ pub mod model;
 pub mod negotiate;
 pub mod rules;
 pub mod search;
+pub mod write;

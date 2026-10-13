@@ -12,7 +12,7 @@
 //!   autolayout flip <in> <out> (<REF>... | ALL)      move footprints to the other side (NEW file)
 //!   autolayout rules <file.kicad_pcb> [--track W --clearance C --via D/DRILL]   design rules from the project beside the board (or explicit)
 //!   autolayout model <file.kicad_pcb> [--class NAME] [--plane LAYER=NET]... [explicit rules]   build the routing grid, report obstacles and pad access
-//!   autolayout route <file.kicad_pcb> [--greedy] [--iters N] [model flags]   route every net (PathFinder, or greedy baseline); reports only until M7.4
+//!   autolayout route <file.kicad_pcb> [--out NEW.kicad_pcb] [--greedy] [--iters N] [model flags]   route every net (PathFinder, or greedy baseline); with --out, write tracks and vias to a NEW file
 //!   autolayout unlock <in> <out> <REF>...            unlock footprints for an experiment (NEW file)
 
 use std::collections::BTreeMap;
@@ -414,12 +414,14 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     search::Costs,
   };
   let mut greedy = false;
+  let mut out_path: Option<String> = None;
   let mut params = Params::default();
   let mut rest = Vec::new();
   let mut it = args.iter();
   while let Some(a) = it.next() {
     match a.as_str() {
       "--greedy" => greedy = true,
+      "--out" => out_path = Some(it.next().ok_or("--out needs a path")?.clone()),
       "--iters" => {
         params.max_iterations = it
           .next()
@@ -430,7 +432,18 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     }
   }
   let (rules, profile, planes) = model_args(pcb, &rest)?;
-  let (_, doc) = load(pcb)?;
+  if let Some(o) = &out_path {
+    let same = fs::canonicalize(o)
+      .ok()
+      .zip(fs::canonicalize(pcb).ok())
+      .is_some_and(|(a, b)| a == b);
+    if Path::new(o).exists() || same || o == pcb {
+      return Err(format!(
+        "{o}: already exists or is the input; refusing to overwrite"
+      ));
+    }
+  }
+  let (_, mut doc) = load(pcb)?;
   let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
   let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
   let t = std::time::Instant::now();
@@ -486,6 +499,28 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
       board.nets.get(&r.net).map_or("?", String::as_str),
       pads.join(" ")
     );
+  }
+  if let Some(o) = &out_path {
+    let w = autolayout_route::write::add_routes(&mut doc, &m, &board, &s)?;
+    fs::write(o, doc.to_string()).map_err(|e| format!("{o}: {e}"))?;
+    // Read it back off disk: it must parse, round-trip byte-exact, and hold
+    // exactly the copper that was added.
+    let back = fs::read_to_string(o).map_err(|e| format!("{o}: {e}"))?;
+    let parsed = parse(&back).map_err(|e| format!("{o}: written file does not parse: {e}"))?;
+    if parsed.to_string() != back {
+      return Err(format!("{o}: written file does not round-trip byte-exact"));
+    }
+    let count = |d: &Document, k: &str| d.root().map_or(0, |r| r.children(k).count());
+    let (_, before) = load(pcb)?;
+    let added_seg = count(&parsed, "segment") - count(&before, "segment");
+    let added_via = count(&parsed, "via") - count(&before, "via");
+    println!(
+      "wrote {o}: {} segments, {} vias added (read back: {added_seg} / {added_via}); judge it with KiCad DRC, not with this tool",
+      w.segments, w.vias
+    );
+    if (added_seg, added_via) != (w.segments, w.vias) {
+      return Err("read-back copper count differs from what was written".to_owned());
+    }
   }
   let c = autolayout_route::check::check(&board, &m, &s.routes);
   println!(

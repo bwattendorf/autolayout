@@ -175,6 +175,9 @@ pub struct RoutingModel {
   pub ny: usize,
   /// Routable copper layers, in stack order. Plane layers are not here.
   pub layers: Vec<String>,
+  /// Every copper layer the file declares, outermost first (a through-via
+  /// spans the first and last).
+  pub stack: Vec<String>,
   pub planes: Vec<Plane>,
   /// Per layer, `ny * nx` owners: where a centre-line of this profile may go.
   pub track: Vec<Vec<u32>>,
@@ -397,6 +400,7 @@ impl RoutingModel {
       track: vec![vec![FREE; nx * ny]; layers.len()],
       via: vec![FREE; nx * ny],
       layers,
+      stack: all_cu.clone(),
       planes: plane_list,
       profile: profile.clone(),
       stats: ModelStats::default(),

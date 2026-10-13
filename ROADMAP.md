@@ -14,7 +14,8 @@
 | m1 signal HPWL: service's return (the bar) | 3 016 mm    | measured 2026-10-12, `autolayout grade`                      |
 | boards placed legally (KiCad DRC clean)    | 1 (m1)      | measured 2026-10-12, `autolayout place` + `kicad-cli pcb drc` |
 | m1 unconnected after 10 Freerouting passes | ours 135, service 65 | measured 2026-10-12, `tools/route_check.py` + KiCad DRC |
-| boards routed                              | 0           | —                                                            |
+| boards routed (KiCad-verified)             | 0           | —                                                            |
+| m1 (service placement) routed by own router | 104/104 nets in our model; **KiCad DRC PENDING** | measured 2026-10-13, `autolayout route`, self-check only; unverified |
 
 ## Milestones
 
@@ -284,6 +285,21 @@
   model's own geometry and not a grade. The synthetic unit board only proves
   convergence, determinism and legality, not that negotiation beats greedy;
   the m1 numbers are the evidence, from one board.
+- 2026-10-13 — **M7.4: write the routes; KiCad's verdict still owed.**
+  `autolayout route ... --out NEW.kicad_pcb` appends `(segment …)` and
+  `(via …)` items (KiCad 9 layout copied from the fab board, deterministic
+  UUIDs, placed before `embedded_fonts`) through the lossless layer; refuses
+  an existing path or the input; reads the file back off disk (parses,
+  round-trips byte-exact, copper count equals what was written). m1 fab
+  stripped: **840 segments + 462 vias added, 0 original lines changed**
+  (`diff` shows 0 removed, 10 416 added), read-back 840/462. Unit test: the
+  original items survive in order and untouched, copper sits before
+  `embedded_fonts`, same routes give the same bytes. **Not done: the
+  verdict.** No KiCad in the cloud, so `kicad-cli pcb drc` has not seen this
+  file. `tools/m7_check.py` (pour In1/In2 planes, route, refill, DRC both)
+  is written but NOT RUN; expect small first-run fixes. Until it reports,
+  every router number above is unverified, in particular the plane-tap stubs
+  (up to ~0.9 mm, never grid-checked) and the bounding-box board outline.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss
