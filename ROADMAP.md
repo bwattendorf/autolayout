@@ -547,6 +547,48 @@
   of 100 there, 100 of 100 here; emu candidate2 188 vs 187), so pcbnew's
   rewrite of a board changes pad coordinates enough to change a route; both
   are deterministic, neither is "the" answer.
+- 2026-10-13 — **M7.5 round 9: where KiCad's extra clearance counts come
+  from** (`docs/m7-results/2026-10-13-round9.md`, commit 784e95b, ten
+  boards, `tools/drc_compare.py`). Of 107 KiCad clearance entries on the
+  ten routed boards, **93 already existed in the service's placement before
+  any copper was added** (pad against pad, one connector's pads: J10 on four
+  m1 boards, J92, J26, J19/J14, J29/J20) — not the router's, and the verifier
+  rightly ignores pad-vs-pad. **14 are new and all involve our copper** (7
+  track/via vs track/via, 7 track/via vs pad); none involves a zone. Shorting
+  and hole_to_hole on c2 and c4/3p5mil were pre-existing; board `r` has 2 new
+  clearance and 2 new shorting entries. So the verifier agreed with KiCad on
+  the new violations on 8 of 10 boards and missed some on c2 (1 of 2) and r
+  (all 4).
+  Causes found in the 14 new entries and fixed (local, unit-tested, **not yet
+  KiCad-judged**):
+  1. *Custom pads* (board r, U6 pads 15/16: a 0.115 mm anchor plus a 0.845 mm
+     polygon): only the anchor was modelled, so a track beside the polygon
+     looked clear — KiCad: a short and a 0.0154 mm violation. `Pad.primitives`
+     (`gr_poly`, stroke and fill) and `Shape::Union` now model them; other
+     primitive kinds are counted in `unmodelled_primitives`, not drawn.
+  2. *Micrometre shortfalls* (0.0006-0.0027 mm, round/through-hole pads on c2,
+     c4, m1, r): KiCad polygonises curves within the project's `max_error`
+     (0.005 mm, all 32 corpus projects). The router now keeps that much extra
+     clearance (pitch grows by 0.005 mm), and the verifier's slack is cut from
+     1 um to 0.2 um because KiCad does flag 0.6 um. (Round 2 had the opposite
+     impression from a 0.1 um case; that was a modelling error since fixed.)
+  3. *Stubs against tracks and vias* (0.011-0.030 mm, c4/candidate2,
+     emu/candidate2; lengths like 0.3971 mm are off-grid stubs): stubs were
+     only checked against pads. A stub now claims its corridor (cells within
+     one pitch of the segment) as part of the net, so other nets' tracks and
+     via halos conflict with it and negotiation routes around; landing cells
+     whose corridor another net already owns are rejected. Cost, measured: the
+     MCU pin U1.2 of c4/3p5mil-candidate3 can no longer find a clear landing
+     (190 of 190 nets -> 189 of 190).
+  4. *g2i, verifier 10 unconnected vs KiCad 1:* nine through-hole GND connector
+     pads (pad has its own `(zone_connect 1)`). Hypothesis, not confirmed: a
+     thermal relief leaves the pour a gap short of the pad, reached by spokes,
+     so no point inside the pad lies in the fill. The verifier now joins a pad
+     to a same-net fill that comes within the pad's outer radius + 0.05 mm.
+     Whether that is KiCad's rule for those nine pads is for Windows to show.
+  Measured locally after 1-3 (verifier = KiCad on these boards before), m1 fab
+  104/104 clean; r 88/88 and c2 150/150 with 0 clearance/shorting; c4/3p5mil
+  189/190. Local run of all 37 follows below.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

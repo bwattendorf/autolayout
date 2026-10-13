@@ -562,3 +562,64 @@ sizes).
 `docs/m7-results/YYYY-MM-DD-round9.md`: hash; per-board tables from step 1; the
 classification table from step 2; the g2i material; what you did not do. Commit;
 `git push origin m7-router`; reply with the classification totals and the hash.
+
+
+---
+
+# Round 10 (2026-10-13): KiCad judges the round-9 fixes
+
+Since round 8 the router and verifier changed in five ways, each tied to a
+KiCad finding: dropped nets are re-routed in hard mode; custom pads (board r's
+U6) are modelled from their polygon primitives; a `max_error` (0.005 mm)
+clearance margin; off-grid stubs claim a corridor so other nets stay clear of
+them; and a pad joins a same-net fill that stops at its edge (thermal relief,
+the g2i hypothesis). None of it has been judged by KiCad. `tools/m7_batch.py`
+now also records clearance/shorting/hole_to_hole BEFORE routing, so new
+violations are `after - before`.
+
+## Prompt to paste
+
+> Follow "Round 10" in docs/windows-handoff.md exactly. Change no autolayout
+> code. If `tools/m7_batch.py` breaks, make the smallest fix, say what you
+> changed, keep going. Fresh output directories; never overwrite a board; no
+> PR; no boards or files over 1 MB committed.
+
+## Steps
+
+`git fetch origin && git checkout m7-router && git pull`; record the hash (later
+than 98cdb93); `cargo build --release`. Same shell setup as before.
+
+1. Whole corpus again, our router, new directory:
+   `"$KPY" tools/m7_batch.py out/m7r10_all`
+2. A table straight from `summary.md`, then these comparisons against round 8
+   (`docs/m7-results/2026-10-13-round8/results.csv`), per board:
+   unconnected, and **new** clearance/shorting/hole_to_hole =
+   `kicad_<kind>` minus `kicad_<kind>_before`. Totals of each, round 8 vs now.
+   Boards that got worse on any of them, listed with the numbers.
+3. The two checks the fixes were made for:
+   - `returned/r/3p5mil-candidate2`: new clearance and new shorting (round 8:
+     2 and 2 new). Expect 0 and 0; say what KiCad reports.
+   - `finish/g2i`: KiCad unconnected vs `verifier_unconnected` (round 8: 1 vs
+     10). Expect the verifier to say 1 too; if it still lists the nine GND
+     connector pads, run
+     `./target/release/autolayout verify <dir>/b_routed.kicad_pcb --plane In1.Cu=GND --plane In2.Cu=+3V3 --probe 58.82,84.1`
+     and, with pcbnew, print for pad J2.2 `GetZoneConnection()` and whether the
+     routed board's GND fills reach it; report both.
+4. Verifier vs KiCad: boards where `verifier_unconnected` or the verifier's
+   new-clearance count differs from KiCad's, with the numbers.
+5. Optional, only after 1-4 are logged: Freerouting on six representative
+   boards (the service's own final candidates), each 6-12 minutes:
+   `returned/m1/3p5mil-candidate1`, `returned/c2/3p5mil-candidate2`,
+   `returned/emu/3p5mil-candidate3`, `returned/g2/3p5mil-candidate6`,
+   `returned/io/3p5mil-candidate4`, `returned/t/3p5mil-candidate6`:
+   `"$KPY" tools/m7_batch.py out/m7r10_fr --freerouting --boards quilter/returned/m1/3p5mil-candidate1/m1.kicad_pcb ...`
+   and the same columns for Freerouting from the `route_check.py` JSON
+   (`unconnected_after_routing`), against our router's numbers on those boards.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-round10.md`: hash, commands and exit codes, the
+tables from 2-4, the answers to 3 and 4, step 5 if run, what changed in the
+script, what was not run. Copy `summary.md`, `results.csv`, `results.json`. Commit;
+`git push origin m7-router`; reply with the new totals, any board that got worse,
+and the hash.

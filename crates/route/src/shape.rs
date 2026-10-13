@@ -25,6 +25,8 @@ pub enum Shape {
   /// Segment with a round end of radius `r` (circles are zero-length).
   Capsule(Point, Point, f64),
   Polygon(Vec<Point>),
+  /// Union of shapes (a `custom` pad: its anchor plus its polygon primitives).
+  Union(Vec<Shape>),
 }
 
 impl Shape {
@@ -38,6 +40,7 @@ impl Shape {
         qx.max(0.0).hypot(qy.max(0.0)) + qx.max(qy).min(0.0) - r
       }
       Shape::Capsule(a, b, r) => seg_dist(p, *a, *b) - r,
+      Shape::Union(parts) => parts.iter().map(|q| q.sdf(p)).fold(f64::INFINITY, f64::min),
       Shape::Polygon(pts) => {
         let mut d = f64::INFINITY;
         for i in 0..pts.len() {
@@ -69,6 +72,10 @@ impl Shape {
         max: Point::new(a.x.max(b.x) + r, a.y.max(b.y) + r),
       }),
       Shape::Polygon(pts) => BBox::from_points(pts.iter().copied()),
+      Shape::Union(parts) => parts
+        .iter()
+        .filter_map(Shape::bbox)
+        .fold(None, |acc, b| BBox::union(acc, Some(b))),
     }
   }
 }
@@ -112,9 +119,36 @@ fn capsule(pad: &Pad) -> Shape {
   )
 }
 
+/// A `custom` pad: its anchor (circle or rectangle, `size`) plus every
+/// `gr_poly` primitive, each filled polygon and its stroke, rotated with the pad.
+/// Other primitive kinds are counted in `Pad::unmodelled_primitives`, not drawn.
+fn custom(pad: &Pad, anchor_round: bool) -> Shape {
+  let half = Point::new(pad.size.x / 2.0, pad.size.y / 2.0);
+  let mut parts = vec![if anchor_round {
+    Shape::Capsule(pad.at, pad.at, half.x.min(half.y))
+  } else {
+    Shape::RoundRect(pad.at, half, 0.0, pad.angle)
+  }];
+  for prim in &pad.primitives {
+    let pts: Vec<Point> = prim.pts.iter().map(|q| pad.at + q.rotated(pad.angle)).collect();
+    if prim.fill && pts.len() >= 3 {
+      parts.push(Shape::Polygon(pts.clone()));
+    }
+    if prim.width > 0.0 {
+      for i in 0..pts.len() {
+        if let (Some(&a), Some(&b)) = (pts.get(i), pts.get((i + 1) % pts.len())) {
+          parts.push(Shape::Capsule(a, b, prim.width / 2.0));
+        }
+      }
+    }
+  }
+  Shape::Union(parts)
+}
+
 /// The pad as something to keep clear of: roundrects are their full rectangle.
 pub fn pad_obstacle(pad: &Pad) -> Shape {
   match pad.shape.as_str() {
+    "custom" => custom(pad, !pad.anchor_rect),
     "circle" | "oval" => capsule(pad),
     _ => Shape::RoundRect(
       pad.at,
@@ -129,6 +163,7 @@ pub fn pad_obstacle(pad: &Pad) -> Shape {
 /// rectangle (their primitives are not read), so are not exact.
 pub fn pad_copper(pad: &Pad) -> Shape {
   match pad.shape.as_str() {
+    "custom" => custom(pad, !pad.anchor_rect),
     "circle" | "oval" => capsule(pad),
     "roundrect" => {
       let half = Point::new(pad.size.x / 2.0, pad.size.y / 2.0);
@@ -148,6 +183,14 @@ pub fn pad_copper(pad: &Pad) -> Shape {
 /// the gap between a track of radius `r` and `s`. `s` is convex, so the
 /// distance along the segment is convex and a ternary search finds the minimum.
 pub fn capsule_gap(a: Point, b: Point, r: f64, s: &Shape) -> f64 {
+  // A union is the nearer of its parts; each part is convex (polygon fills are
+  // convex in the pads seen so far; a concave one would need splitting).
+  if let Shape::Union(parts) = s {
+    return parts
+      .iter()
+      .map(|q| capsule_gap(a, b, r, q))
+      .fold(f64::INFINITY, f64::min);
+  }
   let at = |t: f64| Point::new(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
   let (mut lo, mut hi) = (0.0, 1.0);
   for _ in 0..60 {
