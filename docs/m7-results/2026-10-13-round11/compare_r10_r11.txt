@@ -1,0 +1,46 @@
+== round 10 (d0a443e): boards 37, status ok 37
+zero routing violations (absolute): 18
+zero unconnected and zero new clearance/shorting/h2h: 22
+KiCad unconnected_after summed: 216
+new (after-before) clearance/shorting/h2h summed: [1, 0, 0]  absolute: [122, 5, 4]  before: [121, 5, 4]
+nets complete / total: 4574 / 4749
+via_dangling nonzero: [('returned/c4/3p5mil-candidate3/c4.kicad_pcb', '1'), ('returned/r/3p5mil-candidate2/r.kicad_pcb', '1')]
+track_width/dangling/copper_edge/hole_clearance nonzero: []
+== round 11: boards 37, status ok 37
+zero routing violations (absolute): 19
+zero unconnected and zero new clearance/shorting/h2h: 23
+KiCad unconnected_after summed: 186
+new (after-before) clearance/shorting/h2h summed: [1, 0, 0]  absolute: [122, 5, 4]  before: [121, 5, 4]
+nets complete / total: 4604 / 4749
+via_dangling nonzero: [('returned/c4/3p5mil-candidate3/c4.kicad_pcb', '1'), ('returned/r/3p5mil-candidate2/r.kicad_pcb', '1')]
+track_width/dangling/copper_edge/hole_clearance nonzero: []
+
+== boards where KiCad unconnected or any NEW violation or nets complete changed (round 10 -> round 11)
+quilter/returned/c4/candidate2/c4.kicad_pcb | unconnected 29 -> 25; nets complete 158 -> 163 of 185
+quilter/returned/emu/candidate2/emu.kicad_pcb | unconnected 36 -> 28; nets complete 182 -> 188 of 214
+quilter/returned/m1-2026-08-06-candidate5/m1.kicad_pcb | unconnected 5 -> 0; nets complete 77 -> 82 of 82
+quilter/returned/m1/candidate4/m1.kicad_pcb | unconnected 25 -> 12; nets complete 83 -> 87 of 99
+quilter/returned/m1/candidate6/m1.kicad_pcb | unconnected 21 -> 20; nets complete 84 -> 86 of 99
+quilter/returned/m1/doublesided-candidate4/m1.kicad_pcb | unconnected 16 -> 15; nets complete 85 -> 86 of 99
+quilter/returned/m1/locked-candidate5/m1.kicad_pcb | nets complete 75 -> 76 of 99
+quilter/returned/m1/tp18-candidate2/m1.kicad_pcb | unconnected 26 -> 23; nets complete 83 -> 86 of 99
+quilter/returned/m1/tp18-candidate3/m1.kicad_pcb | unconnected 15 -> 22; nets complete 84 -> 86 of 99
+quilter/finish/g2i/g2i.kicad_pcb | unconnected 8 -> 6; nets complete 25 -> 26 of 32
+
+worse on unconnected / new violation / via_dangling: ['quilter/returned/m1/tp18-candidate3/m1.kicad_pcb']
+
+== four boards
+quilter/returned/m1/candidate4/m1.kicad_pcb
+   r10: nets 83/99 unc 25 clr 15(before 14) short 0(0) h2h 0(0) via_dangling 0 | verifier unc 25 clr 1
+   r11: nets 87/99 unc 12 clr 15(before 14) short 0(0) h2h 0(0) via_dangling 0 | verifier unc 12 clr 1
+quilter/finish/g2i/g2i.kicad_pcb
+   r10: nets 25/32 unc 8 clr 0(before 0) short 0(0) h2h 0(0) via_dangling 0 | verifier unc 8 clr 0
+   r11: nets 26/32 unc 6 clr 0(before 0) short 0(0) h2h 0(0) via_dangling 0 | verifier unc 6 clr 0
+quilter/returned/m1-2026-08-06-candidate5/m1.kicad_pcb
+   r10: nets 77/82 unc 5 clr 0(before 0) short 0(0) h2h 0(0) via_dangling 0 | verifier unc 5 clr 0
+   r11: nets 82/82 unc 0 clr 0(before 0) short 0(0) h2h 0(0) via_dangling 0 | verifier unc 0 clr 0
+quilter/returned/c4/3p5mil-candidate3/c4.kicad_pcb
+   r10: nets 189/190 unc 2 clr 3(before 3) short 1(1) h2h 2(2) via_dangling 1 | verifier unc 2 clr 0
+   r11: nets 189/190 unc 2 clr 3(before 3) short 1(1) h2h 2(2) via_dangling 1 | verifier unc 2 clr 0
+
+== verifier vs KiCad (new/unconnected) differences, round 11
