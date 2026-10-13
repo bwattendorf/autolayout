@@ -1,0 +1,5 @@
+out/m7r2/fr/m1_fab_routed.kicad_pcb: 1372 segments, 232 vias: unconnected 0, track_dangling 0, hole_to_hole 0, clearance 4, copper_edge 0, track_width 45, via_size 0
+  clearance at (98.9032, 86.5243): +1V1 vs N$54: 0.0722 mm, rule 0.0889
+  clearance at (98.9032, 87.1595): +1V1 vs N$54: -0.0704 mm, rule 0.0889
+  clearance at (105.1313, 90.9107): N$85 vs +3V3_ADC: 0.0736 mm, rule 0.0889
+  clearance at (105.4615, 91.2409): N$85 vs +3V3_ADC: -0.0705 mm, rule 0.0889

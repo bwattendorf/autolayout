@@ -1,0 +1,1 @@
+out/m7r2/ours_check.kicad_pcb: 925 segments, 460 vias: unconnected 0, track_dangling 0, hole_to_hole 0, clearance 0, copper_edge 0, track_width 0, via_size 0

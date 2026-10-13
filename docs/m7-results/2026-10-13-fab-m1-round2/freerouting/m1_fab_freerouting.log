@@ -1,0 +1,39 @@
+2026-10-13 12:24:14.958 INFO   Freerouting v2.3.0 (build-date: 2026-08-07)
+2026-10-13 12:24:15.637 WARN   Analytics tracking: first delivery failure in this window - /v1/analytics/identify - IOException: Server returned HTTP response code: 403 for URL: https://api.freerouting.app/v1/analytics/identify | Server response: <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=Edge"><meta name="robots" content="noindex,nofollow"><meta name="…. Further failures will be aggregated and reported every 60 minutes.
+2026-10-13 12:24:16.465 INFO   [B31FDA\12E4C1] Loading board file 'm1_fab.dsn'...
+2026-10-13 12:24:16.506 INFO   New version available: v2.5.0
+2026-10-13 12:24:16.611 INFO   Layer 'Ground Layer 1' has been automatically configured as a dedicated power plane because it contains a large conduction area covering >50% of the board.
+2026-10-13 12:24:16.612 INFO   Layer 'Power Layer 2' has been automatically configured as a dedicated power plane because it contains a large conduction area covering >50% of the board.
+2026-10-13 12:24:16.642 INFO   [B31FDA\12E4C1] Job 'B31FDA\12E4C1' started at 2026-10-13T16:24:16.642889Z.
+2026-10-13 12:24:17.195 INFO   [B31FDA\12E4C1] Fanout stage started on board 'a2a2665f56743b10af4a60f66bfa5f71' with 338 of 452 SMD pins needing fanout (96 already connected, 18 netless).
+2026-10-13 12:24:30.171 INFO   [B31FDA\12E4C1] Fanout pass #1 on board 'd04e54431c5928a570cd9c7003739c84' completed in 12.63 seconds with 330 SMD pins fanouted, 2 not routed, 0 insert errors, +206 extra vias (0 SMD pins still to check in pass, ripup costs=100).
+2026-10-13 12:24:35.565 INFO   [B31FDA\12E4C1] Fanout pass #2 on board '034b66843fb4f18fb826e667c9b04dfc' completed in 5.35 seconds with 24 SMD pins fanouted, 0 not routed, 0 insert errors, +7 extra vias (0 SMD pins still to check in pass, ripup costs=200).
+2026-10-13 12:24:39.863 INFO   [B31FDA\12E4C1] Fanout pass #3 on board 'b5f554031f09d36a45a7158cd78a0e65' completed in 4.25 seconds with 18 SMD pins fanouted, 0 not routed, 0 insert errors, +3 extra vias (0 SMD pins still to check in pass, ripup costs=300).
+2026-10-13 12:24:42.566 INFO   [B31FDA\12E4C1] Fanout pass #4 on board 'a1de1d50045aa28a0b26ec6b9c91e183' completed in 2.66 seconds with 10 SMD pins fanouted, 0 not routed, 0 insert errors, +4 extra vias (0 SMD pins still to check in pass, ripup costs=400).
+2026-10-13 12:24:45.189 INFO   [B31FDA\12E4C1] Fanout pass #5 on board 'd9deab7dee0167405c26fe194fd36d9d' completed in 2.59 seconds with 10 SMD pins fanouted, 0 not routed, 0 insert errors, +0 extra vias (0 SMD pins still to check in pass, ripup costs=500).
+2026-10-13 12:24:47.617 INFO   [B31FDA\12E4C1] Fanout pass #6 on board '6f9988dd6f789d9635f82dcdd8161b84' completed in 2.40 seconds with 6 SMD pins fanouted, 1 not routed, 0 insert errors, +4 extra vias (0 SMD pins still to check in pass, ripup costs=600).
+2026-10-13 12:24:49.855 INFO   [B31FDA\12E4C1] Fanout pass #7 on board '65bf96f0b843fe6813fafa9061bb970b' completed in 2.21 seconds with 2 SMD pins fanouted, 1 not routed, 0 insert errors, +0 extra vias (0 SMD pins still to check in pass, ripup costs=700).
+2026-10-13 12:24:52.056 INFO   [B31FDA\12E4C1] Fanout pass #8 on board '8c25523c301a18b8c42789cc0d0d3d5e' completed in 2.17 seconds with 2 SMD pins fanouted, 1 not routed, 0 insert errors, +0 extra vias (0 SMD pins still to check in pass, ripup costs=800).
+2026-10-13 12:24:54.507 INFO   [B31FDA\12E4C1] Fanout pass #9 on board 'fb3c06094cc78af39cf955ab46f21209' completed in 2.41 seconds with 2 SMD pins fanouted, 1 not routed, 0 insert errors, +0 extra vias (0 SMD pins still to check in pass, ripup costs=900).
+2026-10-13 12:24:57.592 INFO   [B31FDA\12E4C1] Fanout pass #10 on board 'd260f0239d7db234ffb359bbe6a73f85' completed in 3.05 seconds with 2 SMD pins fanouted, 1 not routed, 0 insert errors, +0 extra vias (0 SMD pins still to check in pass, ripup costs=1000).
+2026-10-13 12:24:57.593 INFO   Fanout stopped after 10 passes: no progress for 3 consecutive passes.
+2026-10-13 12:24:58.296 INFO   [B31FDA\12E4C1] Fanout stage completed: started with 434 total SMD pins, completed in 40.81 seconds, escaped pins: 432/434 (99.5%), using 39.80 total CPU seconds, 87.23 GB total allocated, and 486.9 MB peak heap usage.
+2026-10-13 12:24:58.344 INFO   [B31FDA\12E4C1] Auto-routing stage started on board 'd260f0239d7db234ffb359bbe6a73f85' for 145 unrouted items.
+2026-10-13 12:28:34.080 INFO   [B31FDA\12E4C1] Auto-routing pass #1 on board 'd260f0239d7db234ffb359bbe6a73f85' was completed in 214.15 seconds with the score of 921.31 (31 unrouted and 0 violations), using 249.58 CPU seconds and the job allocated 562.26 GB of memory so far.
+2026-10-13 12:29:39.818 INFO   [B31FDA\12E4C1] Auto-routing pass #2 on board 'b01ef7742134c2c6a669f95f677657aa' was completed in 63.93 seconds with the score of 971.06 (11 unrouted and 2 violations), using 313.17 CPU seconds and the job allocated 710.89 GB of memory so far.
+2026-10-13 12:30:08.289 INFO   [B31FDA\12E4C1] Auto-routing pass #3 on board '21e2b5cbf5e113470e5dd8e6d730dcf3' was completed in 27.00 seconds with the score of 983.75 (6 unrouted and 2 violations), using 341.63 CPU seconds and the job allocated 780.57 GB of memory so far.
+2026-10-13 12:30:24.130 INFO   [B31FDA\12E4C1] Auto-routing pass #4 on board '3e1361e2a5b7183a8c4a7824e49481ef' was completed in 14.38 seconds with the score of 998.97 (0 unrouted and 2 violations), using 357.42 CPU seconds and the job allocated 818.58 GB of memory so far.
+2026-10-13 12:30:26.400 INFO   [B31FDA\12E4C1] Auto-routing pass #5 on board '7f06a43f9426ca68f9b1213c3dddb5b5' was completed in 0.73 seconds with the score of 998.97 (0 unrouted and 2 violations), using 359.39 CPU seconds and the job allocated 823.20 GB of memory so far.
+2026-10-13 12:30:28.005 INFO   [B31FDA\12E4C1] Auto-routing stage completed: started with 277 unrouted nets, completed in 370.52 seconds, final score: 998.97 (0 unrouted and 2 violations), using 360.39 total CPU seconds, 825.54 GB total allocated, and 856.1 MB peak heap usage.
+2026-10-13 12:30:28.738 INFO   [B31FDA\12E4C1] Optimization stage started on board '005413d1162d030ff39da20eec52f8b6' with score 998.97 (0 unrouted and 2 violations).
+2026-10-13 12:30:29.503 INFO   [B31FDA\12E4C1] Stopping optimizer because the current board score (998.97) is already close to the maximum score (1000). Remaining potential improvement is less than the threshold (1.00%).
+2026-10-13 12:30:30.285 INFO   [B31FDA\12E4C1] Optimization stage completed: started with score 998.97 (0 unrouted and 2 violations), completed in 0.77 seconds, final score: 998.97 (0 unrouted and 2 violations), using 0.75 total CPU seconds, 1.61 GB total allocated, and 367.5 MB peak heap usage.
+2026-10-13 12:30:30.286 INFO   [B31FDA\12E4C1] Job 'B31FDA\12E4C1' finished with state: COMPLETED (elapsed: 6 minutes 13.64 seconds, finished at UTC: 2026-10-13T16:30:30.285115300Z).
+
+????????????????????????????????????????????????????????????????????
+?           Thank you for using Freerouting!                       ?
+?                                                                  ?
+?  If you would like to support the project, please consider       ?
+?  sponsoring me at https://github.com/sponsors/andrasfuchs        ?
+?  Even a small monthly donation is greatly appreciated!           ?
+????????????????????????????????????????????????????????????????????
