@@ -89,6 +89,8 @@ pub struct Pad {
   pub size: Point,
   /// `circle`, `rect`, `roundrect`, `oval` or `custom`, as written (empty if absent).
   pub shape: String,
+  /// `(roundrect_rratio r)` if the pad states one: corner radius = r x the shorter side.
+  pub roundrect_rratio: Option<f64>,
   /// Drill width and height; `None` for SMD pads. A round drill has both equal.
   pub drill: Option<Point>,
   pub net: Option<u32>,
@@ -235,6 +237,7 @@ impl Footprint {
       angle,
       size,
       shape: list.atom(3).unwrap_or_default().into_owned(),
+      roundrect_rratio: list.child("roundrect_rratio").and_then(|r| r.number(1)),
       drill: list.child("drill").and_then(|d| {
         // `(drill 1.2)` or `(drill oval 1.0 2.0)`
         let at = |i| d.number(i);

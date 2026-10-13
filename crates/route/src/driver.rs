@@ -117,10 +117,36 @@ pub fn route_all(board: &Board, model: &RoutingModel, costs: Costs) -> Summary {
   s
 }
 
+/// Test helper: write `routes` into the board text `src` and verify the result
+/// from the file alone, with the rules the model was built for.
+#[cfg(test)]
+pub(crate) fn judge(
+  src: &str,
+  board: &Board,
+  model: &RoutingModel,
+  routes: &[NetRoute],
+) -> crate::verify::VerifyReport {
+  use crate::rules::DesignRules;
+  let p = &model.profile;
+  let mut rules = DesignRules::explicit(p.track_width, p.clearance, p.via_diameter, p.via_drill).unwrap();
+  rules.min.copper_edge_clearance = 0.3;
+  let mut doc = autolayout_sexpr::parse(src).unwrap();
+  let summary = Summary {
+    routes: routes.to_vec(),
+    ..Summary::default()
+  };
+  crate::write::add_routes(&mut doc, model, board, &summary).unwrap();
+  let text = doc.to_string();
+  let doc = autolayout_sexpr::parse(&text).unwrap();
+  let b = Board::read(&doc).unwrap();
+  let planes: Vec<(String, u32)> = model.planes.iter().map(|p| (p.layer.clone(), p.net)).collect();
+  crate::verify::verify(&doc, &b, &rules, &planes)
+}
+
 #[cfg(test)]
 mod tests {
+  use super::judge;
   use super::*;
-  use crate::check::check;
   use crate::rules::DesignRules;
   use autolayout_sexpr::parse;
 
@@ -167,7 +193,7 @@ mod tests {
     assert!(a.failed.is_empty(), "failed: {:?}", a.failed);
     assert_eq!(a.connected.len(), 3);
     assert!(!a.runs.is_empty());
-    let c = check(&b, &m, &s.routes);
+    let c = judge(&board(""), &b, &m, &s.routes);
     assert!(c.clean(), "{c:?}");
   }
 
@@ -223,8 +249,8 @@ mod tests {
 
 #[cfg(test)]
 mod negotiation_tests {
+  use super::judge;
   use super::*;
-  use crate::check::check;
   use crate::negotiate::{Params, route_negotiated};
   use crate::rules::DesignRules;
   use autolayout_sexpr::parse;
@@ -274,7 +300,7 @@ mod negotiation_tests {
       n.nets_complete,
       g.nets_complete
     );
-    let c = check(&b, &m, &n.routes);
+    let c = judge(BOARD, &b, &m, &n.routes);
     assert!(c.clean(), "{c:?}");
   }
 
@@ -299,7 +325,7 @@ mod negotiation_tests {
       history_step: u32::MAX,
     };
     let (n, st) = route_negotiated(&b, &m, Costs::default(), p);
-    assert!(check(&b, &m, &n.routes).clean());
+    assert!(judge(BOARD, &b, &m, &n.routes).clean());
     assert!(st.iterations >= 1);
   }
 
@@ -311,6 +337,47 @@ mod negotiation_tests {
       ..Params::default()
     };
     let (n, _) = route_negotiated(&b, &m, Costs::default(), p);
-    assert!(check(&b, &m, &n.routes).clean());
+    assert!(judge(BOARD, &b, &m, &n.routes).clean());
+  }
+
+  /// Regression (2026-10-13): plane-tap vias of one net were placed one grid
+  /// pitch (0.1778 mm) apart, holes 0.0278 mm apart against a 0.0889 mm rule;
+  /// same-net vias were exempt from the via-to-via check. Three pads of one
+  /// plane net, so close that each would take the nearest free cell.
+  #[test]
+  fn plane_taps_of_one_net_keep_hole_to_hole_spacing() {
+    let src = r#"(kicad_pcb
+  (layers (0 "F.Cu" signal) (4 "In1.Cu" power) (2 "B.Cu" signal) (25 "Edge.Cuts" user))
+  (net 0 "") (net 1 "G")
+  (gr_line (start 0 0) (end 10 0) (layer "Edge.Cuts"))
+  (gr_line (start 10 0) (end 10 6) (layer "Edge.Cuts"))
+  (gr_line (start 10 6) (end 0 6) (layer "Edge.Cuts"))
+  (gr_line (start 0 6) (end 0 0) (layer "Edge.Cuts"))
+  (footprint "X" (layer "F.Cu") (at 0 0) (property "Reference" "U1")
+    (pad "1" smd rect (at 4 3) (size 0.3 0.3) (layers "F.Cu") (net 1 "G"))
+    (pad "2" smd rect (at 4.4 3) (size 0.3 0.3) (layers "F.Cu") (net 1 "G"))
+    (pad "3" smd rect (at 4.8 3) (size 0.3 0.3) (layers "F.Cu") (net 1 "G")))
+)"#;
+    let doc = parse(src).unwrap();
+    let b = Board::read(&doc).unwrap();
+    let mut r = DesignRules::explicit(0.2, 0.2, 0.6, 0.3).unwrap();
+    r.min.copper_edge_clearance = 0.3;
+    let p = r.classes[0].clone();
+    let m = RoutingModel::build(&doc, &b, &r, &p, &[("In1.Cu".to_string(), "G".to_string())]).unwrap();
+    let s = route_all(&b, &m, Costs::default());
+    let g = s.routes.iter().find(|r| r.net == 1).unwrap();
+    assert!(g.vias.len() >= 2, "expected several taps, got {:?}", g.vias);
+    for (i, a) in g.vias.iter().enumerate() {
+      for c in &g.vias[i + 1..] {
+        let d = (m.centre(a.0, a.1) - m.centre(c.0, c.1)).length();
+        assert!(
+          d >= m.via_spacing - 1e-9,
+          "vias {a:?} {c:?} are {d} apart, need {}",
+          m.via_spacing
+        );
+      }
+    }
+    let v = judge(src, &b, &m, &s.routes);
+    assert_eq!(v.hole_to_hole, 0, "{v:?}");
   }
 }

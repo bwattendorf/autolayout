@@ -323,6 +323,57 @@
   8 GB allocation killed the process (exit 134/137). Penalties are capped
   (`PENALTY_CAP`), path costs are `u64`, and a regression test runs 200
   iterations from `u32::MAX` penalties.
+- 2026-10-13 — **M7.4 round 2: fixes from KiCad's first verdict** (fab m1,
+  KiCad 9.0.1 on commit 8bb50a4: ours 2 unconnected + 2 track_dangling + 2
+  hole_to_hole; docs/m7-results/2026-10-13-fab-m1.md). Three causes found,
+  all in the router, none in the rules:
+  1. *hole_to_hole*: two +3V3 plane-tap vias one pitch (0.1778 mm) apart, holes
+     0.0278 mm apart vs 0.0889. Same-net vias were exempt from the via check
+     (halo ownership allowed overlap for the same net), and nothing checked
+     via-to-via hole spacing at all. Now `RoutingModel::via_spacing` = drill +
+     `min_hole_to_hole`; fixed vias mark `hole_block`, a path that places two
+     vias too close to each other or to this net's earlier vias bans the
+     later site and searches again.
+  2. *dangling +12V / +12V_RDR stubs*: not stubs. Both tracks end inside the
+     **square** outline of a roundrect pad (C22.1 3.5 x 1.6, C28.1 1 x 1.45,
+     ratio 0.25) but outside its rounded corner, 0.068 / 0.069 mm from the
+     copper. M7.1 had written "roundrect corners count as square
+     (conservative)": true for obstacles, **wrong for landing a track**. Pads
+     now have `pad_copper` (true rounded rectangle, `roundrect_rratio`, 0.5 if
+     unstated) for access and `pad_obstacle` (full rectangle) for clearance,
+     and an access cell must lie half a track-width inside the copper.
+  3. *self-check*: the old `check` re-read the router's own grid, so it shared
+     every blind spot. Replaced by `route::verify`, which reads the **written
+     file** (segments, vias, true pad shapes) and judges unconnected,
+     track_dangling, hole_to_hole, clearance, copper_edge, track_width and
+     via_size in continuous geometry. `autolayout route` now verifies the
+     exact text it writes and exits 1 on any finding; `autolayout verify
+     <board>` does it for any file.
+  **Agreement with KiCad (measured, one board, calibrated on it):** the
+  verifier run on the *old* router's output (built from 739824f) reports
+  unconnected 2, track_dangling 2, hole_to_hole 2, clearance 0 at the same
+  coordinates KiCad listed, versus KiCad's 2 / 2 / 2 / 0. Getting there took
+  four wrong guesses at KiCad's joining rules, each shown by the board: a
+  track end joins a pad when its copper reaches the pad polygon (calibrated:
+  threshold = half the track width + 0.01 mm, since ends up to 0.0528 mm
+  outside the true corner were joined and the two at 0.068/0.069 were not); a
+  track end on another track's body joins it; a via or pad centre on a
+  track's body joins it; a via whose disc reaches a pad joins it. A 0.0001 mm
+  clearance shortfall KiCad ignored is also ignored (1 um slack). These are
+  fitted to 35 ends on one board, not read from KiCad.
+  **Current router, same board and rules:** 104/104 nets, 925 segments, 460
+  vias, 3 009 mm, verifier 0/0/0/0, identical bytes on two runs. UNVERIFIED by
+  KiCad (round-2 DRC owed). Also: plane-tap and off-grid stubs are now
+  checked against foreign pads (at 0.2 mm rules a tap stub crossed the MCU's
+  0.4 mm-pitch pads: verifier clearance findings 35 -> 2; that case is 62 of
+  104 nets, verifier unconnected 57, clearance 2, not good). Stubs are still
+  not checked against other nets' *tracks*.
+  **Correction to M7.1:** "0 of 345 pads unreachable at fab rules" used the
+  square-corner pad outline. With true rounded copper and a half-track inset,
+  21 of 345 pads have no grid cell fully on their copper and land by an
+  off-grid stub instead (`m1_fab_every_pad_is_reachable` is replaced by
+  `m1_fab_routes_and_the_verifier_is_clean`, which routes, writes and verifies
+  the whole board: 104/104 nets, verifier clean, measured 2026-10-13).
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

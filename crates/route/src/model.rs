@@ -29,6 +29,7 @@ use autolayout_board::{BBox, Board, Point, arc_points};
 use autolayout_sexpr::{Document, List};
 
 use crate::rules::{DesignRules, NetClass};
+use crate::shape::{Shape, pad_copper, pad_obstacle};
 
 /// Cell owner values. A net code `n` is stored as `n + 1`.
 pub const FREE: u32 = 0;
@@ -73,84 +74,6 @@ fn owner_of(net: Option<u32>) -> u32 {
   }
 }
 
-/// Distance-to-shape primitives, all in board millimetres.
-enum Shape {
-  /// Oriented rectangle: centre, half extents, angle (degrees, board frame).
-  Rect(Point, Point, f64),
-  /// Segment with a round end of radius `r` (circles are zero-length).
-  Capsule(Point, Point, f64),
-  Polygon(Vec<Point>),
-}
-
-impl Shape {
-  /// Distance from `p` to the shape's edge, 0 inside.
-  fn distance(&self, p: Point) -> f64 {
-    match self {
-      Shape::Rect(c, half, angle) => {
-        let l = (p - *c).rotated(-angle);
-        (l.x.abs() - half.x).max(0.0).hypot((l.y.abs() - half.y).max(0.0))
-      }
-      Shape::Capsule(a, b, r) => (seg_dist(p, *a, *b) - r).max(0.0),
-      Shape::Polygon(pts) => {
-        if inside(pts, p) {
-          0.0
-        } else {
-          let mut d = f64::INFINITY;
-          for i in 0..pts.len() {
-            if let (Some(&a), Some(&b)) = (pts.get(i), pts.get((i + 1) % pts.len())) {
-              d = d.min(seg_dist(p, a, b));
-            }
-          }
-          d
-        }
-      }
-    }
-  }
-
-  fn bbox(&self) -> Option<BBox> {
-    match self {
-      Shape::Rect(c, half, _) => {
-        let r = half.x.hypot(half.y);
-        Some(BBox {
-          min: Point::new(c.x - r, c.y - r),
-          max: Point::new(c.x + r, c.y + r),
-        })
-      }
-      Shape::Capsule(a, b, r) => Some(BBox {
-        min: Point::new(a.x.min(b.x) - r, a.y.min(b.y) - r),
-        max: Point::new(a.x.max(b.x) + r, a.y.max(b.y) + r),
-      }),
-      Shape::Polygon(pts) => BBox::from_points(pts.iter().copied()),
-    }
-  }
-}
-
-fn seg_dist(p: Point, a: Point, b: Point) -> f64 {
-  let ab = b - a;
-  let l2 = ab.x * ab.x + ab.y * ab.y;
-  let t = if l2 == 0.0 {
-    0.0
-  } else {
-    (((p.x - a.x) * ab.x + (p.y - a.y) * ab.y) / l2).clamp(0.0, 1.0)
-  };
-  (p - Point::new(a.x + ab.x * t, a.y + ab.y * t)).length()
-}
-
-fn inside(pts: &[Point], p: Point) -> bool {
-  let mut c = false;
-  let mut j = pts.len().saturating_sub(1);
-  for i in 0..pts.len() {
-    if let (Some(a), Some(b)) = (pts.get(i), pts.get(j))
-      && (a.y > p.y) != (b.y > p.y)
-      && p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x
-    {
-      c = !c;
-    }
-    j = i;
-  }
-  c
-}
-
 /// A plane: a copper layer poured with one net, not routed on.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Plane {
@@ -184,6 +107,10 @@ pub struct RoutingModel {
   /// One map for vias (they pierce every layer): where a via centre may go.
   pub via: Vec<u32>,
   pub profile: NetClass,
+  /// Least centre-to-centre distance between two via holes: drill plus
+  /// `min_hole_to_hole`. Two vias one pitch apart broke this on m1 (KiCad
+  /// hole_to_hole, 2026-10-13).
+  pub via_spacing: f64,
   pub stats: ModelStats,
 }
 
@@ -250,7 +177,9 @@ impl RoutingModel {
     let Some(net) = pad.net else {
       return Access { cells };
     };
-    let shape = pad_shape(pad);
+    let shape = pad_copper(pad);
+    // The track end must sit fully on copper: inset by half the track width.
+    let inset = self.profile.track_width / 2.0;
     let Some(bb) = shape.bbox() else {
       return Access { cells };
     };
@@ -258,7 +187,7 @@ impl RoutingModel {
     for layer in self.pad_layer_indices(&pad.layers) {
       for iy in y0..=y1 {
         for ix in x0..=x1 {
-          if shape.distance(self.centre(ix, iy)) == 0.0 && self.track_ok(layer, ix, iy, net) {
+          if shape.sdf(self.centre(ix, iy)) <= -inset && self.track_ok(layer, ix, iy, net) {
             cells.push((layer, ix, iy));
           }
         }
@@ -304,21 +233,6 @@ fn claim(cell: u32, owner: u32) -> u32 {
     owner
   } else {
     BLOCKED
-  }
-}
-
-fn pad_shape(pad: &autolayout_board::Pad) -> Shape {
-  let half = Point::new(pad.size.x / 2.0, pad.size.y / 2.0);
-  match pad.shape.as_str() {
-    "circle" | "oval" => {
-      // A capsule along the long axis; a circle has equal sides.
-      let r = half.x.min(half.y);
-      let along = Point::new((half.x - r).max(0.0), (half.y - r).max(0.0));
-      let a = pad.at + along.rotated(pad.angle);
-      let b = pad.at - along.rotated(pad.angle);
-      Shape::Capsule(a, b, r)
-    }
-    _ => Shape::Rect(pad.at, half, pad.angle),
   }
 }
 
@@ -403,6 +317,7 @@ impl RoutingModel {
       stack: all_cu.clone(),
       planes: plane_list,
       profile: profile.clone(),
+      via_spacing: profile.via_drill + rules.min.hole_to_hole,
       stats: ModelStats::default(),
     };
 
@@ -419,7 +334,7 @@ impl RoutingModel {
     // Pads.
     for fp in &board.footprints {
       for pad in &fp.pads {
-        let shape = pad_shape(pad);
+        let shape = pad_obstacle(pad);
         if pad.shape == "custom" {
           m.stats.custom_pads += 1;
         }
@@ -510,6 +425,8 @@ impl RoutingModel {
             m.paint(map, &shape, tr + cl, owner);
           }
           m.paint(&mut via_map, &shape, vr + cl, owner);
+          let hole = Shape::Capsule(at, at, 0.0);
+          m.paint(&mut via_map, &hole, m.via_spacing - 1e-9, BLOCKED);
         }
         Some("zone") => {
           let ko = item.child("keepout");
@@ -785,5 +702,46 @@ mod tests {
         let _ = RoutingModel::build(&doc, &board, &r, &p, &[]);
       }
     }
+  }
+
+  /// Regression (2026-10-13): C22.1 is a 3.5 x 1.6 mm roundrect (ratio 0.25).
+  /// Access cells used to be chosen against its square outline, so a track
+  /// could end in the rounded-off corner, outside the copper, and KiCad
+  /// reported it dangling. Every access cell must lie on the true rounded
+  /// copper, a half track-width in.
+  #[test]
+  fn access_cells_of_a_roundrect_pad_avoid_its_rounded_corners() {
+    let src = r#"(kicad_pcb
+  (layers (0 "F.Cu" signal) (2 "B.Cu" signal) (25 "Edge.Cuts" user))
+  (net 0 "") (net 1 "A")
+  (gr_line (start 0 0) (end 20 0) (layer "Edge.Cuts"))
+  (gr_line (start 20 0) (end 20 10) (layer "Edge.Cuts"))
+  (gr_line (start 20 10) (end 0 10) (layer "Edge.Cuts"))
+  (gr_line (start 0 10) (end 0 0) (layer "Edge.Cuts"))
+  (footprint "X" (layer "F.Cu") (at 0 0) (property "Reference" "C22")
+    (pad "1" smd roundrect (at 10 5) (size 3.5 1.6) (layers "F.Cu") (roundrect_rratio 0.25) (net 1 "A")))
+)"#;
+    let doc = parse(src).unwrap();
+    let board = Board::read(&doc).unwrap();
+    let mut r = DesignRules::explicit(0.0889, 0.0889, 0.25, 0.15).unwrap();
+    r.min.copper_edge_clearance = 0.3;
+    let p = r.classes[0].clone();
+    let m = RoutingModel::build(&doc, &board, &r, &p, &[]).unwrap();
+    let a = m.pad_access(&board, 0, 0);
+    assert!(a.cells.len() > 20);
+    let pad = &board.footprints[0].pads[0];
+    let truth = crate::shape::pad_copper(pad);
+    for &(_, ix, iy) in &a.cells {
+      let d = truth.sdf(m.centre(ix, iy));
+      assert!(
+        d <= -p.track_width / 2.0 + 1e-9,
+        "cell ({ix},{iy}) is {d} from the copper edge"
+      );
+    }
+    // The square corner (1.72, 0.78 from the centre) is a grid cell the old
+    // code accepted; make sure the grid really has one there, and it is out.
+    let corner = Point::new(10.0 + 1.72, 5.0 - 0.78);
+    assert!(crate::shape::pad_obstacle(pad).sdf(corner) < 0.0);
+    assert!(truth.sdf(corner) > 0.0);
   }
 }

@@ -134,6 +134,14 @@ pub struct Router<'a> {
   prev: Vec<u32>,
   epoch: u32,
   via_halo: Vec<(i64, i64)>,
+  /// Cells too near a placed via's hole for another via (hole-to-hole rule).
+  /// Fixed vias only (plane taps, and every via in greedy mode): while
+  /// negotiating, vias of the net being routed are checked on their own.
+  hole_block: Vec<bool>,
+  spacing_offsets: Vec<(i64, i64)>,
+  /// Via sites the current search must avoid (they broke the spacing rule
+  /// against another via of the same path).
+  banned: std::collections::HashSet<(usize, usize)>,
 }
 
 impl<'a> Router<'a> {
@@ -150,8 +158,21 @@ impl<'a> Router<'a> {
         }
       }
     }
+    let sp = model.via_spacing;
+    let sr = (sp / model.pitch).ceil() as i64;
+    let mut spacing_offsets = Vec::new();
+    for dy in -sr..=sr {
+      for dx in -sr..=sr {
+        if ((dx * dx + dy * dy) as f64).sqrt() * model.pitch < sp - 1e-9 {
+          spacing_offsets.push((dx, dy));
+        }
+      }
+    }
     Router {
       model,
+      hole_block: vec![false; model.nx * model.ny],
+      spacing_offsets,
+      banned: std::collections::HashSet::new(),
       costs,
       usage: vec![vec![FREE; model.nx * model.ny]; model.layers.len()],
       soft: None,
@@ -182,7 +203,15 @@ impl<'a> Router<'a> {
   }
 
   fn via_free(&self, ix: usize, iy: usize, net: u32) -> bool {
-    if !self.model.via_ok(ix, iy, net) {
+    if !self.model.via_ok(ix, iy, net) || self.banned.contains(&(ix, iy)) {
+      return false;
+    }
+    if self
+      .hole_block
+      .get(iy * self.model.nx + ix)
+      .copied()
+      .unwrap_or(true)
+    {
       return false;
     }
     for &(dx, dy) in &self.via_halo {
@@ -221,6 +250,17 @@ impl<'a> Router<'a> {
         for l in 0..self.usage.len() {
           self.claim_cell(l, x as usize, y as usize, net);
         }
+      }
+    }
+    for &(dx, dy) in &self.spacing_offsets.clone() {
+      let (x, y) = (ix as i64 + dx, iy as i64 + dy);
+      if x >= 0
+        && y >= 0
+        && x < nx
+        && y < ny
+        && let Some(b) = self.hole_block.get_mut(y as usize * self.model.nx + x as usize)
+      {
+        *b = true;
       }
     }
   }
@@ -385,7 +425,10 @@ impl<'a> Router<'a> {
       for iy in y0..=y1.min(m.ny.saturating_sub(1)) {
         for ix in x0..=x1.min(m.nx.saturating_sub(1)) {
           let d = m.centre(ix, iy) - pad.at;
-          if d.length() <= reach && self.cell_free(l, ix, iy, net) {
+          if d.length() <= reach
+            && self.cell_free(l, ix, iy, net)
+            && self.stub_clear(board, fi, pi, m.centre(ix, iy), l, net)
+          {
             found.push(((d.length() * 1e6) as u64, l, ix, iy));
           }
         }
@@ -394,6 +437,40 @@ impl<'a> Router<'a> {
     found.sort_unstable();
     found.truncate(4);
     found.into_iter().map(|(_, l, x, y)| (l, x, y)).collect()
+  }
+
+  /// Is the straight stub from `from` to the centre of pad (`fi`, `pi`) clear
+  /// of every foreign pad on `layer`? Stubs are drawn off the grid, so the grid
+  /// cannot vouch for them: at 0.2 mm rules a plane-tap stub ran across the
+  /// neighbouring pads of a 0.4 mm-pitch MCU (found by the verifier, 2026-10-13).
+  /// Tracks of other nets are not consulted, only pads.
+  fn stub_clear(&self, board: &Board, fi: usize, pi: usize, from: Point, layer: usize, net: u32) -> bool {
+    let Some(pad) = board.footprints.get(fi).and_then(|f| f.pads.get(pi)) else {
+      return false;
+    };
+    let Some(layer_name) = self.model.layers.get(layer) else {
+      return false;
+    };
+    let half = self.model.profile.track_width / 2.0;
+    let need = self.model.profile.clearance;
+    for (qf, fp) in board.footprints.iter().enumerate() {
+      for (qp, q) in fp.pads.iter().enumerate() {
+        if (qf, qp) == (fi, pi)
+          || q.net == Some(net)
+          || q.kind == "np_thru_hole"
+          || (q.at - pad.at).length() > 6.0
+        {
+          continue;
+        }
+        let on_layer = q.layers.iter().any(|l| {
+          l == layer_name || l == "*.Cu" || (l == "F&B.Cu" && (layer_name == "F.Cu" || layer_name == "B.Cu"))
+        });
+        if on_layer && crate::shape::capsule_gap(from, pad.at, half, &crate::shape::pad_copper(q)) < need {
+          return false;
+        }
+      }
+    }
+    true
   }
 
   fn wrong_way(&self, layer: usize, dx: bool) -> bool {
@@ -429,9 +506,19 @@ impl<'a> Router<'a> {
     // Pads already in the tree; a stub is drawn for any off-grid cell a path leaves from.
     let mut joined: Vec<Terminal> = vec![first];
 
+    let mut attempts = 0;
     while !terms.is_empty() {
       match self.search(net, &tree, &terms) {
+        Some((path, _)) if attempts < 24 && self.spacing_violation(&path, &out.vias).is_some() => {
+          // Two vias of one net too close: forbid the later site and search again.
+          if let Some(site) = self.spacing_violation(&path, &out.vias) {
+            self.banned.insert(site);
+          }
+          attempts += 1;
+        }
         Some((path, ti)) => {
+          self.banned.clear();
+          attempts = 0;
           let term = terms.remove(ti);
           if let Some(&start) = path.first() {
             let cell = self.unstate(start);
@@ -450,6 +537,7 @@ impl<'a> Router<'a> {
           joined.push(term);
         }
         None => {
+          self.banned.clear();
           for t in terms.drain(..) {
             out.failed.push(t.pad);
           }
@@ -460,6 +548,35 @@ impl<'a> Router<'a> {
     out.cells.sort_unstable();
     out.cells.dedup();
     out
+  }
+
+  /// The first via in `path` that sits nearer than `via_spacing` to another
+  /// via already committed by this net or earlier in the same path.
+  fn spacing_violation(&self, path: &[usize], committed: &[(usize, usize)]) -> Option<(usize, usize)> {
+    let mut sites: Vec<(usize, usize)> = Vec::new();
+    for w in path.windows(2) {
+      if let [a, b] = w {
+        let (la, xa, ya) = self.unstate(*a);
+        let (lb, xb, yb) = self.unstate(*b);
+        if (xa, ya) == (xb, yb) && la != lb && !sites.contains(&(xa, ya)) {
+          sites.push((xa, ya));
+        }
+      }
+    }
+    let mut seen: Vec<(usize, usize)> = committed.to_vec();
+    for site in sites {
+      if !seen.contains(&site) {
+        let c = self.model.centre(site.0, site.1);
+        let too_near = seen
+          .iter()
+          .any(|&(ox, oy)| (self.model.centre(ox, oy) - c).length() < self.model.via_spacing - 1e-9);
+        if too_near {
+          return Some(site);
+        }
+      }
+      seen.push(site);
+    }
+    None
   }
 
   fn stub_if_off_pad(&self, board: &Board, t: &Terminal, cell: (usize, usize, usize), out: &mut NetRoute) {
@@ -659,6 +776,7 @@ impl<'a> Router<'a> {
       lo(pad.at.y - reach, m.origin.y),
       lo(pad.at.y + reach, m.origin.y) + 1,
     );
+    let on_pad: Vec<(usize, usize, usize)> = m.pad_access(board, fi, pi).cells;
     let mut best: Option<(u64, usize, usize, usize)> = None;
     for &l in &layers {
       for iy in y0..=y1.min(m.ny.saturating_sub(1)) {
@@ -669,6 +787,7 @@ impl<'a> Router<'a> {
             && best.is_none_or(|b| key < b.0)
             && self.cell_free(l, ix, iy, net)
             && self.via_free(ix, iy, net)
+            && (on_pad.contains(&(l, ix, iy)) || self.stub_clear(board, fi, pi, m.centre(ix, iy), l, net))
           {
             best = Some((key, l, ix, iy));
           }
