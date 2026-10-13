@@ -1,7 +1,7 @@
 # Roadmap
 
-**Stage:** M2 — grader running and KiCad-verified for overlaps; M3 grouping next. Nothing places or routes yet.
-**Updated:** 2026-10-12
+**Stage:** M7 — our own router is built and judged by KiCad on all 37 service-placed corpus boards (M7.0-M7.4 closed, M7.5 largely met: it leaves 0 unconnected where Freerouting leaves 12-36 on the service-final boards, in seconds). Open: MCU-pin escape on the older candidate placements, plane islands under via fields, per-class track widths. Placement (M5) is now the larger gap: our own m1 placement routes worse than the service's with either router.
+**Updated:** 2026-10-13
 
 ## Headline numbers
 
@@ -14,8 +14,9 @@
 | m1 signal HPWL: service's return (the bar) | 3 016 mm    | measured 2026-10-12, `autolayout grade`                      |
 | boards placed legally (KiCad DRC clean)    | 1 (m1)      | measured 2026-10-12, `autolayout place` + `kicad-cli pcb drc` |
 | m1 unconnected after 10 Freerouting passes | ours 135, service 65 | measured 2026-10-12, `tools/route_check.py` + KiCad DRC |
-| boards routed (KiCad-verified)             | 0           | —                                                            |
-| m1 (service placement) routed by own router | 104/104 nets in our model; **KiCad DRC PENDING** | measured 2026-10-13, `autolayout route`, self-check only; unverified |
+| boards routed with 0 KiCad routing violations (own router, 37 service-placed boards) | 19 of 37 (23 with no unconnected and no new violation) | measured 2026-10-13, `tools/m7_batch.py`, KiCad 9.0.1, round 11 |
+| own router, KiCad unconnected summed over the 37 boards | 186 (round 8: 307) | measured 2026-10-13, round 11 |
+| own router vs Freerouting, service-final boards, KiCad unconnected | ours 0 vs 12-36 (m1, emu, g2, t); seconds vs 118-2 326 s | measured 2026-10-13, round 10 |
 
 ## Milestones
 
@@ -28,7 +29,7 @@
 | M4 | Legal placer | rule-based initial placement + legalisation: no courtyard overlap, all on board, fixed parts untouched; beats the staging-grid input on every M2 metric |
 | M5 | Optimising placer | wirelength/congestion optimisation (analytical or annealing, seeded); compared against the commercial return on the corpus |
 | M6 | Routability | export DSN, route with Freerouting as an external process, report unconnected; placement scored by how well a router finishes it |
-| M7 | Own router | M7.0 rules → M7.1 grid model → M7.2 A* → M7.3 negotiated congestion → M7.4 write + KiCad DRC → M7.5 beat Freerouting on m1; steps in `docs/gaps.md`. Router results are unverified until KiCad DRC runs on the Windows machine |
+| M7 | Own router | rules from the project, grid model, A* + negotiated congestion, writer, an independent file verifier, all KiCad-judged on 37 service-placed boards. **Met on unconnected vs Freerouting; open:** MCU escape on weak placements, plane islands, per-class widths |
 | M8 | RF checks | intended RF (antenna keepouts, matching-network order and length, feed lines, stitching) and unintended RF (switch loops, crystals, fast-edge nets, cable-connected nets, plane gaps) reported on every corpus board, each limit cited to a datasheet or app note; the placer gets them as constraints |
 
 ## Progress log
@@ -648,6 +649,33 @@
   via_dangling), and the older candidate placements, where our router still
   leaves 15-36 unconnected (m1/candidate4 25, emu/candidate2 36, c4/candidate2
   29, locked-candidate5 29): the MCU pins those placements wall in.
+- 2026-10-13 — **M7.5 round 11: KiCad judges the current branch (`9a250fe`,
+  includes the stub-length change)** (`docs/m7-results/2026-10-13-round11.md`).
+  Whole corpus, our router: boards with 0 routing violations 18 -> **19**;
+  with 0 unconnected and 0 new violations 22 -> **23**; KiCad unconnected
+  216 -> **186** (round 8: 307); new clearance/shorting/hole_to_hole 1 / 0 / 0
+  (unchanged; the one is m1/candidate4); nets complete 4 574 -> 4 604 of
+  4 749; verifier = KiCad on all 37. Targets: m1-2026-08-06-candidate5 5 -> 0
+  (82/82), m1/candidate4 25 -> 12, g2i 8 -> 6 (26/32), c4/3p5mil-candidate3
+  2 -> 2 (U1.2). Worse: one board, m1/tp18-candidate3, 15 -> 22 unconnected
+  while nets complete rose 84 -> 86; reproduced locally (22): twelve
+  single-MCU-pin nets (U1.3, .7, .10, .13, .21, .24, .27, .32, .36, .42, .44,
+  .52) find no stub landing, i.e. the MCU-escape ceiling of the older candidate
+  placements, not new misbehaviour.
+  *Plane islands* (r, c4/3p5): on both boards a +3V3 tap via (r (81.2588,
+  62.6132), c4 (132.0772, 73.0328)) with one pad (U1.38 / U1.5) has **no fill
+  polygon at all at the via** in the KiCad-saved file, while the pad at the
+  other end of KiCad's pair is under an In2.Cu fill in the main part. So the
+  via sits in a fill-less pocket. Why was not checked; the likely cause is the
+  neighbouring vias' antipads (zone clearance 0.25 mm + via radius) leaving no
+  fill of the zone's 0.2 mm minimum width around it. The router keeps foreign
+  vias only ~2R = 0.52 mm from a tap via, which is enough to avoid shorts but
+  not to keep a pour neck open. Not fixed: a plane-integrity model (fill
+  minus antipads, opened by the minimum width, connected components) is the
+  real answer and has not been built; the cheap mitigation (tap vias keep
+  foreign vias >= ~0.7 mm) is untested against KiCad and would cost landing
+  options. Two items on 37 boards. c4's second item is N$41 (U1.2 / U11.1, no
+  copper at either point): the U1.2 landing failure.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss
