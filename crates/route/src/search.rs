@@ -445,7 +445,7 @@ impl<'a> Router<'a> {
           if d.length() <= reach
             && self.cell_free(l, ix, iy, net)
             && self.stub_clear(board, fi, pi, m.centre(ix, iy), l, net)
-            && self.corridor_free(l, m.centre(ix, iy), pad.at, net)
+            && self.corridor_free(l, m.centre(ix, iy), self.stub_target(pad, m.centre(ix, iy)), net)
           {
             found.push(((d.length() * 1e6) as u64, l, ix, iy));
           }
@@ -455,6 +455,31 @@ impl<'a> Router<'a> {
     found.sort_unstable();
     found.truncate(4);
     found.into_iter().map(|(_, l, x, y)| (l, x, y)).collect()
+  }
+
+  /// Where a stub from `from` should end on `pad`: just inside the copper,
+  /// half a track width plus 2 um from its edge, on the line to the pad centre.
+  /// Ending at the centre made every stub as long as the pad's half-size
+  /// longer than it needed to be, with a bigger corridor to keep clear (g2i
+  /// went from 31 to 25 nets complete when stubs began claiming corridors).
+  fn stub_target(&self, pad: &autolayout_board::Pad, from: Point) -> Point {
+    let shape = crate::shape::pad_copper(pad);
+    let need = -(self.model.profile.track_width / 2.0 + 0.002);
+    let c = pad.at;
+    if shape.sdf(c) > need || shape.sdf(from) <= need {
+      return c; // too thin to inset, or already inside: aim at the centre
+    }
+    let at = |t: f64| Point::new(from.x + (c.x - from.x) * t, from.y + (c.y - from.y) * t);
+    let (mut lo, mut hi) = (0.0f64, 1.0f64);
+    for _ in 0..40 {
+      let mid = (lo + hi) / 2.0;
+      if shape.sdf(at(mid)) <= need {
+        hi = mid;
+      } else {
+        lo = mid;
+      }
+    }
+    at(hi)
   }
 
   /// Grid cells (ix, iy) whose centre lies within one pitch of the segment
@@ -521,6 +546,7 @@ impl<'a> Router<'a> {
       return false;
     };
     let half = self.model.profile.track_width / 2.0;
+    let end = self.stub_target(pad, from);
     let need = self.model.profile.clearance + self.model.margin;
     for (qf, fp) in board.footprints.iter().enumerate() {
       for (qp, q) in fp.pads.iter().enumerate() {
@@ -535,7 +561,7 @@ impl<'a> Router<'a> {
           l == layer_name || l == "*.Cu" || (l == "F&B.Cu" && (layer_name == "F.Cu" || layer_name == "B.Cu"))
         });
         if on_layer
-          && crate::shape::capsule_gap(from, pad.at, half, &crate::shape::pad_copper(q))
+          && crate::shape::capsule_gap(from, end, half, &crate::shape::pad_copper(q))
             < need.max(q.clearance.map_or(0.0, |o| o + self.model.margin))
         {
           return false;
@@ -672,7 +698,7 @@ impl<'a> Router<'a> {
     let stub = Stub {
       layer: l,
       from: p,
-      to: pad.at,
+      to: self.stub_target(pad, p),
     };
     if !inside && !out.stubs.contains(&stub) {
       self.adopt_stub(stub, out.net, out);
@@ -867,7 +893,7 @@ impl<'a> Router<'a> {
             && self.via_free(ix, iy, net)
             && (on_pad.contains(&(l, ix, iy))
               || (self.stub_clear(board, fi, pi, m.centre(ix, iy), l, net)
-                && self.corridor_free(l, m.centre(ix, iy), pad.at, net)))
+                && self.corridor_free(l, m.centre(ix, iy), self.stub_target(pad, m.centre(ix, iy)), net)))
           {
             best = Some((key, l, ix, iy));
           }
@@ -890,7 +916,7 @@ impl<'a> Router<'a> {
         Stub {
           layer: l,
           from: m.centre(ix, iy),
-          to: pad.at,
+          to: self.stub_target(pad, m.centre(ix, iy)),
         },
         net,
         &mut out,
