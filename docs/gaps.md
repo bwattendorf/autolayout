@@ -34,7 +34,7 @@ own and ends with something measured.
 - **M7.4 — write and judge.** *(2026-10-13: writer built and read back; KiCad verdict PENDING — run `tools/m7_check.py` on the Windows machine, then close this item.)* Tracks and vias go into the `.kicad_pcb` through
   the lossless layer, into a NEW file. **KiCad DRC is the judge:** 0
   clearance violations, and the unconnected count reported every time.
-- **M7.5 — the bar.** On the same placements and the same rules: m1 ours
+- **M7.5 — the bar.** *(2026-10-13: NOT DONE — blocked on three things only the Windows machine has: KiCad DRC, Freerouting, and the `.net` file our `place` needs; see ROADMAP for the model-level numbers and the stall on U1.)* On the same placements and the same rules: m1 ours
   (131 unconnected with Freerouting at default rules), the service's m1
   stripped (65). Beat Freerouting on both, then go after the service.
 

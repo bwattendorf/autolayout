@@ -300,6 +300,29 @@
   is written but NOT RUN; expect small first-run fixes. Until it reports,
   every router number above is unverified, in particular the plane-tap stubs
   (up to ~0.9 mm, never grid-checked) and the bounding-box board outline.
+- 2026-10-13 — **M7.5 attempted, not closed; one real bug found.** What was
+  run: our router on the service's m1 placement (fab board stripped) at the
+  rules Freerouting was given in M6.2 (`--track 0.2 --clearance 0.2 --via
+  0.6/0.3`; note explicit mode sets the edge clearance to 0.2, the project's
+  is 0.3), 2 routable layers + In1 GND / In2 +3V3 planes. Result in our
+  model, `autolayout route --iters 60`, 53 s: **73 of 104 nets complete, 391
+  of 494 pads, 21 nets dropped for sharing cells; contested cells stall at
+  ~104 from iteration 20 on** (334 -> 119 by iteration 11, then flat). The
+  incomplete nets are mostly U1's (MCU) pins plus D90/J10: at 0.45 mm pitch
+  the 0.5 mm-pitch part's escape is the wall, as in every Freerouting run.
+  Same board at its own fab rules: 104 of 104 (M7.3). So the rules, not the
+  search, set the result; the decision about which rules the comparison uses
+  is still the owner's (open since M7.0). **Not comparable to Freerouting's
+  65** (that is KiCad's count of unconnected items after its 10 passes; ours
+  is nets complete in our own model, UNVERIFIED). Missing for a real M7.5:
+  (1) `tools/m7_check.py` run on the Windows machine for the DRC verdict;
+  (2) our own placed m1 (needs the `.net`, absent from the cloud clone of
+  Portcullis); (3) the Freerouting 65/131 re-run at the *same* rules.
+  **Bug found and fixed:** the present-sharing penalty (x1.5 per iteration)
+  overflowed `u32` near iteration 50 and the search ran away until a failed
+  8 GB allocation killed the process (exit 134/137). Penalties are capped
+  (`PENALTY_CAP`), path costs are `u64`, and a regression test runs 200
+  iterations from `u32::MAX` penalties.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss
