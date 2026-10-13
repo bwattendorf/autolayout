@@ -1,0 +1,20 @@
+out/m7r11_all/quilter__returned__c4__3p5mil-candidate3__c4.kicad_pcb/b_routed.kicad_pcb: 1516 segments, 829 vias: unconnected 2, track_dangling 0, hole_to_hole 0, clearance 0, shorting 0, copper_edge 0, track_width 0, via_size 0
+  zone fills read: 2 polygons (each island is a component of its net)
+  unconnected at (132.1209, 73.0228): net +3V3 part 2 of 2 (main part has 85 pads): pads [U1.5], 0 tracks, 1 vias
+  unconnected at (130.9210, 73.0228): net N$41 part 2 of 2 (main part has 1 pads): pads [U1.2], 0 tracks, 0 vias
+probe (132.0772, 73.0328):
+  pad U1.5 net +3V3 on F.Cu -> net +3V3 part 2 of 2
+  via net +3V3 on all layers -> net +3V3 part 2 of 2
+probe (129.3709, 70.2728):
+  pad U1.76 net +3V3 on F.Cu -> net +3V3 part 1 of 2 (the main part)
+  via net +3V3 on all layers -> net +3V3 part 1 of 2 (the main part)
+  fill In2.Cu net +3V3 -> net +3V3 part 1 of 2 (the main part)
+probe (79.6047, 238.3416):
+  pad U11.1 net N$41 on F.Cu -> net N$41 part 1 of 2 (the main part)
+  pad TP18.1 net UP_A on B.Cu -> net UP_A: the only part
+  fill In1.Cu net GND -> net GND: the only part
+  fill In2.Cu net +3V3 -> net +3V3 part 1 of 2 (the main part)
+probe (130.9210, 73.0228):
+  pad U1.2 net N$41 on F.Cu -> net N$41 part 2 of 2
+  fill In1.Cu net GND -> net GND: the only part
+  fill In2.Cu net +3V3 -> net +3V3 part 1 of 2 (the main part)

@@ -1,0 +1,10 @@
+out/m7r11_all/quilter__returned__r__3p5mil-candidate2__r.kicad_pcb/b_routed.kicad_pcb: 792 segments, 455 vias: unconnected 1, track_dangling 0, hole_to_hole 0, clearance 0, shorting 0, copper_edge 0, track_width 0, via_size 0
+  zone fills read: 2 polygons (each island is a component of its net)
+  unconnected at (81.2945, 62.5915): net +3V3 part 2 of 2 (main part has 61 pads): pads [U1.38], 0 tracks, 1 vias
+probe (81.2588, 62.6132):
+  pad U1.38 net +3V3 on F.Cu -> net +3V3 part 2 of 2
+  via net +3V3 on all layers -> net +3V3 part 2 of 2
+probe (78.8945, 62.5915):
+  pad U1.44 net +3V3 on F.Cu -> net +3V3 part 1 of 2 (the main part)
+  via net +3V3 on all layers -> net +3V3 part 1 of 2 (the main part)
+  fill In2.Cu net +3V3 -> net +3V3 part 1 of 2 (the main part)
