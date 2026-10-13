@@ -514,6 +514,39 @@
   track widths, so current capacity is not honoured). Unit-tested, not
   KiCad-judged. The local dry run was stopped after 6 boards to commit; it is
   not a result.
+- 2026-10-13 — **M7.5 round 8: our router over all 37 service-placed boards,
+  KiCad 9.0.1** (`docs/m7-results/2026-10-13-round8.md`, commit a3cfc79,
+  `tools/m7_batch.py` ran unmodified). 37 of 37 ran without error; **16 of 37
+  have 0 KiCad routing violations**; nets complete 4 616 / 4 749; KiCad
+  totals: unconnected 307, clearance 137, shorting 8, hole_to_hole 4. Clean
+  boards are mostly the service's final candidates (`3p5mil-*`, fab m1/emu);
+  the worst are the earlier variants (m1 locked-candidate5: 61 unconnected, 74
+  of 99 nets; emu candidate2: 41; c4 candidate2: 36; m1 candidate4/6: 34).
+  **Verifier vs KiCad:** equal on unconnected for every board except g2i (KiCad
+  1, verifier 10), c2 and c4/3p5mil-candidate3 (0 vs 1); KiCad counts MORE
+  clearance on 12 boards (up to 19 vs 5), plus shorting/hole_to_hole it does
+  not see on c2, c4, r and others. The batch did not record violations that
+  exist before routing (pad-to-pad in the service's own placement), so
+  whether those excess clearance counts are the router's is **unknown**;
+  `tools/drc_compare.py` and the batch's new `*_before` columns exist to
+  answer it (Round 9). The reports were not copied into the repo, so none of
+  this could be examined from the cloud.
+  **Net N$4 (our m1): explained.** Not unreachable pads: the negotiation sat
+  on 1 contested cell for ~50 iterations and the final legalisation dropped
+  the whole net (all 7 pads). Same mechanism on the candidate boards (verifier
+  unconnected = KiCad's, reproduced locally to the net: m1 candidate4 87 of 99).
+  Fixed: (1) dropped nets are now re-routed in hard mode around the nets that
+  were kept (`repaired_nets`); (2) history growth accelerates while the
+  contested count is stuck. Measured locally, verifier unconnected: m1
+  candidate4 34 -> 29 (nets 87 -> 89 of 99), g2 candidate6 2 -> 1; m1
+  3p5mil-candidate1 unchanged (clean). The rest are MCU pins (U1.xx, 0.2 mm
+  pads at 0.4 mm pitch: no cell fits inside the copper, escape cells are
+  blocked by the placement) — placement-limited, as in every Freerouting run.
+  Not yet KiCad-judged. Local vs Windows: the same boards routed on the
+  pcbnew-saved copy differ by 1-2 nets in two cases (m1 3p5mil-candidate1: 98
+  of 100 there, 100 of 100 here; emu candidate2 188 vs 187), so pcbnew's
+  rewrite of a board changes pad coordinates enough to change a route; both
+  are deterministic, neither is "the" answer.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

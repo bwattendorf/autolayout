@@ -507,3 +507,58 @@ and exit code; Part A tables and lists; Part B outputs; what you changed in
 for any board with non-zero violations (no boards; nothing over 1 MB). Commit;
 `git push origin m7-router`; reply with the totals, the worst five boards and
 the hash.
+
+
+---
+
+# Round 9 (2026-10-13): why KiCad counts more clearance violations than the verifier
+
+Round 8 left a question the cloud cannot answer: on 12 boards KiCad reports more
+clearance (and some shorting/hole_to_hole) violations than `autolayout verify`.
+Either the violations already exist in the service's placement before any copper
+is added (pad against pad), which the router did not cause, or they involve
+copper the router added and the verifier misses a rule. The files that answer it
+are the per-board reports from the round-8 batch, still under `out/m7r8_all/` on
+this machine. **No re-run, no code change.**
+
+## Prompt to paste
+
+> Follow "Round 9" in docs/windows-handoff.md. Use the existing round-8 files;
+> do not re-run the batch and do not change any code. Report facts and counts;
+> do not decide whose fault a violation is. No PR.
+
+## Steps
+
+`git fetch origin && git checkout m7-router && git pull`; record the hash (later
+than abe3432).
+
+For each of these boards (their folders are under `out/m7r8_all/`, named from the
+path with `__` for `/`): `returned/c2/3p5mil-candidate2`,
+`returned/c4/3p5mil-candidate3`, `returned/c4/candidate2`,
+`returned/emu/candidate2`, `returned/m1/candidate4`, `returned/m1/candidate6`,
+`returned/m1/locked-candidate5`, `returned/m1/tp18-candidate2`,
+`returned/r/3p5mil-candidate2`, `finish/g2i`:
+
+1. `python tools/drc_compare.py <dir>/b_prepared_drc.rpt <dir>/b_routed_drc.rpt --kind clearance --show 10`
+   Paste the per-kind table and the listed new clearance entries. Then the same
+   with `--kind shorting_items` and `--kind hole_to_hole` where either is non-zero.
+   (`new` counts for silk/unconnected kinds can be inflated by shifted
+   coordinates; ignore those and say so.)
+2. For the new clearance entries, classify each as: **track/via vs track/via**,
+   **track/via vs pad**, **pad vs pad**, **zone involved**, or **other**, and give
+   the counts per board. Say which pads' footprints appear most (for example J10).
+3. For `finish/g2i` only: paste `<dir>/b_verify.txt` and the DRC
+   `unconnected_items` entries from `b_routed_drc.rpt`, since the verifier says 10
+   and KiCad 1.
+
+Also, before anything else, copy these two small things into the repo log: the
+`results.csv` from the full round-8 run is already committed; add the per-board
+`*_prepared_drc.rpt` and `*_routed_drc.rpt` ONLY for the ten boards above if each
+is under 1 MB (otherwise paste the entries of the kinds listed and name the file
+sizes).
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-round9.md`: hash; per-board tables from step 1; the
+classification table from step 2; the g2i material; what you did not do. Commit;
+`git push origin m7-router`; reply with the classification totals and the hash.

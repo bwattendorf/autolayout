@@ -49,6 +49,9 @@ pub struct NegotiationStats {
   /// Contested cells after each iteration (index 0 = first full pass).
   pub conflicts: Vec<usize>,
   pub dropped_nets: usize,
+  /// Of the dropped nets, how many came out complete when re-routed in hard
+  /// mode around the nets that were kept.
+  pub repaired_nets: usize,
 }
 
 pub fn route_negotiated(
@@ -74,10 +77,14 @@ pub fn route_negotiated(
   let mut fps: Vec<Vec<(usize, usize)>> = vec![Vec::new(); nets.len()];
   let mut stats = NegotiationStats::default();
   let mut best: Option<(usize, Vec<NetRoute>)> = None;
+  let mut stuck = 0usize;
 
   for it in 0..=params.max_iterations {
     if it > 0 {
-      router.bump_history(params.history_step);
+      // A count that has stopped falling means two nets are locked over the
+      // same cell; raise the price of that cell faster the longer it lasts.
+      let mult = 1 + (stuck / 3).min(9) as u32;
+      router.bump_history(params.history_step.saturating_mul(mult));
       router.grow_present(params.present_growth.0, params.present_growth.1);
     }
     for (k, (_, net, pads)) in nets.iter().enumerate() {
@@ -97,6 +104,11 @@ pub fn route_negotiated(
       }
     }
     let c = router.conflicts();
+    stuck = if stats.conflicts.last() == Some(&c) {
+      stuck + 1
+    } else {
+      0
+    };
     stats.conflicts.push(c);
     stats.iterations = it + 1;
     if best.as_ref().is_none_or(|(bc, _)| c < *bc) {
@@ -107,22 +119,38 @@ pub fn route_negotiated(
     }
   }
 
-  // Legalise the best iteration: keep a net only if it shares no cell with one already kept.
+  // Legalise the best iteration: keep a net only if it shares no cell with one
+  // already kept. A dropped net is not given up on: it is re-routed in hard
+  // mode around everything kept (before this, a single contested cell that
+  // survived the iterations cost a net all of its pads: m1's N$4, round 7).
   let (_, best_routes) = best.unwrap_or((0, routes));
   let mut taken: std::collections::HashSet<(usize, usize)> = std::collections::HashSet::new();
-  for ((_, net, pads), r) in nets.iter().zip(best_routes) {
+  let mut kept: Vec<Option<NetRoute>> = Vec::new();
+  for r in best_routes {
     let fp = router.footprint(&r);
-    let kept = if fp.iter().any(|c| taken.contains(c)) {
+    if fp.iter().any(|c| taken.contains(c)) {
       stats.dropped_nets += 1;
-      NetRoute {
-        net: *net,
-        failed: pads.clone(),
-        ..NetRoute::default()
-      }
+      kept.push(None);
     } else {
       taken.extend(fp);
-      r
-    };
+      kept.push(Some(r));
+    }
+  }
+  router.leave_soft();
+  for r in kept.iter().flatten() {
+    router.commit_hard(r);
+  }
+  for (slot, (_, net, pads)) in kept.iter_mut().zip(&nets) {
+    if slot.is_none() {
+      let r = router.route_net(board, *net, pads);
+      if r.failed.is_empty() {
+        stats.repaired_nets += 1;
+      }
+      *slot = Some(r);
+    }
+  }
+  for ((_, _, pads), r) in nets.iter().zip(kept) {
+    let Some(kept) = r else { continue };
     s.nets_total += 1;
     s.pads_total += pads.len();
     s.pads_connected += kept.connected.len();

@@ -364,6 +364,23 @@ impl<'a> Router<'a> {
     }
   }
 
+  /// Stop negotiating: from here routes are claimed in `usage` and cells are
+  /// hard obstacles again (used to repair nets dropped at the end).
+  pub fn leave_soft(&mut self) {
+    self.soft = None;
+  }
+
+  /// Claim a finished route's cells and via halos in `usage` as hard obstacles.
+  /// Only meaningful after [`Router::leave_soft`].
+  pub fn commit_hard(&mut self, r: &NetRoute) {
+    for &(l, x, y) in &r.cells {
+      self.claim_cell(l, x, y, r.net);
+    }
+    for &(x, y) in &r.vias {
+      self.claim_via(x, y, r.net);
+    }
+  }
+
   pub fn is_contested(&self, fp: &[(usize, usize)]) -> bool {
     self.soft.as_ref().is_some_and(|s| {
       fp.iter()

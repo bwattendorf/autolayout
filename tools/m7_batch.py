@@ -52,6 +52,7 @@ COLUMNS = [
     "board", "status", "planes", "nets_total", "nets_complete", "pads_connected", "pads_total",
     "route_s", "segments", "vias", "track_mm",
     "kicad_unconnected_before", "kicad_unconnected_after",
+    "kicad_clearance_before", "kicad_shorting_items_before", "kicad_hole_to_hole_before",
     "kicad_clearance", "kicad_shorting_items", "kicad_hole_to_hole", "kicad_track_dangling",
     "kicad_via_dangling", "kicad_track_width", "kicad_copper_edge_clearance", "kicad_hole_clearance",
     "kicad_other_kinds",
@@ -170,6 +171,10 @@ def do_board(src, work, freerouting):
     before = step("drc_before", lambda: drc(prepared, stem + "_prepared_drc.rpt"))
     if before:
         row["kicad_unconnected_before"] = before[0]
+        # Violations already on the board before any copper was added: pad-to-pad
+        # and similar. They are in the "after" counts too, and are not the router's.
+        for k in ("clearance", "shorting_items", "hole_to_hole"):
+            row["kicad_" + k + "_before"] = before[1].get(k, 0)
 
     raw = stem + "_routed_raw.kicad_pcb"
     code, out, secs = run([AUTOLAYOUT, "route", prepared, *flags, "--out", raw], timeout=3600)
@@ -240,7 +245,7 @@ def write_all(out_dir, rows):
         w.writerows(rows)
     json.dump(rows, open(os.path.join(out_dir, "results.json"), "w", encoding="utf-8"), indent=1)
     cols = ["board", "status", "nets_complete", "nets_total", "kicad_unconnected_before", "kicad_unconnected_after",
-            "kicad_clearance", "kicad_shorting_items", "kicad_hole_to_hole", "kicad_track_dangling",
+            "kicad_clearance_before", "kicad_clearance", "kicad_shorting_items", "kicad_hole_to_hole", "kicad_track_dangling",
             "verifier_unconnected", "verifier_clearance", "route_s"]
     if any(r["freerouting_unconnected_after"] != "" for r in rows):
         cols += ["freerouting_unconnected_after", "freerouting_s"]

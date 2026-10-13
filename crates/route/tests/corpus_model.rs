@@ -97,3 +97,41 @@ fn m1_fab_greedy_is_deterministic() {
   let b = route_all(&board, &m, Costs::default());
   assert_eq!(a.routes, b.routes);
 }
+
+/// A service candidate with a crowded MCU: before the hard-mode repair of
+/// dropped nets this routed 87 of 99 nets (KiCad and the verifier agreed on 34
+/// unconnected); with it, 89 of 99 and 29 unconnected (2026-10-13, local run,
+/// measured). The repair must complete at least one net the negotiation gave up.
+#[test]
+fn dropped_nets_are_repaired_where_possible() {
+  let Ok(root) = std::env::var("AUTOLAYOUT_CORPUS") else {
+    println!("SKIPPED: route corpus test (AUTOLAYOUT_CORPUS not set)");
+    return;
+  };
+  let path = Path::new(&root).join("quilter/returned/m1/candidate4/m1.kicad_pcb");
+  let mut doc = parse(&std::fs::read_to_string(&path).unwrap()).unwrap();
+  let copper = ["segment", "arc", "via", "zone"];
+  doc
+    .root_mut()
+    .unwrap()
+    .items
+    .retain(|n| n.as_list().is_none_or(|l| !copper.iter().any(|k| l.is(k))));
+  let board = Board::read(&doc).unwrap();
+  let rules = DesignRules::load_for_board(&path).unwrap();
+  let profile = rules.classes[0].clone();
+  let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes()).unwrap();
+  let (s, st) = route_negotiated(&board, &m, Costs::default(), Params::default());
+  println!(
+    "route corpus: m1 candidate4 {} of {} nets, {} dropped, {} repaired",
+    s.nets_complete, s.nets_total, st.dropped_nets, st.repaired_nets
+  );
+  assert!(
+    st.dropped_nets > 0,
+    "this board is expected to drop nets; the test would be vacuous"
+  );
+  assert!(
+    st.repaired_nets >= 1,
+    "no dropped net was completed by the hard re-route"
+  );
+  assert!(s.nets_complete >= 89, "{} of {}", s.nets_complete, s.nets_total);
+}
