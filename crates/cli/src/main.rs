@@ -10,6 +10,7 @@
 //!   autolayout place <in.kicad_pcb> <file.net> <out.kicad_pcb> [--no-halo]   place unlocked parts, write a NEW file, grade it
 //!   autolayout strip <in.kicad_pcb> <out.kicad_pcb>  remove tracks, arcs, vias and zones (NEW file)
 //!   autolayout flip <in> <out> (<REF>... | ALL)      move footprints to the other side (NEW file)
+//!   autolayout unlock <in> <out> <REF>...            unlock footprints for an experiment (NEW file)
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -72,7 +73,44 @@ fn parity(pcb: &str, net: &str) -> Result<bool, String> {
 
 /// Place every unlocked part and write the result to a NEW file, then grade
 /// the written file read back off disk (rule 3: not the placer's own state).
-fn place(pcb: &str, net: &str, out: &str, escape_halo: bool) -> Result<bool, String> {
+/// Read a decoupling-pair record: `{"pairs": [{"cap": "C4", "part": "U1",
+/// "pin": "1"}, …]}` — the shape Portcullis's `decouple()` writes. Every
+/// reference must resolve on this board; an unknown cap, part or pin is an
+/// error, never a silent skip (a record that matches nothing would place as
+/// if it did not exist, which is the failure this input exists to end).
+fn read_pairs(path: &str, board: &Board) -> Result<Vec<autolayout_place::place::Pair>, String> {
+  let text = fs::read_to_string(path).map_err(|e| format!("{path}: {e}"))?;
+  let json: serde_json::Value = serde_json::from_str(&text).map_err(|e| format!("{path}: {e}"))?;
+  let rows = json
+    .get("pairs")
+    .and_then(|p| p.as_array())
+    .ok_or_else(|| format!("{path}: no \"pairs\" array"))?;
+  let index = |r: &str| board.footprints.iter().position(|f| f.reference == r);
+  let mut out = Vec::new();
+  for row in rows {
+    let field = |k: &str| row.get(k).and_then(|v| v.as_str());
+    // Rail-only rows (no part/pin) carry no pairing; they are not errors.
+    let (Some(cap), Some(part), Some(pin)) = (field("cap"), field("part"), field("pin")) else {
+      continue;
+    };
+    let c = index(cap).ok_or_else(|| format!("{path}: cap {cap} not on the board"))?;
+    let h = index(part).ok_or_else(|| format!("{path}: part {part} not on the board"))?;
+    let pad = board
+      .footprints
+      .get(h)
+      .and_then(|fp| fp.pads.iter().position(|p| p.number == pin))
+      .ok_or_else(|| format!("{path}: {part} has no pad {pin}"))?;
+    out.push(autolayout_place::place::Pair { cap: c, host: h, pad });
+  }
+  if out.is_empty() {
+    return Err(format!(
+      "{path}: no cap/part/pin pairs read; refusing a vacuous record"
+    ));
+  }
+  Ok(out)
+}
+
+fn place(pcb: &str, net: &str, out: &str, escape_halo: bool, pairs: Option<&String>) -> Result<bool, String> {
   if Path::new(out).exists() {
     return Err(format!("{out}: already exists; refusing to overwrite"));
   }
@@ -91,7 +129,14 @@ fn place(pcb: &str, net: &str, out: &str, escape_halo: bool) -> Result<bool, Str
     spread: false,
     front_only: escape_halo,
   };
-  let p = autolayout_place::place::place(&board, &g, opts);
+  let pairs = match pairs {
+    Some(path) => read_pairs(path, &board)?,
+    None => Vec::new(),
+  };
+  if !pairs.is_empty() {
+    println!("decoupling record: {} cap/pin pair(s)", pairs.len());
+  }
+  let p = autolayout_place::place::place(&board, &g, opts, &pairs);
   let secs = start.elapsed().as_secs_f64();
   for &f in &p.flips {
     let fp = board.footprints.get(f).ok_or("bad footprint index")?;
@@ -159,6 +204,36 @@ fn flip_parts(input: &str, output: &str, refs: &[String]) -> Result<bool, String
   }
   fs::write(output, doc.to_string()).map_err(|e| format!("{output}: {e}"))?;
   println!("wrote {output} ({} footprint(s) flipped)", targets.len());
+  Ok(true)
+}
+
+/// Unlock the named footprints (remove `(locked yes)` and a bare `locked`
+/// atom) and write a NEW file. For experiments that hand a locked part back
+/// to the placer; the input is never changed.
+fn unlock(input: &str, output: &str, refs: &[String]) -> Result<bool, String> {
+  if Path::new(output).exists() {
+    return Err(format!("{output}: already exists; refusing to overwrite"));
+  }
+  let (_, mut doc) = load(input)?;
+  let board = Board::read(&doc).map_err(|e| format!("{input}: {e}"))?;
+  let mut indices = Vec::new();
+  for r in refs {
+    let fp = board
+      .footprint(r)
+      .ok_or_else(|| format!("{input}: no footprint {r}"))?;
+    indices.push(fp.node_index);
+  }
+  let root = doc.root_mut().ok_or_else(|| format!("{input}: no root list"))?;
+  for i in indices {
+    if let Some(fp) = root.items.get_mut(i).and_then(|n| n.as_list_mut()) {
+      fp.items.retain(|n| match n {
+        autolayout_sexpr::Node::List(l) => !l.is("locked"),
+        autolayout_sexpr::Node::Atom(a) => a.value() != "locked",
+      });
+    }
+  }
+  fs::write(output, doc.to_string()).map_err(|e| format!("{output}: {e}"))?;
+  println!("wrote {output} ({} footprint(s) unlocked)", refs.len());
   Ok(true)
 }
 
@@ -242,13 +317,19 @@ fn main() -> ExitCode {
     Some((cmd, files)) if cmd == "grade" && !files.is_empty() => grade(files),
     Some((cmd, [pcb, net])) if cmd == "groups" => groups(pcb, net),
     Some((cmd, [pcb, net])) if cmd == "parity" => parity(pcb, net),
-    Some((cmd, [pcb, net, out])) if cmd == "place" => place(pcb, net, out, true),
+    Some((cmd, [pcb, net, out])) if cmd == "place" => place(pcb, net, out, true, None),
     Some((cmd, [pcb, net, out, flag])) if cmd == "place" && flag == "--no-halo" => {
-      place(pcb, net, out, false)
+      place(pcb, net, out, false, None)
+    }
+    Some((cmd, [pcb, net, out, flag, pairs])) if cmd == "place" && flag == "--pairs" => {
+      place(pcb, net, out, true, Some(pairs))
     }
     Some((cmd, [pcb, out])) if cmd == "strip" => strip(pcb, out),
     Some((cmd, [input, output, refs @ ..])) if cmd == "flip" && !refs.is_empty() => {
       flip_parts(input, output, refs)
+    }
+    Some((cmd, [input, output, refs @ ..])) if cmd == "unlock" && !refs.is_empty() => {
+      unlock(input, output, refs)
     }
     _ => Err(USAGE.to_owned()),
   };

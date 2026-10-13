@@ -86,6 +86,23 @@ impl Default for Options {
   }
 }
 
+/// A recorded decoupling pair: this cap serves this pad of this part. Comes
+/// from the design (e.g. Portcullis's `<netlist>_bypass.json`, written by
+/// `decouple()` as the schematic is built) — a record, never an inference.
+/// Without one, a cap on a shared rail has no structural owner (see
+/// `group::Bypass`), and on a plane net it has no spring either: on m1 that
+/// left 20 of 22 caps more than 3 mm from their pins (2026-10-13).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Pair {
+  pub cap: usize,
+  pub host: usize,
+  /// Index into the host footprint's `pads`.
+  pub pad: usize,
+}
+
+/// Weight of a recorded cap→pin bond, relative to one net spring.
+const PIN_BOND: f64 = 12.0;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Placement {
   /// (footprint index, new position). Rotation is unchanged, except for parts
@@ -97,7 +114,7 @@ pub struct Placement {
   pub flips: Vec<usize>,
 }
 
-pub fn place(board: &Board, g: &Grouping, opts: Options) -> Placement {
+pub fn place(board: &Board, g: &Grouping, opts: Options, pairs: &[Pair]) -> Placement {
   let n = board.footprints.len();
   let Some(outline) = board.outline else {
     return Placement {
@@ -228,6 +245,14 @@ pub fn place(board: &Board, g: &Grouping, opts: Options) -> Placement {
         acc = acc + Point::new(pos[other].x * weight, pos[other].y * weight);
         w += weight;
       }
+      // A recorded cap pulls toward the very pin it serves.
+      for p in pairs.iter().filter(|p| p.cap == f) {
+        if let Some(&(off, _)) = offsets.get(p.host).and_then(|o| o.get(p.pad)) {
+          let pin = pos[p.host] + off;
+          acc = acc + Point::new(pin.x * PIN_BOND, pin.y * PIN_BOND);
+          w += PIN_BOND;
+        }
+      }
       if w > 0.0 {
         let target = Point::new(acc.x / w, acc.y / w);
         pos[f] = Point::new(
@@ -312,12 +337,42 @@ pub fn place(board: &Board, g: &Grouping, opts: Options) -> Placement {
       .then(area(b).total_cmp(&area(a)))
       .then(a.cmp(&b))
   });
+  // Recorded caps are legalised right after their host — or first of all
+  // when the host is fixed — so the room beside the pin is still free when
+  // the cap comes to claim it. Placed last, as two-pad parts otherwise are,
+  // they found every spot near the MCU already taken.
+  let cap_of_host = |h: usize| -> Vec<usize> {
+    pairs
+      .iter()
+      .filter(|p| p.host == h && movable[p.cap])
+      .map(|p| p.cap)
+      .collect()
+  };
+  let recorded: std::collections::HashSet<usize> =
+    pairs.iter().filter(|p| movable[p.cap]).map(|p| p.cap).collect();
+  let mut reordered: Vec<usize> = Vec::with_capacity(order.len());
+  let mut fixed_hosts: Vec<usize> = pairs.iter().map(|p| p.host).filter(|&h| !movable[h]).collect();
+  fixed_hosts.sort_unstable();
+  fixed_hosts.dedup();
+  for h in fixed_hosts {
+    reordered.extend(cap_of_host(h));
+  }
+  for &f in &order {
+    if recorded.contains(&f) {
+      continue;
+    }
+    reordered.push(f);
+    reordered.extend(cap_of_host(f));
+  }
+  let mut seen = std::collections::HashSet::new();
+  reordered.retain(|f| seen.insert(*f));
+  let order = reordered;
 
   let inner = BBox {
     min: Point::new(outline.min.x + EDGE_MARGIN_MM, outline.min.y + EDGE_MARGIN_MM),
     max: Point::new(outline.max.x - EDGE_MARGIN_MM, outline.max.y - EDGE_MARGIN_MM),
   };
-  let exempt: std::collections::HashSet<(usize, usize)> = g
+  let mut exempt: std::collections::HashSet<(usize, usize)> = g
     .bypass
     .iter()
     .filter_map(|b| match b.ics.as_slice() {
@@ -326,6 +381,12 @@ pub fn place(board: &Board, g: &Grouping, opts: Options) -> Placement {
     })
     .flatten()
     .collect();
+  for p in pairs {
+    exempt.insert((p.cap, p.host));
+    exempt.insert((p.host, p.cap));
+  }
+  // Where each part finally sits: fixed parts now, the rest as legalised.
+  let mut final_pos: Vec<Option<Point>> = (0..n).map(|f| (!movable[f]).then_some(pos[f])).collect();
 
   let mut moves = Vec::new();
   let mut unplaced = Vec::new();
@@ -374,10 +435,21 @@ pub fn place(board: &Board, g: &Grouping, opts: Options) -> Placement {
         }
       })
     };
-    match nearest_free(pos[f], &fits) {
+    // A recorded cap searches outward from its pin's FINAL position (the host
+    // may have been legalised away from its global-placement spot); anything
+    // else from its global target.
+    let target = pairs
+      .iter()
+      .find(|p| p.cap == f)
+      .and_then(|p| Some(final_pos.get(p.host).copied().flatten()? + offsets.get(p.host)?.get(p.pad)?.0))
+      .unwrap_or(pos[f]);
+    match nearest_free(target, &fits) {
       Some(at) => {
         placed.push((f, at));
         moves.push((f, at));
+        if let Some(slot) = final_pos.get_mut(f) {
+          *slot = Some(at);
+        }
       }
       None => unplaced.push(f),
     }
