@@ -1,0 +1,546 @@
+//! One net at a time: deterministic A* on the 3-D grid (layer, x, y) (M7.2).
+//!
+//! A multi-pin net grows a tree. The tree starts as the cells of one pad; each
+//! search starts from every cell already in the tree (cost 0) and ends at the
+//! first cell of any pad still unconnected, so the next pad joined is the
+//! cheapest one to reach. The path is added to the tree and the search
+//! repeats. Moves are the four grid neighbours on a layer (stepping against a
+//! layer's preferred direction costs more) and a through-via to another
+//! layer. Costs are integers and ties break on state index, so the same board
+//! gives the same routes (CLAUDE.md rule 4).
+//!
+//! Publication: maze search is Lee, "An Algorithm for Path Connections and
+//! Its Applications", IRE Trans. Electronic Computers, 1961; A* is Hart,
+//! Nilsson & Raphael, 1968. The heuristic here is Manhattan distance to the
+//! nearest unconnected pad's cell box, never above the true cost because every
+//! step costs at least `STEP`.
+//!
+//! Pads whose copper contains no grid cell (common when the pitch is coarse,
+//! see M7.1) get a *stub*: the nearest usable cells within `1.5 × pitch` are
+//! the terminal and the stub is the straight segment from that cell to the pad
+//! centre. The stub is not checked against the grid (it can come nearer a
+//! neighbour than the clearance); KiCad DRC is the judge (M7.4).
+//!
+//! Plane nets (poured layers declared by the caller) connect by a via per pad
+//! instead of by tracks, unless the pad is through-hole and so already
+//! reaches the plane.
+
+use std::collections::{BinaryHeap, HashMap};
+
+use autolayout_board::{Board, Point};
+
+use crate::model::{FREE, RoutingModel};
+
+/// Cost of one grid step in the layer's preferred direction.
+pub const STEP: u32 = 10;
+
+#[derive(Debug, Clone, Copy)]
+pub struct Costs {
+  pub step: u32,
+  /// Step against the layer's preferred direction.
+  pub wrong_way: u32,
+  pub via: u32,
+}
+
+impl Default for Costs {
+  fn default() -> Costs {
+    Costs {
+      step: STEP,
+      wrong_way: 25,
+      via: 60,
+    }
+  }
+}
+
+/// A straight run of cells on one layer (ix, iy at both ends).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Run {
+  pub layer: usize,
+  pub a: (usize, usize),
+  pub b: (usize, usize),
+}
+
+/// Copper from a cell centre to the pad's centre, for pads off the grid.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Stub {
+  pub layer: usize,
+  pub from: Point,
+  pub to: Point,
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct NetRoute {
+  pub net: u32,
+  pub runs: Vec<Run>,
+  pub vias: Vec<(usize, usize)>,
+  pub stubs: Vec<Stub>,
+  /// Pads (footprint index, pad index) joined into the net.
+  pub connected: Vec<(usize, usize)>,
+  /// Pads that could not be reached.
+  pub failed: Vec<(usize, usize)>,
+}
+
+impl NetRoute {
+  pub fn length_mm(&self, pitch: f64) -> f64 {
+    self
+      .runs
+      .iter()
+      .map(|r| (r.a.0.abs_diff(r.b.0) + r.a.1.abs_diff(r.b.1)) as f64 * pitch)
+      .sum()
+  }
+}
+
+/// Terminal of one pad: the states a path may end on.
+struct Terminal {
+  pad: (usize, usize),
+  cells: Vec<(usize, usize, usize)>,
+  /// Cell box (min ix, max ix, min iy, max iy) for the heuristic.
+  bbox: (usize, usize, usize, usize),
+}
+
+pub struct Router<'a> {
+  pub model: &'a RoutingModel,
+  pub costs: Costs,
+  /// Which net holds each cell, per routable layer (net + 1), from routes
+  /// already committed. Separate from the model's static obstacles.
+  pub usage: Vec<Vec<u32>>,
+  // Search scratch, stamped so a search never clears the whole grid.
+  stamp: Vec<u32>,
+  cost: Vec<u32>,
+  prev: Vec<u32>,
+  epoch: u32,
+  via_halo: Vec<(i64, i64)>,
+}
+
+impl<'a> Router<'a> {
+  pub fn new(model: &'a RoutingModel, costs: Costs) -> Router<'a> {
+    let n = model.nx * model.ny * model.layers.len();
+    // A via claims every cell within via/2 + track/2 + clearance on every layer.
+    let reach = model.profile.via_diameter / 2.0 + model.profile.track_width / 2.0 + model.profile.clearance;
+    let r = (reach / model.pitch).ceil() as i64;
+    let mut via_halo = Vec::new();
+    for dy in -r..=r {
+      for dx in -r..=r {
+        if ((dx * dx + dy * dy) as f64).sqrt() * model.pitch <= reach {
+          via_halo.push((dx, dy));
+        }
+      }
+    }
+    Router {
+      model,
+      costs,
+      usage: vec![vec![FREE; model.nx * model.ny]; model.layers.len()],
+      stamp: vec![0; n],
+      cost: vec![0; n],
+      prev: vec![u32::MAX; n],
+      epoch: 0,
+      via_halo,
+    }
+  }
+
+  fn state(&self, layer: usize, ix: usize, iy: usize) -> usize {
+    (layer * self.model.ny + iy) * self.model.nx + ix
+  }
+
+  fn unstate(&self, s: usize) -> (usize, usize, usize) {
+    let (nx, ny) = (self.model.nx, self.model.ny);
+    (s / (nx * ny), s % nx, (s / nx) % ny)
+  }
+
+  fn cell_free(&self, layer: usize, ix: usize, iy: usize, net: u32) -> bool {
+    self.model.track_ok(layer, ix, iy, net)
+      && self
+        .usage
+        .get(layer)
+        .and_then(|u| u.get(iy * self.model.nx + ix))
+        .is_some_and(|&o| o == FREE || o == net + 1)
+  }
+
+  fn via_free(&self, ix: usize, iy: usize, net: u32) -> bool {
+    if !self.model.via_ok(ix, iy, net) {
+      return false;
+    }
+    for &(dx, dy) in &self.via_halo {
+      let (x, y) = (ix as i64 + dx, iy as i64 + dy);
+      if x < 0 || y < 0 || x >= self.model.nx as i64 || y >= self.model.ny as i64 {
+        return false;
+      }
+      for u in &self.usage {
+        match u.get(y as usize * self.model.nx + x as usize) {
+          Some(&o) if o == FREE || o == net + 1 => {}
+          _ => return false,
+        }
+      }
+    }
+    true
+  }
+
+  fn claim_cell(&mut self, layer: usize, ix: usize, iy: usize, net: u32) {
+    let nx = self.model.nx;
+    if let Some(c) = self.usage.get_mut(layer).and_then(|u| u.get_mut(iy * nx + ix)) {
+      *c = net + 1;
+    }
+  }
+
+  fn claim_via(&mut self, ix: usize, iy: usize, net: u32) {
+    let (nx, ny) = (self.model.nx as i64, self.model.ny as i64);
+    for &(dx, dy) in &self.via_halo.clone() {
+      let (x, y) = (ix as i64 + dx, iy as i64 + dy);
+      if x >= 0 && y >= 0 && x < nx && y < ny {
+        for l in 0..self.usage.len() {
+          self.claim_cell(l, x as usize, y as usize, net);
+        }
+      }
+    }
+  }
+
+  /// Cells a path to this pad may end on.
+  fn terminal(&self, board: &Board, fi: usize, pi: usize, net: u32) -> Option<Terminal> {
+    board.footprints.get(fi)?.pads.get(pi)?;
+    let inside = self.model.pad_access(board, fi, pi).cells;
+    let cells = if inside.is_empty() {
+      self.near_cells(board, fi, pi, net)
+    } else {
+      inside
+    };
+    if cells.is_empty() {
+      return None;
+    }
+    let (mut x0, mut x1, mut y0, mut y1) = (usize::MAX, 0, usize::MAX, 0);
+    for &(_, x, y) in &cells {
+      (x0, x1, y0, y1) = (x0.min(x), x1.max(x), y0.min(y), y1.max(y));
+    }
+    Some(Terminal {
+      pad: (fi, pi),
+      cells,
+      bbox: (x0, x1, y0, y1),
+    })
+  }
+
+  /// Usable cells within 1.5 pitch of the pad's centre, nearest four, on the
+  /// pad's own copper layers.
+  fn near_cells(&self, board: &Board, fi: usize, pi: usize, net: u32) -> Vec<(usize, usize, usize)> {
+    let Some(pad) = board.footprints.get(fi).and_then(|f| f.pads.get(pi)) else {
+      return Vec::new();
+    };
+    let reach = self.model.pitch * 1.5 + pad.size.x.max(pad.size.y) / 2.0;
+    let layers = self.model.pad_layer_indices(&pad.layers);
+    let m = self.model;
+    let lo = |v: f64, o: f64| ((v - o) / m.pitch).floor().max(0.0) as usize;
+    let (x0, x1) = (
+      lo(pad.at.x - reach, m.origin.x),
+      lo(pad.at.x + reach, m.origin.x) + 1,
+    );
+    let (y0, y1) = (
+      lo(pad.at.y - reach, m.origin.y),
+      lo(pad.at.y + reach, m.origin.y) + 1,
+    );
+    let mut found: Vec<(u64, usize, usize, usize)> = Vec::new();
+    for &l in &layers {
+      for iy in y0..=y1.min(m.ny.saturating_sub(1)) {
+        for ix in x0..=x1.min(m.nx.saturating_sub(1)) {
+          let d = m.centre(ix, iy) - pad.at;
+          if d.length() <= reach && self.cell_free(l, ix, iy, net) {
+            found.push(((d.length() * 1e6) as u64, l, ix, iy));
+          }
+        }
+      }
+    }
+    found.sort_unstable();
+    found.truncate(4);
+    found.into_iter().map(|(_, l, x, y)| (l, x, y)).collect()
+  }
+
+  fn wrong_way(&self, layer: usize, dx: bool) -> bool {
+    // Even layers prefer horizontal runs, odd ones vertical.
+    layer.is_multiple_of(2) != dx
+  }
+
+  /// Route all pads of `net` (a list of (footprint, pad) on that net). Pads
+  /// are joined nearest-first starting from the first. Claims the copper it
+  /// finds in `self.usage`.
+  pub fn route_net(&mut self, board: &Board, net: u32, pads: &[(usize, usize)]) -> NetRoute {
+    let mut out = NetRoute {
+      net,
+      ..NetRoute::default()
+    };
+    let mut terms: Vec<Terminal> = Vec::new();
+    for &(fi, pi) in pads {
+      match self.terminal(board, fi, pi, net) {
+        Some(t) => terms.push(t),
+        None => out.failed.push((fi, pi)),
+      }
+    }
+    if terms.is_empty() {
+      return out;
+    }
+    let first = terms.remove(0);
+    out.connected.push(first.pad);
+    let mut tree: Vec<usize> = Vec::new();
+    for &(l, x, y) in &first.cells {
+      tree.push(self.state(l, x, y));
+      self.claim_cell(l, x, y, net);
+    }
+    // Pads already in the tree; a stub is drawn for any off-grid cell a path leaves from.
+    let mut joined: Vec<Terminal> = vec![first];
+
+    while !terms.is_empty() {
+      match self.search(net, &tree, &terms) {
+        Some((path, ti)) => {
+          let term = terms.remove(ti);
+          if let Some(&start) = path.first() {
+            let cell = self.unstate(start);
+            if let Some(t) = joined.iter().find(|t| t.cells.contains(&cell)) {
+              self.stub_if_off_pad(board, t, cell, &mut out);
+            }
+          }
+          self.commit_path(net, &path, &mut tree, &mut out);
+          if let Some(&end) = path.last() {
+            self.stub_if_off_pad(board, &term, self.unstate(end), &mut out);
+          }
+          out.connected.push(term.pad);
+          for &(l, x, y) in &term.cells {
+            tree.push(self.state(l, x, y));
+          }
+          joined.push(term);
+        }
+        None => {
+          for t in terms.drain(..) {
+            out.failed.push(t.pad);
+          }
+        }
+      }
+    }
+    tree.sort_unstable();
+    out
+  }
+
+  fn stub_if_off_pad(&self, board: &Board, t: &Terminal, cell: (usize, usize, usize), out: &mut NetRoute) {
+    let (l, x, y) = cell;
+    let Some(pad) = board.footprints.get(t.pad.0).and_then(|f| f.pads.get(t.pad.1)) else {
+      return;
+    };
+    let p = self.model.centre(x, y);
+    // Inside the pad's copper when the cell is one of the pad-access cells.
+    let inside = self
+      .model
+      .pad_access(board, t.pad.0, t.pad.1)
+      .cells
+      .contains(&cell);
+    let stub = Stub {
+      layer: l,
+      from: p,
+      to: pad.at,
+    };
+    if !inside && !out.stubs.contains(&stub) {
+      out.stubs.push(stub);
+    }
+  }
+
+  fn commit_path(&mut self, net: u32, path: &[usize], tree: &mut Vec<usize>, out: &mut NetRoute) {
+    let cells: Vec<(usize, usize, usize)> = path.iter().map(|&s| self.unstate(s)).collect();
+    for w in cells.windows(2) {
+      if let [a, b] = w
+        && a.1 == b.1
+        && a.2 == b.2
+        && a.0 != b.0
+        && !out.vias.contains(&(a.1, a.2))
+      {
+        out.vias.push((a.1, a.2));
+        self.claim_via(a.1, a.2, net);
+        for l in 0..self.model.layers.len() {
+          tree.push(self.state(l, a.1, a.2));
+        }
+      }
+    }
+    for &(l, x, y) in &cells {
+      self.claim_cell(l, x, y, net);
+      tree.push(self.state(l, x, y));
+    }
+    // Merge consecutive same-layer cells in a line into runs.
+    let mut i = 0;
+    while i < cells.len() {
+      let Some(&(l, x0, y0)) = cells.get(i) else { break };
+      let mut j = i;
+      while let (Some(&(l2, x2, y2)), Some(&(_, x1, y1))) = (cells.get(j + 1), cells.get(j)) {
+        let straight = l2 == l && (x2 == x1 || y2 == y1) && (x2 == x0 || y2 == y0);
+        if straight && (x2, y2) != (x1, y1) {
+          j += 1;
+        } else {
+          break;
+        }
+      }
+      if j > i
+        && let Some(&(_, x1, y1)) = cells.get(j)
+      {
+        out.runs.push(Run {
+          layer: l,
+          a: (x0, y0),
+          b: (x1, y1),
+        });
+      }
+      i = j.max(i + 1);
+    }
+    tree.sort_unstable();
+    tree.dedup();
+  }
+
+  /// A* from every tree state to the cheapest cell of any remaining terminal.
+  /// Returns the state path (source first) and the index of the terminal hit.
+  fn search(&mut self, net: u32, tree: &[usize], terms: &[Terminal]) -> Option<(Vec<usize>, usize)> {
+    self.epoch = self.epoch.wrapping_add(1);
+    if self.epoch == 0 {
+      self.stamp.iter_mut().for_each(|s| *s = 0);
+      self.epoch = 1;
+    }
+    let mut goal: HashMap<usize, usize> = HashMap::new();
+    for (ti, t) in terms.iter().enumerate() {
+      for &(l, x, y) in &t.cells {
+        goal.entry(self.state(l, x, y)).or_insert(ti);
+      }
+    }
+    let h = |x: usize, y: usize| -> u32 {
+      let mut best = u32::MAX;
+      for t in terms {
+        let (x0, x1, y0, y1) = t.bbox;
+        let dx = x0.saturating_sub(x).max(x.saturating_sub(x1));
+        let dy = y0.saturating_sub(y).max(y.saturating_sub(y1));
+        best = best.min((dx + dy) as u32);
+      }
+      best.saturating_mul(STEP)
+    };
+
+    // Heap entries: (Reverse f, Reverse state) → smallest f, then smallest state.
+    let mut heap: BinaryHeap<(std::cmp::Reverse<u32>, std::cmp::Reverse<u32>)> = BinaryHeap::new();
+    for &s in tree {
+      let (_, x, y) = self.unstate(s);
+      self.stamp[s] = self.epoch;
+      self.cost[s] = 0;
+      self.prev[s] = u32::MAX;
+      heap.push((std::cmp::Reverse(h(x, y)), std::cmp::Reverse(s as u32)));
+    }
+    let (nx, ny, nl) = (self.model.nx, self.model.ny, self.model.layers.len());
+    while let Some((_, std::cmp::Reverse(s32))) = heap.pop() {
+      let s = s32 as usize;
+      let g = self.cost[s];
+      let (l, x, y) = self.unstate(s);
+      if let Some(&ti) = goal.get(&s)
+        && !tree.contains(&s)
+      {
+        let mut path = vec![s];
+        let mut cur = s;
+        while let Some(&p) = self.prev.get(cur) {
+          if p == u32::MAX {
+            break;
+          }
+          path.push(p as usize);
+          cur = p as usize;
+        }
+        path.reverse();
+        return Some((path, ti));
+      }
+      let mut relax = |me: &mut Self, ns: usize, step: u32, nxx: usize, nyy: usize| {
+        let ng = g + step;
+        if me.stamp[ns] != me.epoch || ng < me.cost[ns] {
+          me.stamp[ns] = me.epoch;
+          me.cost[ns] = ng;
+          me.prev[ns] = s as u32;
+          heap.push((std::cmp::Reverse(ng + h(nxx, nyy)), std::cmp::Reverse(ns as u32)));
+        }
+      };
+      for (dx, dy) in [(1i64, 0i64), (-1, 0), (0, 1), (0, -1)] {
+        let (xx, yy) = (x as i64 + dx, y as i64 + dy);
+        if xx < 0 || yy < 0 || xx >= nx as i64 || yy >= ny as i64 {
+          continue;
+        }
+        let (xx, yy) = (xx as usize, yy as usize);
+        if !self.cell_free(l, xx, yy, net) {
+          continue;
+        }
+        let step = if self.wrong_way(l, dx != 0) {
+          self.costs.wrong_way
+        } else {
+          self.costs.step
+        };
+        let ns = self.state(l, xx, yy);
+        relax(self, ns, step, xx, yy);
+      }
+      if nl > 1 && self.via_free(x, y, net) {
+        for l2 in 0..nl {
+          if l2 != l && self.cell_free(l2, x, y, net) {
+            let ns = self.state(l2, x, y);
+            relax(self, ns, self.costs.via, x, y);
+          }
+        }
+      }
+    }
+    None
+  }
+
+  /// Connect a plane-net pad to its plane by a via at the nearest usable cell.
+  /// Through-hole pads that reach the plane layer already are, and need none.
+  pub fn tap_plane(&mut self, board: &Board, fi: usize, pi: usize, net: u32) -> Option<NetRoute> {
+    let pad = board.footprints.get(fi)?.pads.get(pi)?;
+    let mut out = NetRoute {
+      net,
+      ..NetRoute::default()
+    };
+    let on_plane = self
+      .model
+      .planes
+      .iter()
+      .any(|p| p.net == net && pad.layers.iter().any(|l| l == "*.Cu" || l == &p.layer));
+    if on_plane {
+      out.connected.push((fi, pi));
+      return Some(out);
+    }
+    let m = self.model;
+    let reach = m.pitch * 1.5 + pad.size.x.max(pad.size.y) / 2.0;
+    let layers = m.pad_layer_indices(&pad.layers);
+    let lo = |v: f64, o: f64| ((v - o) / m.pitch).floor().max(0.0) as usize;
+    let (x0, x1) = (
+      lo(pad.at.x - reach, m.origin.x),
+      lo(pad.at.x + reach, m.origin.x) + 1,
+    );
+    let (y0, y1) = (
+      lo(pad.at.y - reach, m.origin.y),
+      lo(pad.at.y + reach, m.origin.y) + 1,
+    );
+    let mut best: Option<(u64, usize, usize, usize)> = None;
+    for &l in &layers {
+      for iy in y0..=y1.min(m.ny.saturating_sub(1)) {
+        for ix in x0..=x1.min(m.nx.saturating_sub(1)) {
+          let d = (m.centre(ix, iy) - pad.at).length();
+          let key = (d * 1e6) as u64;
+          if d <= reach
+            && best.is_none_or(|b| key < b.0)
+            && self.cell_free(l, ix, iy, net)
+            && self.via_free(ix, iy, net)
+          {
+            best = Some((key, l, ix, iy));
+          }
+        }
+      }
+    }
+    let Some((_, l, ix, iy)) = best else {
+      out.failed.push((fi, pi));
+      return Some(out);
+    };
+    self.claim_via(ix, iy, net);
+    out.vias.push((ix, iy));
+    if m
+      .pad_access(board, fi, pi)
+      .cells
+      .iter()
+      .all(|&c| c != (l, ix, iy))
+    {
+      out.stubs.push(Stub {
+        layer: l,
+        from: m.centre(ix, iy),
+        to: pad.at,
+      });
+    }
+    out.connected.push((fi, pi));
+    Some(out)
+  }
+}

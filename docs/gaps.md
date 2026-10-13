@@ -24,7 +24,7 @@ own and ends with something measured.
   rules. Obstacles: pads (real rotated shapes, clearance-inflated),
   keepout zones, the board edge, through-hole pads on every layer. Plane
   nets (poured) connect by a via to their plane, not by traces.
-- **M7.2 — one net, A\*.** Deterministic maze search on the 3-D grid (x, y,
+- ~~**M7.2 — one net, A\*.**~~ — closed 2026-10-13 (`route::search`, `route::driver`, `autolayout route`; see ROADMAP). Original scope: Deterministic maze search on the 3-D grid (x, y,
   layer) with a via cost and a direction preference per layer. Multi-pin
   nets grow a Steiner-ish tree from the nearest pin pair outward.
 - **M7.3 — negotiated congestion.** PathFinder (McMurchie & Ebeling,

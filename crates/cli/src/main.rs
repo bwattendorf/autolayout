@@ -12,6 +12,7 @@
 //!   autolayout flip <in> <out> (<REF>... | ALL)      move footprints to the other side (NEW file)
 //!   autolayout rules <file.kicad_pcb> [--track W --clearance C --via D/DRILL]   design rules from the project beside the board (or explicit)
 //!   autolayout model <file.kicad_pcb> [--class NAME] [--plane LAYER=NET]... [explicit rules]   build the routing grid, report obstacles and pad access
+//!   autolayout route <file.kicad_pcb> [same flags as model]   greedy sequential route of every net; reports only (M7.2)
 //!   autolayout unlock <in> <out> <REF>...            unlock footprints for an experiment (NEW file)
 
 use std::collections::BTreeMap;
@@ -361,10 +362,15 @@ fn explicit_rules(
   DesignRules::explicit(track, clearance, num("--via", d)?, num("--via", dr)?)
 }
 
-/// Build the routing model for one net class and report what it blocks and
-/// which netted pads it can reach (M7.1). Nothing is written.
-fn model(pcb: &str, args: &[String]) -> Result<bool, String> {
-  use autolayout_route::model::RoutingModel;
+/// `--class NAME`, `--plane LAYER=NET`..., and optional explicit rules, as the
+/// routing commands take them.
+type ModelArgs = (
+  autolayout_route::rules::DesignRules,
+  autolayout_route::rules::NetClass,
+  Vec<(String, String)>,
+);
+
+fn model_args(pcb: &str, args: &[String]) -> Result<ModelArgs, String> {
   use autolayout_route::rules::DesignRules;
   let (mut class, mut planes, mut rule_flags) = (String::from("Default"), Vec::new(), Vec::new());
   let mut it = args.iter();
@@ -394,6 +400,69 @@ fn model(pcb: &str, args: &[String]) -> Result<bool, String> {
     .find(|c| c.name == class)
     .ok_or_else(|| format!("no net class `{class}` in the rules"))?
     .clone();
+  Ok((rules, profile, planes))
+}
+
+/// Greedy sequential route of every net on the model; reports, writes nothing
+/// (writing is M7.4). Copper already on the board is kept as obstacles, so
+/// route a stripped board (`autolayout strip`).
+fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
+  use autolayout_route::{driver::route_all, model::RoutingModel, search::Costs};
+  let (rules, profile, planes) = model_args(pcb, args)?;
+  let (_, doc) = load(pcb)?;
+  let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
+  let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
+  let t = std::time::Instant::now();
+  let s = route_all(&board, &m, Costs::default());
+  println!(
+    "rules from {}; pitch {:.4} mm; grid {} x {} x {}",
+    rules.source,
+    m.pitch,
+    m.nx,
+    m.ny,
+    m.layers.len()
+  );
+  println!(
+    "greedy sequential route (UNVERIFIED: not written, not checked by KiCad): nets complete {} of {}; pads connected {} of {}; {:.1} mm of track, {} vias, {:.1} s",
+    s.nets_complete,
+    s.nets_total,
+    s.pads_connected,
+    s.pads_total,
+    s.length_mm,
+    s.vias,
+    t.elapsed().as_secs_f64()
+  );
+  for r in s.routes.iter().filter(|r| !r.failed.is_empty()).take(12) {
+    let pads: Vec<String> = r
+      .failed
+      .iter()
+      .filter_map(|&(f, p)| {
+        Some(format!(
+          "{}.{}",
+          board.footprints.get(f)?.reference,
+          board.footprints.get(f)?.pads.get(p)?.number
+        ))
+      })
+      .collect();
+    println!(
+      "  incomplete: net {} — unreached {}",
+      board.nets.get(&r.net).map_or("?", String::as_str),
+      pads.join(" ")
+    );
+  }
+  let c = autolayout_route::check::check(&board, &m, &s.routes);
+  println!(
+    "self-check (our own model, not a grade): {} nets, {} illegal cells, {} shared cells, {} disconnected pads",
+    c.nets_checked, c.illegal_cells, c.shared_cells, c.disconnected_pads
+  );
+  Ok(s.nets_complete == s.nets_total && c.clean())
+}
+
+/// Build the routing model for one net class and report what it blocks and
+/// which netted pads it can reach (M7.1). Nothing is written.
+fn model(pcb: &str, args: &[String]) -> Result<bool, String> {
+  use autolayout_route::model::RoutingModel;
+  let (rules, profile, planes) = model_args(pcb, args)?;
   let (_, doc) = load(pcb)?;
   let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
   let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
@@ -498,6 +567,7 @@ fn main() -> ExitCode {
     }
     Some((cmd, [pcb, flags @ ..])) if cmd == "rules" => rules(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "model" => model(pcb, flags),
+    Some((cmd, [pcb, flags @ ..])) if cmd == "route" => route(pcb, flags),
     Some((cmd, [pcb, out])) if cmd == "strip" => strip(pcb, out),
     Some((cmd, files)) if cmd == "escape" && !files.is_empty() => escape(files),
     Some((cmd, [input, output, refs @ ..])) if cmd == "flip" && !refs.is_empty() => {
