@@ -1,54 +1,97 @@
-//! Model checks on a real board. Skips, printing why, without the corpus.
+//! Checks on a real board. Skip, printing why, without the corpus.
 
 use std::path::Path;
 
 use autolayout_board::Board;
+use autolayout_route::driver::route_all;
 use autolayout_route::model::RoutingModel;
+use autolayout_route::negotiate::{Params, route_negotiated};
 use autolayout_route::rules::DesignRules;
-use autolayout_sexpr::parse;
+use autolayout_route::search::Costs;
+use autolayout_route::verify::verify;
+use autolayout_route::write::add_routes;
+use autolayout_sexpr::{Document, parse};
 
-/// m1 at its fab rules (pitch 0.178 mm): every netted pad other than the
-/// SMD pads of the two plane nets has at least one grid cell inside its copper
-/// that its own net may use. Measured 345 of 345 on 2026-10-13.
-#[test]
-fn m1_fab_every_pad_is_reachable() {
-  let Ok(root) = std::env::var("AUTOLAYOUT_CORPUS") else {
-    println!("SKIPPED: route model corpus test (AUTOLAYOUT_CORPUS not set)");
-    return;
-  };
+/// The m1 fab board with its copper removed (what `autolayout strip` does).
+fn stripped_fab() -> Option<(Document, Board, DesignRules)> {
+  let root = std::env::var("AUTOLAYOUT_CORPUS").ok()?;
   let path = Path::new(&root).join("quilter/fab/m1/m1.kicad_pcb");
-  let doc = parse(&std::fs::read_to_string(&path).unwrap()).unwrap();
+  let mut doc = parse(&std::fs::read_to_string(&path).unwrap()).unwrap();
+  let copper = ["segment", "arc", "via", "zone"];
+  doc
+    .root_mut()
+    .unwrap()
+    .items
+    .retain(|n| n.as_list().is_none_or(|l| !copper.iter().any(|k| l.is(k))));
   let board = Board::read(&doc).unwrap();
   let rules = DesignRules::load_for_board(&path).unwrap();
-  let profile = rules.classes[0].clone();
-  let planes = vec![
+  Some((doc, board, rules))
+}
+
+fn planes() -> Vec<(String, String)> {
+  vec![
     ("In1.Cu".to_string(), "GND".to_string()),
     ("In2.Cu".to_string(), "+3V3".to_string()),
-  ];
-  let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).unwrap();
-  let plane_nets: Vec<u32> = m.planes.iter().map(|p| p.net).collect();
-  let (mut total, mut bad) = (0, 0);
-  for (fi, fp) in board.footprints.iter().enumerate() {
-    for (pi, pad) in fp.pads.iter().enumerate() {
-      let Some(net) = pad.net.filter(|&n| n != 0) else {
-        continue;
-      };
-      if plane_nets.contains(&net) && pad.kind == "smd" {
-        continue;
-      }
-      total += 1;
-      if m.pad_access(&board, fi, pi).cells.is_empty() {
-        bad += 1;
-      }
-    }
-  }
+  ]
+}
+
+/// m1 at its fab rules, routed and written, then judged from the written text
+/// alone. Measured 2026-10-13: 104 of 104 nets, verifier 0 in every category.
+/// (Before the pad-geometry, via-spacing and stub fixes the same board gave
+/// 2 unconnected + 2 dangling + 2 hole_to_hole in KiCad.) The verifier is our
+/// code; KiCad DRC is the judge (docs/m7-results).
+#[test]
+fn m1_fab_routes_and_the_verifier_is_clean() {
+  let Some((doc, board, rules)) = stripped_fab() else {
+    println!("SKIPPED: route corpus test (AUTOLAYOUT_CORPUS not set)");
+    return;
+  };
+  let profile = rules.classes[0].clone();
+  let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes()).unwrap();
+  let (s, st) = route_negotiated(&board, &m, Costs::default(), Params::default());
+  assert_eq!(st.conflicts.last(), Some(&0), "{:?}", st.conflicts);
+  assert_eq!(s.nets_complete, s.nets_total, "incomplete nets");
+  assert!(
+    s.nets_total > 100,
+    "too few nets ({}); refusing a vacuous pass",
+    s.nets_total
+  );
+
+  let mut out = doc.clone();
+  let w = add_routes(&mut out, &m, &board, &s).unwrap();
+  let text = out.to_string();
+  let back = parse(&text).unwrap();
+  assert_eq!(back.to_string(), text);
+  let b2 = Board::read(&back).unwrap();
+  let codes: Vec<(String, u32)> = m.planes.iter().map(|p| (p.layer.clone(), p.net)).collect();
+  let v = verify(&back, &b2, &rules, &codes);
   println!(
-    "route model: m1 fab, {bad} of {total} pads unreachable on the {:.4} mm grid",
-    m.pitch
+    "route corpus: m1 fab {} nets, {} segments, {} vias; verifier: {}",
+    s.nets_total,
+    w.segments,
+    w.vias,
+    v.summary()
   );
   assert!(
-    total > 300,
-    "too few pads checked ({total}); refusing a vacuous pass"
+    v.clean(),
+    "{}\n{:?}",
+    v.summary(),
+    &v.issues[..v.issues.len().min(10)]
   );
-  assert_eq!(bad, 0);
+  assert_eq!((v.segments, v.vias), (w.segments, w.vias));
+}
+
+/// The greedy baseline writes a board the verifier can also read (it need not
+/// be clean: greedy leaves nets unfinished on purpose).
+#[test]
+fn m1_fab_greedy_is_deterministic() {
+  let Some((doc, board, rules)) = stripped_fab() else {
+    println!("SKIPPED: route corpus test (AUTOLAYOUT_CORPUS not set)");
+    return;
+  };
+  let profile = rules.classes[0].clone();
+  let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes()).unwrap();
+  let a = route_all(&board, &m, Costs::default());
+  let b = route_all(&board, &m, Costs::default());
+  assert_eq!(a.routes, b.routes);
 }

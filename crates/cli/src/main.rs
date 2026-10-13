@@ -13,6 +13,7 @@
 //!   autolayout rules <file.kicad_pcb> [--track W --clearance C --via D/DRILL]   design rules from the project beside the board (or explicit)
 //!   autolayout model <file.kicad_pcb> [--class NAME] [--plane LAYER=NET]... [explicit rules]   build the routing grid, report obstacles and pad access
 //!   autolayout route <file.kicad_pcb> [--out NEW.kicad_pcb] [--greedy] [--iters N] [model flags]   route every net (PathFinder, or greedy baseline); with --out, write tracks and vias to a NEW file
+//!   autolayout verify <file.kicad_pcb> [--plane LAYER=NET]...   judge existing copper from the file alone (unconnected, dangling, hole-to-hole, clearance); not KiCad
 //!   autolayout unlock <in> <out> <REF>...            unlock footprints for an experiment (NEW file)
 
 use std::collections::BTreeMap;
@@ -443,7 +444,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
       ));
     }
   }
-  let (_, mut doc) = load(pcb)?;
+  let (_, doc) = load(pcb)?;
   let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
   let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
   let t = std::time::Instant::now();
@@ -500,9 +501,11 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
       pads.join(" ")
     );
   }
+  // The copper as it would be written; the file and the verifier both use this text.
+  let mut judged = doc.clone();
+  let written = autolayout_route::write::add_routes(&mut judged, &m, &board, &s)?;
   if let Some(o) = &out_path {
-    let w = autolayout_route::write::add_routes(&mut doc, &m, &board, &s)?;
-    fs::write(o, doc.to_string()).map_err(|e| format!("{o}: {e}"))?;
+    fs::write(o, judged.to_string()).map_err(|e| format!("{o}: {e}"))?;
     // Read it back off disk: it must parse, round-trip byte-exact, and hold
     // exactly the copper that was added.
     let back = fs::read_to_string(o).map_err(|e| format!("{o}: {e}"))?;
@@ -516,18 +519,53 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     let added_via = count(&parsed, "via") - count(&before, "via");
     println!(
       "wrote {o}: {} segments, {} vias added (read back: {added_seg} / {added_via}); judge it with KiCad DRC, not with this tool",
-      w.segments, w.vias
+      written.segments, written.vias
     );
-    if (added_seg, added_via) != (w.segments, w.vias) {
+    if (added_seg, added_via) != (written.segments, written.vias) {
       return Err("read-back copper count differs from what was written".to_owned());
     }
   }
-  let c = autolayout_route::check::check(&board, &m, &s.routes);
+  // Judge the copper as it would be written, from the file text and the real
+  // pad shapes, not from the router's grid.
+  let judged_text = judged.to_string();
+  let jdoc = parse(&judged_text).map_err(|e| format!("internal: {e}"))?;
+  let jboard = Board::read(&jdoc).map_err(|e| e.to_string())?;
+  let plane_codes: Vec<(String, u32)> = m.planes.iter().map(|p| (p.layer.clone(), p.net)).collect();
+  let v = autolayout_route::verify::verify(&jdoc, &jboard, &rules, &plane_codes);
   println!(
-    "self-check (our own model, not a grade): {} nets, {} illegal cells, {} shared cells, {} disconnected pads",
-    c.nets_checked, c.illegal_cells, c.shared_cells, c.disconnected_pads
+    "verifier (re-derived from the written copper, NOT KiCad; judge is `kicad-cli pcb drc`): {}",
+    v.summary()
   );
-  Ok(s.nets_complete == s.nets_total && c.clean())
+  for i in v.issues.iter().take(10) {
+    println!("  {} at ({:.4}, {:.4}): {}", i.kind, i.at.x, i.at.y, i.detail);
+  }
+  Ok(s.nets_complete == s.nets_total && v.clean())
+}
+
+/// Judge the copper already in a board file against its project's rules, in
+/// continuous geometry from the file alone (see `route::verify`). `--plane
+/// LAYER=NET` says which layers are poured planes. Exit 1 if anything is found.
+fn verify(pcb: &str, args: &[String]) -> Result<bool, String> {
+  let (rules, _, planes) = model_args(pcb, args)?;
+  let (_, doc) = load(pcb)?;
+  let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
+  let codes: Vec<(String, u32)> = planes
+    .iter()
+    .map(|(l, n)| {
+      board
+        .nets
+        .iter()
+        .find(|(_, name)| *name == n)
+        .map(|(c, _)| (l.clone(), *c))
+        .ok_or_else(|| format!("plane net `{n}` is not a net of this board"))
+    })
+    .collect::<Result<_, _>>()?;
+  let v = autolayout_route::verify::verify(&doc, &board, &rules, &codes);
+  println!("{pcb}: {}", v.summary());
+  for i in v.issues.iter().take(40) {
+    println!("  {} at ({:.4}, {:.4}): {}", i.kind, i.at.x, i.at.y, i.detail);
+  }
+  Ok(v.clean())
 }
 
 /// Build the routing model for one net class and report what it blocks and
@@ -640,6 +678,7 @@ fn main() -> ExitCode {
     Some((cmd, [pcb, flags @ ..])) if cmd == "rules" => rules(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "model" => model(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "route" => route(pcb, flags),
+    Some((cmd, [pcb, flags @ ..])) if cmd == "verify" => verify(pcb, flags),
     Some((cmd, [pcb, out])) if cmd == "strip" => strip(pcb, out),
     Some((cmd, files)) if cmd == "escape" && !files.is_empty() => escape(files),
     Some((cmd, [input, output, refs @ ..])) if cmd == "flip" && !refs.is_empty() => {

@@ -99,3 +99,90 @@ Do not commit boards (`.kicad_pcb`), gerbers or anything over 1 MB.
 Then: `git add docs/m7-results tools && git commit` (message starts with
 `M7.4:`, end with the usual attribution) and `git push origin m7-router`.
 Reply with the table and the commit hash.
+
+
+---
+
+# Round 2 (2026-10-13): re-judge after the fixes, and test the verifier
+
+Why: KiCad's first verdict (docs/m7-results/2026-10-13-fab-m1.md) found 2
+unconnected, 2 track_dangling and 2 hole_to_hole on our board. The router now
+has fixes for all three and a new `autolayout verify` that is supposed to agree
+with KiCad. Round 2 measures both: does KiCad now come back clean, and does the
+verifier agree with KiCad on boards it did not help make.
+
+## Prompt to paste
+
+> Same rules as before (docs/windows-handoff.md): follow "Round 2" exactly, do
+> not change router or verifier code to make a number match, fix only what stops
+> a script running and say what you changed, report every number with its
+> command, commit results to branch `m7-router` and push, no PR, never
+> overwrite a board. If KiCad and `autolayout verify` disagree, that is the
+> finding: report both and the coordinates, do not reconcile them.
+
+## Steps
+
+Same shell setup as round 1 (`PATH`, `AUTOLAYOUT_CORPUS`, `KPY`). `W=out/m7r2`.
+
+1. `git fetch origin && git checkout m7-router && git pull`; record the commit
+   hash. `bash ci.sh > out/ci_last.txt 2>&1; echo "exit=$?"` and its last line.
+   `cargo build --release`.
+
+2. **Prepare and route (ours), KiCad judges.** Fresh output dir (the router
+   refuses to overwrite):
+   ```
+   mkdir -p out/m7r2
+   F=$AUTOLAYOUT_CORPUS/quilter/fab/m1
+   ./target/release/autolayout strip $F/m1.kicad_pcb out/m7r2/m1_fab.kicad_pcb
+   cp $F/m1.kicad_pro out/m7r2/m1_fab.kicad_pro
+   "$KPY" tools/m7_check.py out/m7r2/m1_fab.kicad_pcb out/m7r2/ours GND +3V3
+   ```
+   Save the JSON. Expected from our side: the router's own `verifier` line says
+   0 on every category and the exit code is 0 (see `out/m7r2/ours/*_route.log`).
+   What KiCad says is the point: `unconnected_after`, and
+   `violations_by_kind` (`track_dangling`, `hole_to_hole`, `clearance`,
+   `unconnected_items`, `via_dangling`, `shorting_items`). Quote the first
+   five lines of each non-zero kind with coordinates.
+
+3. **Does the verifier agree with KiCad on OUR routed board?**
+   ```
+   cp out/m7r2/ours/m1_fab_routed.kicad_pcb out/m7r2/ours_check.kicad_pcb
+   cp $F/m1.kicad_pro out/m7r2/ours_check.kicad_pro
+   ./target/release/autolayout verify out/m7r2/ours_check.kicad_pcb --plane In1.Cu=GND --plane In2.Cu=+3V3
+   ```
+   Put KiCad's count and the verifier's count per category side by side.
+
+4. **Does the verifier agree with KiCad on a board it did not help make?** Use
+   the Freerouting result from round 1, or rerun it (10 passes, ~10 min):
+   ```
+   "$KPY" tools/route_check.py out/m7r2/m1_fab.kicad_pcb out/m7r2/fr GND +3V3 10
+   cp $F/m1.kicad_pro out/m7r2/fr/m1_fab_routed.kicad_pro   # verify reads the project beside the board
+   ./target/release/autolayout verify out/m7r2/fr/m1_fab_routed.kicad_pcb \
+       --plane In1.Cu=GND --plane F.Cu=GND --plane B.Cu=GND --plane In2.Cu=+3V3
+   ```
+   (route_check pours GND on F, In1, B and +3V3 on In2, hence the four
+   `--plane` flags.) Round-1 KiCad numbers for Freerouting: 17 unconnected,
+   2 clearance, 2 shorting, 45 track_width, 9 via_dangling. The verifier does
+   not implement via_dangling or shorting_items (an overlap counts as a
+   clearance finding); compare `track_width`, `clearance`, `unconnected`,
+   `track_dangling`, `hole_to_hole`. Report where it differs and by how much;
+   a verifier that is wrong here has only been fitted to our own board.
+
+5. **Stress case (model only, not KiCad-judged):**
+   ```
+   ./target/release/autolayout route out/m7r2/m1_fab.kicad_pcb --plane In1.Cu=GND --plane In2.Cu=+3V3 --track 0.2 --clearance 0.2 --via 0.6/0.3 --iters 60
+   ```
+   Paste the `negotiated` and `verifier` lines.
+
+6. **Optional, if `m1.net` exists now:** its path. Place our own m1 with
+   `autolayout place` and report the command and result; do not commit boards.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-fab-m1-round2.md` with: commit hash; KiCad
+version; commands and exit codes; table ours-KiCad vs ours-verifier vs
+Freerouting-KiCad vs Freerouting-verifier per category; first violation
+examples; what you changed (ideally nothing) and what you did not run. Copy the
+`*_drc.rpt` and `*_route.log` files (not boards, nothing over 1 MB) into
+`docs/m7-results/YYYY-MM-DD-fab-m1-round2/`. Commit, `git push origin
+m7-router`, reply with the table and the hash.
