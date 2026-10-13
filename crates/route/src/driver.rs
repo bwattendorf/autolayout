@@ -20,7 +20,7 @@ pub struct Summary {
 }
 
 /// (half-perimeter, net code, pads): a net queued for routing.
-type Ordered = (f64, u32, Vec<(usize, usize)>);
+pub type Ordered = (f64, u32, Vec<(usize, usize)>);
 
 /// Half-perimeter of a net's pad box, used to order nets short-first.
 fn hpwl(board: &Board, pads: &[(usize, usize)]) -> f64 {
@@ -30,17 +30,23 @@ fn hpwl(board: &Board, pads: &[(usize, usize)]) -> f64 {
   autolayout_board::BBox::from_points(pts).map_or(0.0, |b| b.width() + b.height())
 }
 
-pub fn route_all(board: &Board, model: &RoutingModel, costs: Costs) -> Summary {
-  let mut router = Router::new(model, costs);
-  let by_net = board.pads_by_net();
+/// Plane nets: one via per pad that does not already reach the plane. Adds the
+/// plane routes to `s` (and permanently claims their vias in `router`).
+pub fn tap_planes(
+  board: &Board,
+  model: &RoutingModel,
+  router: &mut Router,
+  by_net: &std::collections::HashMap<u32, Vec<(usize, usize)>>,
+  s: &mut Summary,
+) {
   let plane_nets: Vec<u32> = model.planes.iter().map(|p| p.net).collect();
-  let mut s = Summary::default();
-
-  let mut codes: Vec<u32> = by_net.keys().copied().filter(|&n| n != 0).collect();
+  let mut codes: Vec<u32> = by_net
+    .keys()
+    .copied()
+    .filter(|n| plane_nets.contains(n))
+    .collect();
   codes.sort_unstable();
-
-  // Plane nets: one via per pad that does not already reach the plane.
-  for &net in codes.iter().filter(|n| plane_nets.contains(n)) {
+  for net in codes {
     let mut agg = NetRoute {
       net,
       ..NetRoute::default()
@@ -58,15 +64,29 @@ pub fn route_all(board: &Board, model: &RoutingModel, costs: Costs) -> Summary {
     s.nets_total += 1;
     s.pads_total += pads.len();
     s.pads_connected += agg.connected.len();
+    s.vias += agg.vias.len();
     if agg.failed.is_empty() {
       s.nets_complete += 1;
     }
     s.routes.push(agg);
   }
+}
 
+/// Signal nets with two or more pads, shortest half-perimeter first (ties by net code).
+pub fn order_signal_nets(
+  board: &Board,
+  model: &RoutingModel,
+  by_net: &std::collections::HashMap<u32, Vec<(usize, usize)>>,
+) -> Vec<Ordered> {
+  let plane_nets: Vec<u32> = model.planes.iter().map(|p| p.net).collect();
+  let mut codes: Vec<u32> = by_net
+    .keys()
+    .copied()
+    .filter(|&n| n != 0 && !plane_nets.contains(&n))
+    .collect();
+  codes.sort_unstable();
   let mut signal: Vec<Ordered> = codes
     .iter()
-    .filter(|n| !plane_nets.contains(n))
     .filter_map(|&n| {
       let mut pads = by_net.get(&n)?.clone();
       pads.sort_unstable();
@@ -74,7 +94,15 @@ pub fn route_all(board: &Board, model: &RoutingModel, costs: Costs) -> Summary {
     })
     .collect();
   signal.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
-  for (_, net, pads) in signal {
+  signal
+}
+
+pub fn route_all(board: &Board, model: &RoutingModel, costs: Costs) -> Summary {
+  let mut router = Router::new(model, costs);
+  let by_net = board.pads_by_net();
+  let mut s = Summary::default();
+  tap_planes(board, model, &mut router, &by_net, &mut s);
+  for (_, net, pads) in order_signal_nets(board, model, &by_net) {
     let r = router.route_net(board, net, &pads);
     s.nets_total += 1;
     s.pads_total += pads.len();
@@ -86,12 +114,6 @@ pub fn route_all(board: &Board, model: &RoutingModel, costs: Costs) -> Summary {
     s.vias += r.vias.len();
     s.routes.push(r);
   }
-  s.vias += s
-    .routes
-    .iter()
-    .take_while(|r| plane_nets.contains(&r.net))
-    .map(|r| r.vias.len())
-    .sum::<usize>();
   s
 }
 
@@ -196,5 +218,83 @@ mod tests {
     let a = s.routes.iter().find(|r| r.net == 1).unwrap();
     assert!(!a.failed.is_empty(), "the enclosed pad cannot be reached");
     assert!(s.nets_complete < s.nets_total);
+  }
+}
+
+#[cfg(test)]
+mod negotiation_tests {
+  use super::*;
+  use crate::check::check;
+  use crate::negotiate::{Params, route_negotiated};
+  use crate::rules::DesignRules;
+  use autolayout_sexpr::parse;
+
+  /// Four nets cross a corridor on a 2-layer board. Whatever greedy manages,
+  /// negotiation must end with no contested cells, a clean self-check, never
+  /// complete fewer nets than greedy on this board, and the same bytes twice.
+  const BOARD: &str = r#"(kicad_pcb
+  (layers (0 "F.Cu" signal) (2 "B.Cu" signal) (25 "Edge.Cuts" user))
+  (net 0 "") (net 1 "A") (net 2 "B") (net 3 "C") (net 4 "D")
+  (gr_line (start 0 0) (end 16 0) (layer "Edge.Cuts"))
+  (gr_line (start 16 0) (end 16 8) (layer "Edge.Cuts"))
+  (gr_line (start 16 8) (end 0 8) (layer "Edge.Cuts"))
+  (gr_line (start 0 8) (end 0 0) (layer "Edge.Cuts"))
+  (footprint "X" (layer "F.Cu") (at 0 0) (property "Reference" "U1")
+    (pad "1" smd rect (at 2 2) (size 0.8 0.8) (layers "F.Cu") (net 1 "A"))
+    (pad "2" smd rect (at 14 2) (size 0.8 0.8) (layers "F.Cu") (net 1 "A"))
+    (pad "3" smd rect (at 2 3.5) (size 0.8 0.8) (layers "F.Cu") (net 2 "B"))
+    (pad "4" smd rect (at 14 3.5) (size 0.8 0.8) (layers "F.Cu") (net 2 "B"))
+    (pad "5" smd rect (at 2 5) (size 0.8 0.8) (layers "F.Cu") (net 3 "C"))
+    (pad "6" smd rect (at 14 5) (size 0.8 0.8) (layers "F.Cu") (net 3 "C"))
+    (pad "7" smd rect (at 2 6.5) (size 0.8 0.8) (layers "F.Cu") (net 4 "D"))
+    (pad "8" smd rect (at 14 6.5) (size 0.8 0.8) (layers "F.Cu") (net 4 "D"))
+    (pad "9" thru_hole circle (at 8 2.75) (size 1.4 1.4) (drill 0.7) (layers "*.Cu") (net 2 "B"))
+    (pad "10" thru_hole circle (at 8 5.75) (size 1.4 1.4) (drill 0.7) (layers "*.Cu") (net 3 "C")))
+)"#;
+
+  fn setup() -> (Board, RoutingModel) {
+    let doc = parse(BOARD).unwrap();
+    let b = Board::read(&doc).unwrap();
+    let mut r = DesignRules::explicit(0.2, 0.2, 0.6, 0.3).unwrap();
+    r.min.copper_edge_clearance = 0.3;
+    let p = r.classes[0].clone();
+    let m = RoutingModel::build(&doc, &b, &r, &p, &[]).unwrap();
+    (b, m)
+  }
+
+  #[test]
+  fn negotiation_is_conflict_free_clean_and_no_worse_than_greedy() {
+    let (b, m) = setup();
+    let g = route_all(&b, &m, Costs::default());
+    let (n, st) = route_negotiated(&b, &m, Costs::default(), Params::default());
+    assert_eq!(st.conflicts.last(), Some(&0), "{:?}", st.conflicts);
+    assert!(
+      n.nets_complete >= g.nets_complete,
+      "{} < {}",
+      n.nets_complete,
+      g.nets_complete
+    );
+    let c = check(&b, &m, &n.routes);
+    assert!(c.clean(), "{c:?}");
+  }
+
+  #[test]
+  fn negotiation_is_deterministic() {
+    let (b, m) = setup();
+    let (x, sx) = route_negotiated(&b, &m, Costs::default(), Params::default());
+    let (y, sy) = route_negotiated(&b, &m, Costs::default(), Params::default());
+    assert_eq!(x.routes, y.routes);
+    assert_eq!(sx.conflicts, sy.conflicts);
+  }
+
+  #[test]
+  fn zero_iterations_still_returns_a_legal_result() {
+    let (b, m) = setup();
+    let p = Params {
+      max_iterations: 0,
+      ..Params::default()
+    };
+    let (n, _) = route_negotiated(&b, &m, Costs::default(), p);
+    assert!(check(&b, &m, &n.routes).clean());
   }
 }

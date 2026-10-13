@@ -31,6 +31,11 @@ use autolayout_board::{Board, Point};
 
 use crate::model::{FREE, RoutingModel};
 
+/// How far from a plane-net pad's centre (in pitches, beyond its own half
+/// size) a tap via may sit; the stub that joins them is not grid-checked.
+/// 1.5 left 4 of 104 m1 plane pads unreachable, 5 reaches all (2026-10-13).
+pub const TAP_REACH_PITCHES: f64 = 5.0;
+
 /// Cost of one grid step in the layer's preferred direction.
 pub const STEP: u32 = 10;
 
@@ -74,6 +79,8 @@ pub struct NetRoute {
   pub runs: Vec<Run>,
   pub vias: Vec<(usize, usize)>,
   pub stubs: Vec<Stub>,
+  /// Every grid cell (layer, ix, iy) the paths pass through, sorted, no repeats.
+  pub cells: Vec<(usize, usize, usize)>,
   /// Pads (footprint index, pad index) joined into the net.
   pub connected: Vec<(usize, usize)>,
   /// Pads that could not be reached.
@@ -98,12 +105,23 @@ struct Terminal {
   bbox: (usize, usize, usize, usize),
 }
 
+/// State of negotiated congestion (M7.3): how many nets hold each cell now,
+/// how often each cell has been fought over, and how hard sharing is punished.
+pub struct Soft {
+  pub occ: Vec<Vec<u16>>,
+  pub hist: Vec<Vec<u32>>,
+  pub pres: u32,
+}
+
 pub struct Router<'a> {
   pub model: &'a RoutingModel,
   pub costs: Costs,
   /// Which net holds each cell, per routable layer (net + 1), from routes
   /// already committed. Separate from the model's static obstacles.
   pub usage: Vec<Vec<u32>>,
+  /// `Some` while negotiating: cells may be shared at a cost, and routes do
+  /// not write `usage` (the driver keeps `soft.occ` instead).
+  pub soft: Option<Soft>,
   // Search scratch, stamped so a search never clears the whole grid.
   stamp: Vec<u32>,
   cost: Vec<u32>,
@@ -130,6 +148,7 @@ impl<'a> Router<'a> {
       model,
       costs,
       usage: vec![vec![FREE; model.nx * model.ny]; model.layers.len()],
+      soft: None,
       stamp: vec![0; n],
       cost: vec![0; n],
       prev: vec![u32::MAX; n],
@@ -176,6 +195,9 @@ impl<'a> Router<'a> {
   }
 
   fn claim_cell(&mut self, layer: usize, ix: usize, iy: usize, net: u32) {
+    if self.soft.is_some() {
+      return;
+    }
     let nx = self.model.nx;
     if let Some(c) = self.usage.get_mut(layer).and_then(|u| u.get_mut(iy * nx + ix)) {
       *c = net + 1;
@@ -183,6 +205,9 @@ impl<'a> Router<'a> {
   }
 
   fn claim_via(&mut self, ix: usize, iy: usize, net: u32) {
+    if self.soft.is_some() {
+      return;
+    }
     let (nx, ny) = (self.model.nx as i64, self.model.ny as i64);
     for &(dx, dy) in &self.via_halo.clone() {
       let (x, y) = (ix as i64 + dx, iy as i64 + dy);
@@ -191,6 +216,115 @@ impl<'a> Router<'a> {
           self.claim_cell(l, x as usize, y as usize, net);
         }
       }
+    }
+  }
+
+  /// Start negotiating. `present` is the first present-sharing penalty.
+  pub fn enable_soft(&mut self, present: u32) {
+    let (n, l) = (self.model.nx * self.model.ny, self.model.layers.len());
+    self.soft = Some(Soft {
+      occ: vec![vec![0; n]; l],
+      hist: vec![vec![0; n]; l],
+      pres: present,
+    });
+  }
+
+  /// Added cost of putting a track on a cell: history plus the present
+  /// penalty per other net already there.
+  fn cell_extra(&self, layer: usize, ix: usize, iy: usize) -> u32 {
+    let Some(s) = &self.soft else { return 0 };
+    let i = iy * self.model.nx + ix;
+    let h = s.hist.get(layer).and_then(|v| v.get(i)).copied().unwrap_or(0);
+    let o = s.occ.get(layer).and_then(|v| v.get(i)).copied().unwrap_or(0);
+    h + s.pres * u32::from(o)
+  }
+
+  /// Added cost of a via: the same, summed over the cells its halo takes.
+  fn via_extra(&self, ix: usize, iy: usize) -> u32 {
+    let Some(s) = &self.soft else { return 0 };
+    let mut sum = 0;
+    for &(dx, dy) in &self.via_halo {
+      let (x, y) = (ix as i64 + dx, iy as i64 + dy);
+      if x < 0 || y < 0 || x >= self.model.nx as i64 || y >= self.model.ny as i64 {
+        continue;
+      }
+      let i = y as usize * self.model.nx + x as usize;
+      for l in 0..s.occ.len() {
+        let o = s.occ.get(l).and_then(|v| v.get(i)).copied().unwrap_or(0);
+        sum += s.pres * u32::from(o) + s.hist.get(l).and_then(|v| v.get(i)).copied().unwrap_or(0) / 4;
+      }
+    }
+    sum
+  }
+
+  /// Every (layer, cell index) the net's copper takes: its track cells and
+  /// the halo of each via on every layer. Sorted, no repeats.
+  pub fn footprint(&self, r: &NetRoute) -> Vec<(usize, usize)> {
+    let (nx, ny) = (self.model.nx as i64, self.model.ny as i64);
+    let mut v: Vec<(usize, usize)> = r
+      .cells
+      .iter()
+      .map(|&(l, x, y)| (l, y * self.model.nx + x))
+      .collect();
+    for &(vx, vy) in &r.vias {
+      for &(dx, dy) in &self.via_halo {
+        let (x, y) = (vx as i64 + dx, vy as i64 + dy);
+        if x >= 0 && y >= 0 && x < nx && y < ny {
+          for l in 0..self.model.layers.len() {
+            v.push((l, y as usize * self.model.nx + x as usize));
+          }
+        }
+      }
+    }
+    v.sort_unstable();
+    v.dedup();
+    v
+  }
+
+  /// Add (`+1`) or remove (`-1`) a net's footprint from the occupancy.
+  pub fn occupy(&mut self, fp: &[(usize, usize)], add: bool) {
+    let Some(s) = &mut self.soft else { return };
+    for &(l, i) in fp {
+      if let Some(c) = s.occ.get_mut(l).and_then(|v| v.get_mut(i)) {
+        *c = if add {
+          c.saturating_add(1)
+        } else {
+          c.saturating_sub(1)
+        };
+      }
+    }
+  }
+
+  /// Cells held by more than one net.
+  pub fn conflicts(&self) -> usize {
+    self.soft.as_ref().map_or(0, |s| {
+      s.occ.iter().map(|v| v.iter().filter(|&&o| o > 1).count()).sum()
+    })
+  }
+
+  /// Raise the history of every contested cell by `inc`.
+  pub fn bump_history(&mut self, inc: u32) {
+    if let Some(s) = &mut self.soft {
+      for (h, o) in s.hist.iter_mut().zip(&s.occ) {
+        for (h, &o) in h.iter_mut().zip(o) {
+          if o > 1 {
+            *h = h.saturating_add(inc);
+          }
+        }
+      }
+    }
+  }
+
+  pub fn is_contested(&self, fp: &[(usize, usize)]) -> bool {
+    self.soft.as_ref().is_some_and(|s| {
+      fp.iter()
+        .any(|&(l, i)| s.occ.get(l).and_then(|v| v.get(i)).is_some_and(|&o| o > 1))
+    })
+  }
+
+  pub fn grow_present(&mut self, factor_num: u32, factor_den: u32) {
+    if let Some(s) = &mut self.soft {
+      s.pres = (s.pres.saturating_mul(factor_num) / factor_den.max(1)).max(s.pres + 1);
     }
   }
 
@@ -312,6 +446,8 @@ impl<'a> Router<'a> {
       }
     }
     tree.sort_unstable();
+    out.cells.sort_unstable();
+    out.cells.dedup();
     out
   }
 
@@ -356,6 +492,7 @@ impl<'a> Router<'a> {
     for &(l, x, y) in &cells {
       self.claim_cell(l, x, y, net);
       tree.push(self.state(l, x, y));
+      out.cells.push((l, x, y));
     }
     // Merge consecutive same-layer cells in a line into runs.
     let mut i = 0;
@@ -420,10 +557,13 @@ impl<'a> Router<'a> {
       heap.push((std::cmp::Reverse(h(x, y)), std::cmp::Reverse(s as u32)));
     }
     let (nx, ny, nl) = (self.model.nx, self.model.ny, self.model.layers.len());
-    while let Some((_, std::cmp::Reverse(s32))) = heap.pop() {
+    while let Some((std::cmp::Reverse(f), std::cmp::Reverse(s32))) = heap.pop() {
       let s = s32 as usize;
       let g = self.cost[s];
       let (l, x, y) = self.unstate(s);
+      if f > g.saturating_add(h(x, y)) {
+        continue; // a cheaper way to this state was found after this entry
+      }
       if let Some(&ti) = goal.get(&s)
         && !tree.contains(&s)
       {
@@ -463,13 +603,15 @@ impl<'a> Router<'a> {
           self.costs.step
         };
         let ns = self.state(l, xx, yy);
-        relax(self, ns, step, xx, yy);
+        let extra = self.cell_extra(l, xx, yy);
+        relax(self, ns, step + extra, xx, yy);
       }
       if nl > 1 && self.via_free(x, y, net) {
         for l2 in 0..nl {
           if l2 != l && self.cell_free(l2, x, y, net) {
             let ns = self.state(l2, x, y);
-            relax(self, ns, self.costs.via, x, y);
+            let extra = self.via_extra(x, y) + self.cell_extra(l2, x, y);
+            relax(self, ns, self.costs.via + extra, x, y);
           }
         }
       }
@@ -495,7 +637,7 @@ impl<'a> Router<'a> {
       return Some(out);
     }
     let m = self.model;
-    let reach = m.pitch * 1.5 + pad.size.x.max(pad.size.y) / 2.0;
+    let reach = m.pitch * TAP_REACH_PITCHES + pad.size.x.max(pad.size.y) / 2.0;
     let layers = m.pad_layer_indices(&pad.layers);
     let lo = |v: f64, o: f64| ((v - o) / m.pitch).floor().max(0.0) as usize;
     let (x0, x1) = (
