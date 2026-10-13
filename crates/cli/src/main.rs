@@ -13,7 +13,7 @@
 //!   autolayout rules <file.kicad_pcb> [--track W --clearance C --via D/DRILL]   design rules from the project beside the board (or explicit)
 //!   autolayout model <file.kicad_pcb> [--class NAME] [--plane LAYER=NET]... [explicit rules]   build the routing grid, report obstacles and pad access
 //!   autolayout route <file.kicad_pcb> [--out NEW.kicad_pcb] [--greedy] [--iters N] [model flags]   route every net (PathFinder, or greedy baseline); with --out, write tracks and vias to a NEW file
-//!   autolayout verify <file.kicad_pcb> [--plane LAYER=NET]...   judge existing copper from the file alone (unconnected, dangling, hole-to-hole, clearance); not KiCad
+//!   autolayout verify <file.kicad_pcb> [--plane LAYER=NET]... [--probe X,Y]...   judge existing copper from the file alone (unconnected, dangling, hole-to-hole, clearance); not KiCad
 //!   autolayout unlock <in> <out> <REF>...            unlock footprints for an experiment (NEW file)
 
 use std::collections::BTreeMap;
@@ -546,7 +546,27 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
 /// continuous geometry from the file alone (see `route::verify`). `--plane
 /// LAYER=NET` says which layers are poured planes. Exit 1 if anything is found.
 fn verify(pcb: &str, args: &[String]) -> Result<bool, String> {
-  let (rules, _, planes) = model_args(pcb, args)?;
+  // `--probe X,Y` (repeatable): which copper and which part of its net lies there.
+  let mut probes = Vec::new();
+  let mut rest = Vec::new();
+  let mut it = args.iter();
+  while let Some(a) = it.next() {
+    if a == "--probe" {
+      let v = it.next().ok_or("--probe needs X,Y")?;
+      let (x, y) = v.split_once(',').ok_or("--probe needs X,Y")?;
+      let num = |s: &str| {
+        s.trim()
+          .parse::<f64>()
+          .ok()
+          .filter(|n| n.is_finite())
+          .ok_or_else(|| format!("not a number: {s}"))
+      };
+      probes.push(autolayout_board::Point::new(num(x)?, num(y)?));
+    } else {
+      rest.push(a.clone());
+    }
+  }
+  let (rules, _, planes) = model_args(pcb, &rest)?;
   let (_, doc) = load(pcb)?;
   let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
   let codes: Vec<(String, u32)> = planes
@@ -560,10 +580,13 @@ fn verify(pcb: &str, args: &[String]) -> Result<bool, String> {
         .ok_or_else(|| format!("plane net `{n}` is not a net of this board"))
     })
     .collect::<Result<_, _>>()?;
-  let v = autolayout_route::verify::verify(&doc, &board, &rules, &codes);
+  let v = autolayout_route::verify::verify_with_probes(&doc, &board, &rules, &codes, &probes);
   println!("{pcb}: {}", v.summary());
   for i in v.issues.iter().take(400) {
     println!("  {} at ({:.4}, {:.4}): {}", i.kind, i.at.x, i.at.y, i.detail);
+  }
+  for n in &v.probe_notes {
+    println!("{n}");
   }
   Ok(v.clean())
 }

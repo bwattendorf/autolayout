@@ -46,6 +46,9 @@ const EPS: f64 = 1e-6;
 /// board, not taken from KiCad's source.
 const LAND_SLACK: f64 = 0.01;
 
+/// A probe point matches copper within this distance (KiCad prints 4 decimals).
+const PROBE_REACH: f64 = 0.005;
+
 /// KiCad did not flag a 0.0001 mm clearance shortfall (m1, same run). Shortfalls
 /// below this are not counted; it can hide a real violation of up to 1 um.
 const CLEARANCE_SLACK: f64 = 0.001;
@@ -79,6 +82,8 @@ pub struct VerifyReport {
   /// `filled_polygon` islands read from zones in the file; each is its own
   /// component until a same-net pad, via or track lies on it.
   pub fill_polygons: usize,
+  /// One block of lines per probe point (see [`verify_with_probes`]).
+  pub probe_notes: Vec<String>,
   pub issues: Vec<Issue>,
 }
 
@@ -211,6 +216,20 @@ fn resolve_layers(names: &[String], all: &[String]) -> Vec<usize> {
 }
 
 pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(String, u32)]) -> VerifyReport {
+  verify_with_probes(doc, board, rules, planes, &[])
+}
+
+/// Like [`verify`], and for each probe point also say which copper lies on it
+/// and which part of its net that copper belongs to (`probe_notes`). This is
+/// how a point from a KiCad report is matched to a verifier part exactly,
+/// where the printed track-end boxes of two parts can overlap.
+pub fn verify_with_probes(
+  doc: &Document,
+  board: &Board,
+  rules: &DesignRules,
+  planes: &[(String, u32)],
+  probes: &[Point],
+) -> VerifyReport {
   let mut rep = VerifyReport::default();
   let Some(root) = doc.root() else { return rep };
   let cu = copper_layers(root);
@@ -235,6 +254,19 @@ pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(Str
         }
         continue;
       }
+      // Pads may share a number inside one footprint (SW2 has two pads "2");
+      // later duplicates get a suffix so a label names one pad.
+      let dup = fp
+        .pads
+        .iter()
+        .take_while(|q| !std::ptr::eq(*q, pad))
+        .filter(|q| q.number == pad.number)
+        .count();
+      let label = if dup == 0 {
+        format!("{}.{}", fp.reference, pad.number)
+      } else {
+        format!("{}.{}#{}", fp.reference, pad.number, dup + 1)
+      };
       items.push(Item {
         kind: Kind::Pad,
         net: pad.net.unwrap_or(0),
@@ -243,7 +275,7 @@ pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(Str
         hole: pad.drill.map(|d| (pad.at, d.x.max(d.y))),
         ends: None,
         anchor: Some(pad.at),
-        label: format!("{}.{}", fp.reference, pad.number),
+        label,
         size: 0.0,
       });
     }
@@ -668,12 +700,16 @@ pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(Str
       per_net.entry(*net).or_default().push(root);
     }
   }
+  let mut part_of: HashMap<usize, String> = HashMap::new();
   let mut nets: Vec<_> = per_net.into_iter().collect();
   nets.sort_by_key(|(n, _)| *n);
   for (net, mut roots) in nets {
     roots.sort_unstable();
     roots.dedup();
     if roots.len() < 2 {
+      for &r in &roots {
+        part_of.insert(r, format!("net {}: the only part", name(net)));
+      }
       continue;
     }
     rep.unconnected += roots.len() - 1;
@@ -748,6 +784,18 @@ pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(Str
         .cmp(&(a.pads.len(), a.fills.len(), a.tracks))
         .then(a.root.cmp(&b.root))
     });
+    for (k, c) in comps.iter().enumerate() {
+      part_of.insert(
+        c.root,
+        format!(
+          "net {} part {} of {}{}",
+          name(net),
+          k + 1,
+          comps.len(),
+          if k == 0 { " (the main part)" } else { "" }
+        ),
+      );
+    }
     for (k, c) in comps.iter().enumerate().skip(1) {
       if k > 40 {
         issues.push(Issue {
@@ -798,6 +846,51 @@ pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(Str
         ),
       });
     }
+  }
+  for probe in probes {
+    let mut lines = vec![format!("probe ({:.4}, {:.4}):", probe.x, probe.y)];
+    for (i, it) in items.iter().enumerate() {
+      if it.shape.sdf(*probe) <= PROBE_REACH {
+        let what = match it.kind {
+          Kind::Pad if it.layers.is_empty() => continue,
+          Kind::Pad => format!("pad {}", it.label),
+          Kind::Track => "track".to_string(),
+          Kind::Via => "via".to_string(),
+        };
+        let layers: Vec<&str> = it
+          .layers
+          .iter()
+          .filter_map(|l| cu.get(*l).map(String::as_str))
+          .collect();
+        let part = part_of
+          .get(&uf.find(i))
+          .cloned()
+          .unwrap_or_else(|| "a component with no pad or fill".to_string());
+        lines.push(format!(
+          "  {what} net {} on {} -> {part}",
+          name(it.net),
+          if layers.len() > 3 {
+            "all layers".to_string()
+          } else {
+            layers.join("+")
+          }
+        ));
+      }
+    }
+    for (k, (net, li, poly)) in fills.iter().enumerate() {
+      if crate::shape::polygon_contains(poly, *probe) {
+        let part = part_of.get(&uf.find(fill_base + k)).cloned().unwrap_or_default();
+        lines.push(format!(
+          "  fill {} net {} -> {part}",
+          cu.get(*li).map_or("?", String::as_str),
+          name(*net)
+        ));
+      }
+    }
+    if lines.len() == 1 {
+      lines.push(format!("  no copper within {PROBE_REACH} mm"));
+    }
+    rep.probe_notes.push(lines.join("\n"));
   }
   rep.issues = issues;
   rep
@@ -1025,6 +1118,84 @@ mod tests {
     assert!(
       d.contains("pads []") && d.contains("(9.000,1.000)-(10.000,2.000)"),
       "{d}"
+    );
+  }
+
+  fn run_probes(copper: &str, probes: &[Point]) -> VerifyReport {
+    let doc = parse(&board(copper)).unwrap();
+    let b = Board::read(&doc).unwrap();
+    let mut r = DesignRules::explicit(0.1, 0.1, 0.4, 0.2).unwrap();
+    r.min.copper_edge_clearance = 0.3;
+    verify_with_probes(&doc, &b, &r, &[], probes)
+  }
+
+  /// KiCad names points, not parts; a probe says exactly which part of its net
+  /// the copper at a point belongs to (track-end boxes of two parts overlap).
+  #[test]
+  fn a_probe_names_the_copper_and_its_part() {
+    let z = format!(
+      "{} {}",
+      fill(1, "F.Cu", 2.0, 3.0, 8.0, 7.0),
+      fill(1, "F.Cu", 12.0, 3.0, 18.0, 7.0)
+    );
+    let r = run_probes(
+      &z,
+      &[Point::new(5.0, 5.0), Point::new(15.0, 5.0), Point::new(0.5, 9.5)],
+    );
+    assert_eq!(r.probe_notes.len(), 3);
+    assert!(
+      r.probe_notes[0].contains("pad U1.1") && r.probe_notes[0].contains("part"),
+      "{}",
+      r.probe_notes[0]
+    );
+    assert!(r.probe_notes[0].contains("fill F.Cu"), "{}", r.probe_notes[0]);
+    assert!(r.probe_notes[1].contains("pad U1.2"), "{}", r.probe_notes[1]);
+    // The two pads are in different parts, so the part text differs.
+    let part = |n: &str| {
+      n.lines()
+        .find(|l| l.contains("pad U1."))
+        .unwrap()
+        .split("-> ")
+        .nth(1)
+        .unwrap()
+        .to_string()
+    };
+    assert_ne!(part(&r.probe_notes[0]), part(&r.probe_notes[1]));
+    assert!(
+      r.probe_notes[2].contains("no copper within"),
+      "{}",
+      r.probe_notes[2]
+    );
+  }
+
+  #[test]
+  fn a_probe_on_a_track_end_finds_the_track() {
+    let r = run_probes(&seg((5.0, 5.0), (15.0, 5.0), 1), &[Point::new(10.0, 5.0)]);
+    assert!(r.probe_notes[0].contains("track net A"), "{}", r.probe_notes[0]);
+    assert!(r.probe_notes[0].contains("the only part"), "{}", r.probe_notes[0]);
+  }
+
+  /// SW2 on m1 has two pads numbered 2; a label must name one pad.
+  #[test]
+  fn duplicate_pad_numbers_get_distinct_labels() {
+    let src = r#"(kicad_pcb
+  (layers (0 "F.Cu" signal) (2 "B.Cu" signal) (25 "Edge.Cuts" user))
+  (net 0 "") (net 1 "A")
+  (gr_line (start 0 0) (end 20 0) (layer "Edge.Cuts"))
+  (gr_line (start 20 0) (end 20 10) (layer "Edge.Cuts"))
+  (gr_line (start 20 10) (end 0 10) (layer "Edge.Cuts"))
+  (gr_line (start 0 10) (end 0 0) (layer "Edge.Cuts"))
+  (footprint "X" (layer "F.Cu") (at 0 0) (property "Reference" "SW2")
+    (pad "2" smd rect (at 5 5) (size 1 1) (layers "F.Cu") (net 1 "A"))
+    (pad "2" smd rect (at 15 5) (size 1 1) (layers "F.Cu") (net 1 "A"))))"#;
+    let doc = parse(src).unwrap();
+    let b = Board::read(&doc).unwrap();
+    let r = DesignRules::explicit(0.1, 0.1, 0.4, 0.2).unwrap();
+    let rep = verify_with_probes(&doc, &b, &r, &[], &[Point::new(5.0, 5.0), Point::new(15.0, 5.0)]);
+    assert!(
+      rep.probe_notes[0].contains("pad SW2.2 ") && rep.probe_notes[1].contains("pad SW2.2#2"),
+      "{:?}",
+      rep.probe_notes
     );
   }
 }
