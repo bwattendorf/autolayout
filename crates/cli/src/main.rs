@@ -84,15 +84,36 @@ fn place(pcb: &str, net: &str, out: &str, escape_halo: bool) -> Result<bool, Str
   let start = std::time::Instant::now();
   // --no-halo reproduces M4.1 exactly. Spreading stays off: it measured
   // worse (see place::Options).
+  // Front-only is the default policy; --no-halo reproduces M4.1 exactly, so
+  // it also keeps parts on the side they started on.
   let opts = autolayout_place::place::Options {
     escape_halo,
     spread: false,
+    front_only: escape_halo,
   };
   let p = autolayout_place::place::place(&board, &g, opts);
   let secs = start.elapsed().as_secs_f64();
+  for &f in &p.flips {
+    let fp = board.footprints.get(f).ok_or("bad footprint index")?;
+    autolayout_board::flip(&mut doc, fp.node_index).map_err(|e| format!("{}: {e}", fp.reference))?;
+  }
   for &(f, at) in &p.moves {
     let fp = board.footprints.get(f).ok_or("bad footprint index")?;
-    set_pose(&mut doc, fp.node_index, at, fp.rotation).map_err(|e| format!("{}: {e}", fp.reference))?;
+    // A flipped part's angle is now 180 − θ; keep it, only move it.
+    let rotation = if p.flips.contains(&f) {
+      180.0 - fp.rotation
+    } else {
+      fp.rotation
+    };
+    set_pose(&mut doc, fp.node_index, at, rotation).map_err(|e| format!("{}: {e}", fp.reference))?;
+  }
+  if !p.flips.is_empty() {
+    let names: Vec<&str> = p
+      .flips
+      .iter()
+      .filter_map(|&f| board.footprints.get(f).map(|fp| fp.reference.as_str()))
+      .collect();
+    println!("flipped to the front: {}", names.join(" "));
   }
   fs::write(out, doc.to_string()).map_err(|e| format!("{out}: {e}"))?;
   println!(

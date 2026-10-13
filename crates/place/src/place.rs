@@ -22,7 +22,7 @@
 
 use std::collections::HashMap;
 
-use autolayout_board::{BBox, Board, Point, Seg, outlines_overlap, outlines_within};
+use autolayout_board::{BBox, Board, Point, Seg, Side, outlines_overlap, outlines_within};
 
 use crate::group::{Grouping, Role};
 
@@ -67,6 +67,10 @@ pub struct Options {
   pub escape_halo: bool,
   /// Spread parts apart during global placement (density, M4.2).
   pub spread: bool,
+  /// Put every part this placer moves on the FRONT (user policy 2026-10-12:
+  /// back-side parts cost a second assembly pass). Movable back-side parts
+  /// are flipped; locked ones — test points, a designer's decision — are not.
+  pub front_only: bool,
 }
 
 /// Spreading is OFF by default because it measured worse: on m1 (2026-10-12)
@@ -77,16 +81,20 @@ impl Default for Options {
     Options {
       escape_halo: true,
       spread: false,
+      front_only: true,
     }
   }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Placement {
-  /// (footprint index, new position). Rotation is unchanged.
+  /// (footprint index, new position). Rotation is unchanged, except for parts
+  /// in `flips`, which are flipped to the front first (angle θ → 180 − θ).
   pub moves: Vec<(usize, Point)>,
   /// Movable parts no legal spot was found for within the search radius.
   pub unplaced: Vec<usize>,
+  /// Parts to flip to the front before applying their move.
+  pub flips: Vec<usize>,
 }
 
 pub fn place(board: &Board, g: &Grouping, opts: Options) -> Placement {
@@ -95,16 +103,35 @@ pub fn place(board: &Board, g: &Grouping, opts: Options) -> Placement {
     return Placement {
       moves: Vec::new(),
       unplaced: (0..n).collect(),
+      flips: Vec::new(),
     };
   };
   let movable: Vec<bool> = (0..n).map(|f| g.role.get(f) != Some(&Role::Fixed)).collect();
+  let flips: Vec<bool> = (0..n)
+    .map(|f| opts.front_only && movable[f] && board.footprints[f].side == Side::Back)
+    .collect();
+  // The side each part will be on. A flip about the part's own position
+  // mirrors its board-frame geometry in x (verified: autolayout's flip and
+  // KiCad's agree on all 523 m1 pads), so a flipped part's offsets and
+  // courtyard below are mirrored the same way.
+  let side: Vec<Side> = (0..n)
+    .map(|f| {
+      if flips[f] {
+        Side::Front
+      } else {
+        board.footprints[f].side
+      }
+    })
+    .collect();
+  let mirror = |f: usize, p: Point| if flips[f] { Point::new(-p.x, p.y) } else { p };
 
   // Pad offsets from each part's origin, in board orientation (rotation is
   // kept, so these are constant while the part moves).
   let offsets: Vec<Vec<(Point, Option<u32>)>> = board
     .footprints
     .iter()
-    .map(|fp| fp.pads.iter().map(|p| (p.at - fp.at, p.net)).collect())
+    .enumerate()
+    .map(|(f, fp)| fp.pads.iter().map(|p| (mirror(f, p.at - fp.at), p.net)).collect())
     .collect();
 
   // Nets that get a spring: 2..=PLANE_FANOUT pads.
@@ -158,8 +185,7 @@ pub fn place(board: &Board, g: &Grouping, opts: Options) -> Placement {
       bb.map_or(0.5, |b| (b.width() + b.height()) / 4.0)
     })
     .collect();
-  let interact =
-    |a: usize, b: usize| board.footprints[a].side == board.footprints[b].side || tht[a] || tht[b];
+  let interact = |a: usize, b: usize| side[a] == side[b] || tht[a] || tht[b];
 
   let bonds = group_bonds(g);
   let centre = Point::new(
@@ -256,10 +282,16 @@ pub fn place(board: &Board, g: &Grouping, opts: Options) -> Placement {
   let edges: Vec<Vec<Seg>> = board
     .footprints
     .iter()
-    .map(|fp| {
+    .enumerate()
+    .map(|(f, fp)| {
       fp.courtyard_edges_local
         .iter()
-        .map(|&(a, b)| (fp.to_board(a) - fp.at, fp.to_board(b) - fp.at))
+        .map(|&(a, b)| {
+          (
+            mirror(f, fp.to_board(a) - fp.at),
+            mirror(f, fp.to_board(b) - fp.at),
+          )
+        })
         .collect()
     })
     .collect();
@@ -298,7 +330,6 @@ pub fn place(board: &Board, g: &Grouping, opts: Options) -> Placement {
   let mut moves = Vec::new();
   let mut unplaced = Vec::new();
   for f in order {
-    let side = board.footprints[f].side;
     let fits = |at: Point| {
       let mine: Vec<Seg> = edges[f].iter().map(|&(a, b)| (a + at, b + at)).collect();
       let Some(bb) =
@@ -316,7 +347,7 @@ pub fn place(board: &Board, g: &Grouping, opts: Options) -> Placement {
         return false;
       }
       placed.iter().all(|&(o, opos)| {
-        let shares_a_side = board.footprints[o].side == side || tht[f] || tht[o];
+        let shares_a_side = interact(f, o);
         if !shares_a_side || edges[o].is_empty() || mine.is_empty() {
           return true;
         }
@@ -352,7 +383,12 @@ pub fn place(board: &Board, g: &Grouping, opts: Options) -> Placement {
     }
   }
   moves.sort_by_key(|&(f, _)| f);
-  Placement { moves, unplaced }
+  let flips = (0..n).filter(|&f| flips[f]).collect();
+  Placement {
+    moves,
+    unplaced,
+    flips,
+  }
 }
 
 /// Group bonds as (other part, weight) per part, both directions.

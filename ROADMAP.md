@@ -163,6 +163,16 @@
   after a comparison reported "0 differing rows" between two empty files.
   Known cosmetic gap: `move`'s rotate adds the delta to text angles without
   KiCad's keep-upright step.
+- 2026-10-13 — M4.3: **front-only placement** (default; `--no-halo` keeps
+  M4.1 behaviour). Movable back-side parts are flipped with the verified
+  flip; the placer reasons on their mirrored geometry. m1: C21 C31 C32 C36
+  C37 C38 flipped; the back now holds exactly what the service's board
+  holds (13 locked MCU bypass caps, 18 test points); KiCad DRC: 0 clearance,
+  only the 2 known locked overlaps. **Escape did not improve: 60.6 %**
+  (halo alone 64.3 %, service 89.9 %). So back-side caps were not the gap;
+  with sides now identical, the difference is where parts sit. Next levers:
+  field parts to their own terminals (the service spreads to the edges and
+  beside the connectors; ours still gathers toward the MCU), and rotation.
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss
