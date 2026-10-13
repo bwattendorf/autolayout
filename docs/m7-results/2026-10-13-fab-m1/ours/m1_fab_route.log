@@ -1,0 +1,5 @@
+rules from out/m7/ours\m1_fab_prepared.kicad_pro; pitch 0.1778 mm; grid 608 x 394 x 2
+negotiated (PathFinder) route (UNVERIFIED: not written, not checked by KiCad): nets complete 104 of 104; pads connected 494 of 494; 2989.0 mm of track, 462 vias, 0.4 s
+  8 iteration(s); contested cells per iteration [45, 15, 6, 4, 1, 1, 1, 0]; nets dropped to make the result legal 0
+wrote out/m7/ours\m1_fab_routed_raw.kicad_pcb: 840 segments, 462 vias added (read back: 840 / 462); judge it with KiCad DRC, not with this tool
+self-check (our own model, not a grade): 104 nets, 0 illegal cells, 0 shared cells, 0 disconnected pads

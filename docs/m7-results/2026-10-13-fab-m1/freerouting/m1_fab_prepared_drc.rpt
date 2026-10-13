@@ -1,0 +1,2300 @@
+** Drc report for m1_fab_prepared.kicad_pcb **
+** Created on 2026-10-13T11:48:06-0400 **
+
+** Found 325 DRC violations **
+[isolated_copper]: Isolated copper fill
+    Local override; warning
+    @(50.4250 mm, 50.4250 mm): Zone [+3V3] on Power Layer 2
+[isolated_copper]: Isolated copper fill
+    Local override; warning
+    @(50.4250 mm, 50.4250 mm): Zone [+3V3] on Power Layer 2
+[isolated_copper]: Isolated copper fill
+    Local override; warning
+    @(50.4250 mm, 50.4250 mm): Zone [+3V3] on Power Layer 2
+[isolated_copper]: Isolated copper fill
+    Local override; warning
+    @(50.4250 mm, 50.4250 mm): Zone [+3V3] on Power Layer 2
+[isolated_copper]: Isolated copper fill
+    Local override; warning
+    @(50.4250 mm, 50.4250 mm): Zone [+3V3] on Power Layer 2
+[isolated_copper]: Isolated copper fill
+    Local override; warning
+    @(50.4250 mm, 50.4250 mm): Zone [+3V3] on Power Layer 2
+[isolated_copper]: Isolated copper fill
+    Local override; warning
+    @(50.4250 mm, 50.4250 mm): Zone [+3V3] on Power Layer 2
+[isolated_copper]: Isolated copper fill
+    Local override; warning
+    @(50.4250 mm, 50.4250 mm): Zone [+3V3] on Power Layer 2
+[isolated_copper]: Isolated copper fill
+    Local override; warning
+    @(50.4250 mm, 50.4250 mm): Zone [+3V3] on Power Layer 2
+[isolated_copper]: Isolated copper fill
+    Local override; warning
+    @(50.4250 mm, 50.4250 mm): Zone [+3V3] on Power Layer 2
+[courtyards_overlap]: Courtyards overlap
+    Rule: board setup constraints courtyard; error
+    @(137.7000 mm, 86.5400 mm): Footprint J2
+    @(137.7000 mm, 56.0600 mm): Footprint J3
+[courtyards_overlap]: Courtyards overlap
+    Rule: board setup constraints courtyard; error
+    @(70.3000 mm, 88.5400 mm): Footprint J1
+    @(70.3000 mm, 58.0600 mm): Footprint J4
+[silk_edge_clearance]: Silkscreen clipped by board edge
+    Rule: board setup constraints silk; warning
+    @(50.0000 mm, 50.0000 mm): Segment on Edge.Cuts
+    @(152.9000 mm, 49.9000 mm): Reference field of H2
+[silk_edge_clearance]: Silkscreen clipped by board edge
+    Rule: board setup constraints silk; warning
+    @(50.0000 mm, 50.0000 mm): Segment on Edge.Cuts
+    @(55.1000 mm, 49.9000 mm): Reference field of H1
+[lib_footprint_issues]: The current configuration does not include the footprint library 'portcullis'.
+    Local override; warning
+    @(137.7000 mm, 86.5400 mm): Footprint J2
+[lib_footprint_issues]: Footprint 'MountingHole_4.0mm_Pad' not found in library 'MountingHole'.
+    Local override; warning
+    @(152.9000 mm, 114.8500 mm): Footprint H4
+[lib_footprint_issues]: Footprint 'MountingHole_4.0mm_Pad' not found in library 'MountingHole'.
+    Local override; warning
+    @(152.9000 mm, 55.1500 mm): Footprint H2
+[lib_footprint_issues]: Footprint 'MountingHole_4.0mm_Pad' not found in library 'MountingHole'.
+    Local override; warning
+    @(55.1000 mm, 114.8500 mm): Footprint H3
+[lib_footprint_issues]: The current configuration does not include the footprint library 'portcullis'.
+    Local override; warning
+    @(137.7000 mm, 56.0600 mm): Footprint J3
+[lib_footprint_issues]: The current configuration does not include the footprint library 'portcullis'.
+    Local override; warning
+    @(70.3000 mm, 88.5400 mm): Footprint J1
+[lib_footprint_issues]: The current configuration does not include the footprint library 'portcullis'.
+    Local override; warning
+    @(70.3000 mm, 58.0600 mm): Footprint J4
+[lib_footprint_issues]: The current configuration does not include the footprint library 'portcullis'.
+    Local override; warning
+    @(61.8900 mm, 109.8500 mm): Footprint J5
+[lib_footprint_issues]: Footprint 'MountingHole_4.0mm_Pad' not found in library 'MountingHole'.
+    Local override; warning
+    @(55.1000 mm, 55.1500 mm): Footprint H1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 96.7000 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 73.3000 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 83.4600 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 106.8600 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 71.3000 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 91.6200 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 98.7000 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 56.0600 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 93.6200 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(66.9700 mm, 107.2000 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 86.5400 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 81.4600 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 88.5400 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(61.8900 mm, 107.2000 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 66.2200 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 111.9400 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 58.0600 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 101.7800 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 68.2200 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 76.3800 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 78.3800 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(60.8000 mm, 63.1400 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(137.7000 mm, 61.1400 mm): Segment on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(73.7500 mm, 98.7000 mm): PCB text 'GND' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 104.1411 mm): PCB text '8  POWER' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(62.0000 mm, 53.0000 mm): PCB text 'OSDP-M1  1-door module' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(126.8500 mm, 116.4000 mm): PCB text 'FAULT' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 100.5161 mm): PCB text '6  TAMPER' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(111.8500 mm, 116.4000 mm): PCB text 'HEARTBEAT' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(73.7500 mm, 88.5400 mm): PCB text 'TR+' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(74.4550 mm, 116.4000 mm): PCB text 'MODE' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 98.7036 mm): PCB text '5  NO KEYS YET' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 105.9536 mm): PCB text '9  RDR OVERLOAD' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(84.4550 mm, 116.4000 mm): PCB text 'BOOT' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(121.8500 mm, 116.4000 mm): PCB text 'UPLINK' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 93.2661 mm): PCB text '2  SEC CHIP' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 96.8911 mm): PCB text '4  DEV KEYS' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(73.7500 mm, 58.0600 mm): PCB text 'GND' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(79.4550 mm, 116.4000 mm): PCB text 'IOX_CLOCK' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 102.3286 mm): PCB text '7  LOOP CUT/SHRT' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(73.7500 mm, 78.3800 mm): PCB text 'D0' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(101.8500 mm, 116.4000 mm): PCB text 'PWR_12V' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(116.8500 mm, 116.4000 mm): PCB text 'BUS' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(106.8500 mm, 116.4000 mm): PCB text 'PWR_3V3' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(131.8500 mm, 116.4000 mm): PCB text 'STATUS' on Top Overlay
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.5853 mm, 109.7866 mm): Reference field of R37
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(106.9035 mm, 98.4711 mm): Reference field of D16
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(107.8772 mm, 92.1657 mm): Reference field of J11
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(85.2991 mm, 86.4804 mm): Reference field of C20
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(103.2485 mm, 87.3038 mm): Reference field of R14
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(107.2366 mm, 91.0990 mm): Reference field of R31
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(82.5067 mm, 109.1199 mm): Reference field of D12
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(80.6009 mm, 77.9699 mm): Reference field of R52
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(98.3772 mm, 107.9664 mm): Reference field of R53
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(109.2884 mm, 107.2564 mm): Reference field of R57
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(102.5960 mm, 100.3761 mm): Reference field of R42
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(111.6860 mm, 105.8580 mm): Reference field of R51
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(102.9991 mm, 76.1669 mm): Reference field of L2
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(75.2628 mm, 75.7001 mm): Reference field of D81
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(92.8648 mm, 91.4400 mm): Reference field of L1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(93.4035 mm, 87.9504 mm): Reference field of D17
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(104.9241 mm, 85.8205 mm): Reference field of U2
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(85.7210 mm, 115.9785 mm): Reference field of R55
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(83.0000 mm, 94.2267 mm): Reference field of SW1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(102.8066 mm, 109.6732 mm): Reference field of C36
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(90.3041 mm, 87.0155 mm): Reference field of R23
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(104.0428 mm, 109.0798 mm): Reference field of U7
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(111.8197 mm, 107.6781 mm): Reference field of R49
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(111.0335 mm, 105.8580 mm): Reference field of R43
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(83.4803 mm, 106.2364 mm): Reference field of C30
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(88.0610 mm, 113.4484 mm): Reference field of R54
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(84.6659 mm, 75.5166 mm): Reference field of C37
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(97.8022 mm, 102.2064 mm): Reference field of Y1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(101.3518 mm, 89.5758 mm): Reference field of C1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(108.0228 mm, 109.7866 mm): Reference field of R50
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(92.7016 mm, 90.2556 mm): Reference field of R22
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(79.4634 mm, 88.1822 mm): Reference field of R7
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(130.6278 mm, 61.0561 mm): Reference field of D11
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(105.3578 mm, 113.8701 mm): Reference field of R46
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(91.0141 mm, 102.9062 mm): Reference field of R24
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(83.4085 mm, 102.2663 mm): Reference field of U4
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(94.5803 mm, 107.5648 mm): Reference field of C18
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(106.4465 mm, 105.7698 mm): Reference field of U1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(104.2259 mm, 96.1025 mm): Reference field of R25
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(82.7530 mm, 105.3650 mm): Reference field of C22
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(99.5853 mm, 108.5215 mm): Reference field of R45
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(92.5416 mm, 104.1145 mm): Reference field of FB1
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(89.8218 mm, 105.8000 mm): Reference field of D90
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(80.6009 mm, 76.8950 mm): Reference field of R38
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(95.0022 mm, 86.4604 mm): Reference field of R36
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(89.4603 mm, 89.9673 mm): Reference field of R2
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(100.1333 mm, 107.6668 mm): Reference field of J10
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(91.7672 mm, 89.6873 mm): Reference field of D15
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(105.5491 mm, 96.4960 mm): Reference field of R30
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(104.2060 mm, 95.0475 mm): Reference field of C3
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(100.8310 mm, 111.0716 mm): Reference field of C19
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(107.1791 mm, 108.5215 mm): Reference field of R58
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(89.4603 mm, 88.2805 mm): Reference field of R34
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(88.2791 mm, 104.6714 mm): Reference field of R35
+[silk_over_copper]: Silkscreen clipped by solder mask
+    Local override; warning
+    @(103.7238 mm, 91.5721 mm): Reference field of C2
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(62.0000 mm, 53.0000 mm): PCB text 'OSDP-M1  1-door module' on Top Overlay
+    @(79.3000 mm, 52.9203 mm): Reference field of JP1
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(62.0000 mm, 53.0000 mm): PCB text 'OSDP-M1  1-door module' on Top Overlay
+    @(82.3422 mm, 53.8439 mm): Segment of Q5 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(62.0000 mm, 53.0000 mm): PCB text 'OSDP-M1  1-door module' on Top Overlay
+    @(88.8848 mm, 52.7221 mm): Segment of R20 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(62.0000 mm, 53.0000 mm): PCB text 'OSDP-M1  1-door module' on Top Overlay
+    @(89.6066 mm, 53.6290 mm): Segment of Q4 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(62.0000 mm, 53.0000 mm): PCB text 'OSDP-M1  1-door module' on Top Overlay
+    @(89.6066 mm, 53.6290 mm): Segment of Q4 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(62.0000 mm, 53.0000 mm): PCB text 'OSDP-M1  1-door module' on Top Overlay
+    @(91.9916 mm, 53.0904 mm): Reference field of R19
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(62.0000 mm, 53.0000 mm): PCB text 'OSDP-M1  1-door module' on Top Overlay
+    @(94.0686 mm, 52.7856 mm): Segment of D6 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(62.0000 mm, 53.0000 mm): PCB text 'OSDP-M1  1-door module' on Top Overlay
+    @(94.0686 mm, 52.7856 mm): Segment of D6 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(80.4473 mm, 77.6850 mm): Segment of R38 on Top Overlay
+    @(80.6009 mm, 77.9699 mm): Reference field of R52
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(80.4473 mm, 78.4450 mm): Segment of R38 on Top Overlay
+    @(80.6009 mm, 77.9699 mm): Reference field of R52
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(80.6009 mm, 77.9699 mm): Reference field of R52
+    @(80.6009 mm, 76.8950 mm): Reference field of R38
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(83.1122 mm, 78.3916 mm): Reference field of C38
+    @(80.6009 mm, 77.9699 mm): Reference field of R52
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(80.7546 mm, 76.4199 mm): Segment of R52 on Top Overlay
+    @(80.6009 mm, 76.8950 mm): Reference field of R38
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(80.7546 mm, 77.1799 mm): Segment of R52 on Top Overlay
+    @(80.6009 mm, 76.8950 mm): Reference field of R38
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(82.6470 mm, 72.1549 mm): Segment of U8 on Top Overlay
+    @(83.9759 mm, 72.6781 mm): Reference field of R41
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(83.9759 mm, 72.6781 mm): Reference field of R41
+    @(82.6470 mm, 72.1549 mm): Segment of U8 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(84.6659 mm, 75.5166 mm): Reference field of C37
+    @(83.8223 mm, 74.2281 mm): Segment of R41 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(86.4416 mm, 78.7934 mm): Segment of U9 on Top Overlay
+    @(85.6916 mm, 79.4084 mm): Reference field of U9
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(111.8500 mm, 116.4000 mm): PCB text 'HEARTBEAT' on Top Overlay
+    @(110.3324 mm, 116.0433 mm): Reference field of D27
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(117.6866 mm, 106.1832 mm): Segment of D2 on Top Overlay
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(120.3650 mm, 114.7350 mm): Segment of D23 on Top Overlay
+    @(121.8500 mm, 116.4000 mm): PCB text 'UPLINK' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(121.8500 mm, 116.4000 mm): PCB text 'UPLINK' on Top Overlay
+    @(122.6500 mm, 113.2650 mm): Segment of D23 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(115.3650 mm, 114.7350 mm): Segment of D21 on Top Overlay
+    @(116.8500 mm, 116.4000 mm): PCB text 'BUS' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(121.8300 mm, 111.9568 mm): Reference field of D23
+    @(121.8500 mm, 116.4000 mm): PCB text 'UPLINK' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.8500 mm, 116.4000 mm): PCB text 'FAULT' on Top Overlay
+    @(125.3650 mm, 114.7350 mm): Segment of D22 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.8500 mm, 116.4000 mm): PCB text 'FAULT' on Top Overlay
+    @(127.6500 mm, 113.2650 mm): Segment of D22 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.8300 mm, 111.9568 mm): Reference field of D22
+    @(127.9500 mm, 111.9400 mm): PCB text 'I1' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(130.3650 mm, 114.7350 mm): Segment of D20 on Top Overlay
+    @(131.8500 mm, 116.4000 mm): PCB text 'STATUS' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(132.6500 mm, 113.2650 mm): Segment of D20 on Top Overlay
+    @(131.8500 mm, 116.4000 mm): PCB text 'STATUS' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(131.8300 mm, 111.9568 mm): Reference field of D20
+    @(131.8500 mm, 116.4000 mm): PCB text 'STATUS' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(109.2884 mm, 107.2564 mm): Reference field of R57
+    @(109.6303 mm, 106.5477 mm): Segment of R47 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(109.2884 mm, 107.2564 mm): Reference field of R57
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(111.8197 mm, 107.6781 mm): Reference field of R49
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(111.6661 mm, 108.4681 mm): Segment of R49 on Top Overlay
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(111.6860 mm, 105.8580 mm): Reference field of R51
+    @(111.0335 mm, 105.8580 mm): Reference field of R43
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(111.6860 mm, 105.8580 mm): Reference field of R51
+    @(111.8197 mm, 107.6781 mm): Reference field of R49
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(111.0335 mm, 105.8580 mm): Reference field of R43
+    @(111.8197 mm, 107.6781 mm): Reference field of R49
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(111.0335 mm, 105.8580 mm): Reference field of R43
+    @(110.8959 mm, 105.7044 mm): Segment of R51 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(113.9291 mm, 106.4131 mm): Reference field of R48
+    @(112.5834 mm, 106.0117 mm): Segment of R43 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(111.0335 mm, 105.8580 mm): Reference field of R43
+    @(109.2884 mm, 107.2564 mm): Reference field of R57
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(113.7754 mm, 107.9631 mm): Segment of R48 on Top Overlay
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(112.4122 mm, 101.1754 mm): Polygon of D18 on Top Overlay
+    @(113.3022 mm, 102.3379 mm): Reference field of D18
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(95.8022 mm, 106.3064 mm): Segment of Y1 on Top Overlay
+    @(99.0000 mm, 105.9536 mm): PCB text '9  RDR OVERLOAD' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on Top Overlay
+    @(101.8600 mm, 94.6900 mm): Segment of U1 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on Top Overlay
+    @(102.3100 mm, 94.6900 mm): Segment of U1 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 100.5161 mm): PCB text '6  TAMPER' on Top Overlay
+    @(103.3859 mm, 100.5297 mm): Segment of R42 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 100.5161 mm): PCB text '6  TAMPER' on Top Overlay
+    @(104.1459 mm, 100.5297 mm): Segment of R42 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 98.7036 mm): PCB text '5  NO KEYS YET' on Top Overlay
+    @(102.5960 mm, 100.3761 mm): Reference field of R42
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 98.7036 mm): PCB text '5  NO KEYS YET' on Top Overlay
+    @(103.7672 mm, 98.6600 mm): Segment of C16 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on Top Overlay
+    @(104.2259 mm, 96.1025 mm): Reference field of R25
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(101.8600 mm, 101.9100 mm): Segment of U1 on Top Overlay
+    @(99.0000 mm, 102.3286 mm): PCB text '7  LOOP CUT/SHRT' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 102.3286 mm): PCB text '7  LOOP CUT/SHRT' on Top Overlay
+    @(102.3100 mm, 101.9100 mm): Segment of U1 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(102.5960 mm, 100.3761 mm): Reference field of R42
+    @(102.3100 mm, 101.9100 mm): Segment of U1 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 100.5161 mm): PCB text '6  TAMPER' on Top Overlay
+    @(102.5960 mm, 100.3761 mm): Reference field of R42
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on Top Overlay
+    @(99.4900 mm, 92.0421 mm): Segment of L1 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on Top Overlay
+    @(100.4866 mm, 89.8339 mm): Reference field of R16
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(100.4866 mm, 89.8339 mm): Reference field of R16
+    @(101.3518 mm, 89.5758 mm): Reference field of C1
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(92.7016 mm, 90.2556 mm): Reference field of R22
+    @(92.8648 mm, 91.4400 mm): Reference field of L1
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(92.6572 mm, 90.8498 mm): Polygon of D15 on Top Overlay
+    @(92.8648 mm, 91.4400 mm): Reference field of L1
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(98.3772 mm, 107.9664 mm): Reference field of R53
+    @(99.5853 mm, 109.7866 mm): Reference field of R37
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(100.8310 mm, 111.0716 mm): Reference field of C19
+    @(99.4317 mm, 110.5766 mm): Segment of R37 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(100.8310 mm, 111.0716 mm): Reference field of C19
+    @(99.4317 mm, 111.3366 mm): Segment of R37 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(98.3772 mm, 107.9664 mm): Reference field of R53
+    @(97.4759 mm, 108.3314 mm): Reference field of R17
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.5853 mm, 108.5215 mm): Reference field of R45
+    @(98.3772 mm, 107.9664 mm): Reference field of R53
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(82.9700 mm, 114.7350 mm): Segment of D25 on Top Overlay
+    @(84.4550 mm, 116.4000 mm): PCB text 'BOOT' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(82.9700 mm, 114.7350 mm): Segment of D25 on Top Overlay
+    @(85.7210 mm, 115.9785 mm): Reference field of R55
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(102.6500 mm, 113.2650 mm): Segment of D28 on Top Overlay
+    @(101.8500 mm, 116.4000 mm): PCB text 'PWR_12V' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(100.8310 mm, 111.0716 mm): Reference field of C19
+    @(101.8500 mm, 116.4000 mm): PCB text 'PWR_12V' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(88.0610 mm, 113.4484 mm): Reference field of R54
+    @(88.3800 mm, 112.4000 mm): Segment of J10 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.5853 mm, 108.5215 mm): Reference field of R45
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(98.3772 mm, 107.9664 mm): Reference field of R53
+    @(100.1333 mm, 107.6668 mm): Reference field of J10
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on Top Overlay
+    @(99.1672 mm, 108.1201 mm): Segment of R53 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(100.1333 mm, 107.6668 mm): Reference field of J10
+    @(99.1672 mm, 108.1201 mm): Segment of R53 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(100.1333 mm, 107.6668 mm): Reference field of J10
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.5853 mm, 108.5215 mm): Reference field of R45
+    @(100.1333 mm, 107.6668 mm): Reference field of J10
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on Top Overlay
+    @(99.9272 mm, 108.1201 mm): Segment of R53 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(100.1333 mm, 107.6668 mm): Reference field of J10
+    @(99.9272 mm, 108.1201 mm): Segment of R53 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(102.8066 mm, 109.6732 mm): Reference field of C36
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(104.0428 mm, 108.2398 mm): Segment of U7 on Top Overlay
+    @(99.0000 mm, 108.0661 mm): PCB text 'SOLID BUS = ENCRYPTED   BLINK = NOT' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(104.1522 mm, 108.3449 mm): Reference field of C26
+    @(104.0428 mm, 108.2398 mm): Segment of U7 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(104.1522 mm, 108.3449 mm): Reference field of C26
+    @(102.8066 mm, 109.6732 mm): Reference field of C36
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.6653 mm, 115.1952 mm): Segment of D30 on Top Overlay
+    @(101.8500 mm, 116.4000 mm): PCB text 'PWR_12V' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(100.3650 mm, 114.7350 mm): Segment of D28 on Top Overlay
+    @(101.8500 mm, 116.4000 mm): PCB text 'PWR_12V' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.3578 mm, 113.8701 mm): Reference field of R46
+    @(105.6653 mm, 115.1952 mm): Segment of D30 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.3578 mm, 113.8701 mm): Reference field of R46
+    @(105.6653 mm, 118.4952 mm): Segment of D30 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.4317 mm, 109.3115 mm): Segment of R45 on Top Overlay
+    @(99.5853 mm, 109.7866 mm): Reference field of R37
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.5853 mm, 109.7866 mm): Reference field of R37
+    @(99.4317 mm, 110.0715 mm): Segment of R45 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(104.3796 mm, 94.5525 mm): Segment of R25 on Top Overlay
+    @(104.2060 mm, 95.0475 mm): Reference field of C3
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on Top Overlay
+    @(104.2060 mm, 95.0475 mm): Reference field of C3
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on Top Overlay
+    @(105.5491 mm, 96.4960 mm): Reference field of R30
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(104.3796 mm, 94.5525 mm): Segment of R25 on Top Overlay
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on Top Overlay
+    @(104.3796 mm, 95.3125 mm): Segment of R25 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 93.2661 mm): PCB text '2  SEC CHIP' on Top Overlay
+    @(102.8472 mm, 92.4836 mm): Segment of J11 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 93.2661 mm): PCB text '2  SEC CHIP' on Top Overlay
+    @(105.3222 mm, 93.3257 mm): Segment of J11 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 93.2661 mm): PCB text '2  SEC CHIP' on Top Overlay
+    @(105.3222 mm, 92.8324 mm): Segment of J11 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(105.3222 mm, 91.0057 mm): Segment of J11 on Top Overlay
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on Top Overlay
+    @(105.3222 mm, 91.0057 mm): Segment of J11 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 96.7000 mm): Segment on Top Overlay
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 96.7000 mm): Segment on Top Overlay
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on Top Overlay
+    @(137.7000 mm, 101.7800 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on Top Overlay
+    @(137.7000 mm, 101.7800 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 106.8600 mm): Segment on Top Overlay
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on Top Overlay
+    @(137.7000 mm, 111.9400 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on Top Overlay
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on Top Overlay
+    @(137.7000 mm, 91.6200 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on Top Overlay
+    @(137.7000 mm, 86.5400 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 114.4800 mm): Segment of J2 on Top Overlay
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 106.8600 mm): Segment on Top Overlay
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on Top Overlay
+    @(137.7000 mm, 111.9400 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on Top Overlay
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 91.6200 mm): Segment on Top Overlay
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on Top Overlay
+    @(137.7000 mm, 86.5400 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on Top Overlay
+    @(108.7866 mm, 91.2526 mm): Segment of R31 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(107.2366 mm, 91.0990 mm): Reference field of R31
+    @(107.8772 mm, 92.1657 mm): Reference field of J11
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(107.8772 mm, 92.1657 mm): Reference field of J11
+    @(108.0266 mm, 91.2526 mm): Segment of R31 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on Top Overlay
+    @(107.8772 mm, 92.1657 mm): Reference field of J11
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(109.6500 mm, 76.8500 mm): Segment of K2 on Top Overlay
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(109.1347 mm, 88.5889 mm): Reference field of C21
+    @(109.6500 mm, 76.8500 mm): Segment of K2 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(127.9500 mm, 76.3800 mm): PCB text 'NC' on Top Overlay
+    @(126.3500 mm, 76.8500 mm): Segment of K2 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.3500 mm, 75.5500 mm): Segment of K1 on Top Overlay
+    @(127.9500 mm, 71.3000 mm): PCB text 'NO' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(127.7571 mm, 70.6338 mm): Reference field of D10
+    @(127.9500 mm, 71.3000 mm): PCB text 'NO' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 71.3000 mm): Segment on Top Overlay
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 71.3000 mm): Segment on Top Overlay
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(137.7000 mm, 56.0600 mm): Segment on Top Overlay
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on Top Overlay
+    @(137.7000 mm, 56.0600 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on Top Overlay
+    @(137.7000 mm, 66.2200 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on Top Overlay
+    @(137.7000 mm, 66.2200 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on Top Overlay
+    @(137.7000 mm, 61.1400 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on Top Overlay
+    @(137.7000 mm, 61.1400 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.3500 mm, 75.5500 mm): Segment of K1 on Top Overlay
+    @(127.9500 mm, 66.2200 mm): PCB text 'NO' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.9678 mm, 61.9061 mm): Segment of D11 on Top Overlay
+    @(127.9500 mm, 66.2200 mm): PCB text 'NO' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.9678 mm, 66.2061 mm): Segment of D11 on Top Overlay
+    @(127.9500 mm, 66.2200 mm): PCB text 'NO' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(127.3910 mm, 54.8533 mm): Reference field of R26
+    @(127.9500 mm, 56.0600 mm): PCB text 'NC' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.3500 mm, 75.5500 mm): Segment of K1 on Top Overlay
+    @(127.9500 mm, 52.7600 mm): PCB text 'J3' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.3500 mm, 75.5500 mm): Segment of K1 on Top Overlay
+    @(127.9500 mm, 56.0600 mm): PCB text 'NC' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 114.4800 mm): Rectangle of J2 on Top Overlay
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on Top Overlay
+    @(137.7000 mm, 81.4600 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(144.4000 mm, 84.0000 mm): Segment of J3 on Top Overlay
+    @(137.7000 mm, 76.3800 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on Top Overlay
+    @(137.7000 mm, 81.4600 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(135.1000 mm, 84.0000 mm): Rectangle of J3 on Top Overlay
+    @(137.7000 mm, 76.3800 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(127.9500 mm, 91.6200 mm): PCB text 'GND' on Top Overlay
+    @(126.3500 mm, 99.5500 mm): Segment of K2 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(128.0686 mm, 83.8615 mm): PCB text 'J2' on Top Overlay
+    @(126.3500 mm, 99.5500 mm): Segment of K2 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(127.9500 mm, 86.5400 mm): PCB text 'VIN' on Top Overlay
+    @(126.3500 mm, 99.5500 mm): Segment of K2 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(103.3822 mm, 85.9820 mm): Reference field of R1
+    @(103.2485 mm, 87.3038 mm): Reference field of R14
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(103.6241 mm, 86.7105 mm): Polygon of U2 on Top Overlay
+    @(103.2485 mm, 87.3038 mm): Reference field of R14
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(103.3822 mm, 85.9820 mm): Reference field of R1
+    @(103.6241 mm, 86.7105 mm): Polygon of U2 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(107.2366 mm, 91.0990 mm): Reference field of R31
+    @(106.1322 mm, 91.0057 mm): Segment of J11 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on Top Overlay
+    @(106.9422 mm, 91.0057 mm): Segment of J11 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(107.2366 mm, 91.0990 mm): Reference field of R31
+    @(106.9422 mm, 91.0057 mm): Segment of J11 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(107.2366 mm, 91.0990 mm): Reference field of R31
+    @(99.0000 mm, 91.3424 mm): PCB text 'FAULT LED = COUNT THE FLASHES' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(106.0991 mm, 83.8669 mm): Segment of L2 on Top Overlay
+    @(106.3353 mm, 84.4854 mm): Reference field of R44
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.0000 mm, 95.0786 mm): PCB text '3  SEC MISMATCH' on Top Overlay
+    @(109.6500 mm, 76.8500 mm): Segment of K2 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(126.3500 mm, 52.8500 mm): Segment of K1 on Top Overlay
+    @(127.9500 mm, 52.7600 mm): PCB text 'J3' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(107.1791 mm, 62.7892 mm): Reference field of R27
+    @(101.0353 mm, 62.7486 mm): Segment of C39 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(107.1791 mm, 62.7892 mm): Reference field of R27
+    @(106.7908 mm, 62.7486 mm): Segment of C39 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(76.2286 mm, 93.7091 mm): Segment of R9 on Top Overlay
+    @(73.7500 mm, 93.6200 mm): PCB text 'TR-' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(73.7500 mm, 93.6200 mm): PCB text 'TR-' on Top Overlay
+    @(74.2233 mm, 93.6200 mm): Reference field of J1
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(73.7500 mm, 88.5400 mm): PCB text 'TR+' on Top Overlay
+    @(76.9198 mm, 88.8622 mm): Reference field of R8
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(79.4634 mm, 88.1822 mm): Reference field of R7
+    @(80.0253 mm, 87.3238 mm): Reference field of C31
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(66.9700 mm, 106.0000 mm): PCB text 'GND' on Top Overlay
+    @(66.9700 mm, 107.2000 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(59.3500 mm, 107.2500 mm): Rectangle of J5 on Top Overlay
+    @(66.9700 mm, 107.2000 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(59.3500 mm, 116.5500 mm): Segment of J5 on Top Overlay
+    @(66.9700 mm, 107.2000 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(66.9700 mm, 106.0000 mm): PCB text 'GND' on Top Overlay
+    @(59.3500 mm, 107.2500 mm): Rectangle of J5 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(59.3500 mm, 107.2500 mm): Rectangle of J5 on Top Overlay
+    @(61.8900 mm, 107.2000 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(59.3500 mm, 107.2500 mm): Rectangle of J5 on Top Overlay
+    @(61.8900 mm, 106.0000 mm): PCB text 'TMP' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(59.3500 mm, 116.5500 mm): Segment of J5 on Top Overlay
+    @(61.8900 mm, 107.2000 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(75.9326 mm, 116.0433 mm): Reference field of D26
+    @(74.4550 mm, 116.4000 mm): PCB text 'MODE' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(74.4550 mm, 116.4000 mm): PCB text 'MODE' on Top Overlay
+    @(72.9700 mm, 114.7350 mm): Segment of D24 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(74.4550 mm, 116.4000 mm): PCB text 'MODE' on Top Overlay
+    @(75.2550 mm, 113.2650 mm): Segment of D24 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(63.6000 mm, 86.0000 mm): Segment of J1 on Top Overlay
+    @(60.8000 mm, 88.5400 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(60.8000 mm, 88.5400 mm): Segment on Top Overlay
+    @(72.9000 mm, 86.0000 mm): Rectangle of J1 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(60.8000 mm, 98.7000 mm): Segment on Top Overlay
+    @(63.6000 mm, 86.0000 mm): Segment of J1 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(60.8000 mm, 93.6200 mm): Segment on Top Overlay
+    @(63.6000 mm, 86.0000 mm): Segment of J1 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(63.6000 mm, 55.5200 mm): Segment of J4 on Top Overlay
+    @(63.6000 mm, 86.0000 mm): Segment of J1 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(63.6000 mm, 86.0000 mm): Segment of J1 on Top Overlay
+    @(72.9000 mm, 55.5200 mm): Rectangle of J4 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(60.8000 mm, 98.7000 mm): Segment on Top Overlay
+    @(72.9000 mm, 86.0000 mm): Rectangle of J1 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(60.8000 mm, 93.6200 mm): Segment on Top Overlay
+    @(72.9000 mm, 86.0000 mm): Rectangle of J1 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(72.9000 mm, 55.5200 mm): Rectangle of J4 on Top Overlay
+    @(72.9000 mm, 86.0000 mm): Rectangle of J1 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(77.9959 mm, 109.1883 mm): Reference field of C29
+    @(73.7050 mm, 108.7750 mm): Segment of C22 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(80.9326 mm, 116.0433 mm): Reference field of D25
+    @(79.4550 mm, 116.4000 mm): PCB text 'IOX_CLOCK' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(83.8821 mm, 116.8219 mm): Reference field of R56
+    @(84.4550 mm, 116.4000 mm): PCB text 'BOOT' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(85.2453 mm, 116.9755 mm): Segment of R56 on Top Overlay
+    @(85.7210 mm, 115.9785 mm): Reference field of R55
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(85.7210 mm, 115.9785 mm): Reference field of R55
+    @(86.0053 mm, 116.9755 mm): Segment of R56 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(60.8000 mm, 73.3000 mm): Segment on Top Overlay
+    @(63.6000 mm, 55.5200 mm): Segment of J4 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(60.8000 mm, 73.3000 mm): Segment on Top Overlay
+    @(72.9000 mm, 55.5200 mm): Rectangle of J4 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(63.6000 mm, 55.5200 mm): Segment of J4 on Top Overlay
+    @(60.8000 mm, 83.4600 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(60.8000 mm, 83.4600 mm): Segment on Top Overlay
+    @(72.9000 mm, 55.5200 mm): Rectangle of J4 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(63.6000 mm, 55.5200 mm): Segment of J4 on Top Overlay
+    @(60.8000 mm, 78.3800 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(72.9000 mm, 55.5200 mm): Rectangle of J4 on Top Overlay
+    @(60.8000 mm, 78.3800 mm): Segment on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(75.2628 mm, 75.7001 mm): Reference field of D81
+    @(74.1003 mm, 76.5901 mm): Polygon of D81 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(73.7500 mm, 83.4600 mm): PCB text 'VO' on Top Overlay
+    @(74.6566 mm, 84.3326 mm): Reference field of R39
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(79.3928 mm, 102.9062 mm): Reference field of R6
+    @(79.4606 mm, 101.9550 mm): Segment of C22 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(99.5853 mm, 108.5215 mm): Reference field of R45
+    @(97.4759 mm, 108.3314 mm): Reference field of R17
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(94.5803 mm, 107.5648 mm): Reference field of C18
+    @(94.5300 mm, 105.8000 mm): Segment of D90 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(85.2550 mm, 113.2650 mm): Segment of D25 on Top Overlay
+    @(84.4550 mm, 116.4000 mm): PCB text 'BOOT' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(80.2550 mm, 113.2650 mm): Segment of D26 on Top Overlay
+    @(79.4550 mm, 116.4000 mm): PCB text 'IOX_CLOCK' on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(83.2191 mm, 108.6514 mm): Segment of C30 on Top Overlay
+    @(82.5067 mm, 109.1199 mm): Reference field of D12
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(79.4550 mm, 116.4000 mm): PCB text 'IOX_CLOCK' on Top Overlay
+    @(77.9700 mm, 114.7350 mm): Segment of D26 on Top Overlay
+[silk_overlap]: Silkscreen overlap
+    Rule: board setup constraints silk; warning
+    @(88.2791 mm, 104.6714 mm): Reference field of R35
+    @(88.6591 mm, 102.9796 mm): Reference field of C28
+
+** Found 278 unconnected pads **
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.1000 mm, 94.8500 mm): Pad 47 [GND] of U1 on Top Layer
+    @(101.7206 mm, 93.8032 mm): Pad 2 [GND] of C2 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(50.4250 mm, 50.4250 mm): Zone [GND] on Top Layer
+    @(50.4250 mm, 50.4250 mm): Zone [GND] on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.0953 mm, 109.6915 mm): Pad 2 [N$63] of R45 on Top Layer
+    @(112.6375 mm, 114.0000 mm): Pad 2 [N$63] of D19 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(104.1878 mm, 114.3801 mm): Pad 2 [N$65] of R46 on Top Layer
+    @(132.6375 mm, 114.0000 mm): Pad 2 [N$65] of D20 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(109.2503 mm, 107.2114 mm): Pad 2 [N$67] of R47 on Top Layer
+    @(117.6375 mm, 114.0000 mm): Pad 2 [N$67] of D21 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(114.4391 mm, 107.5831 mm): Pad 2 [N$69] of R48 on Top Layer
+    @(127.6375 mm, 114.0000 mm): Pad 2 [N$69] of D22 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(112.3297 mm, 108.8481 mm): Pad 2 [N$71] of R49 on Top Layer
+    @(122.6375 mm, 114.0000 mm): Pad 2 [N$71] of D23 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(75.2425 mm, 114.0000 mm): Pad 2 [N$73] of D24 on Top Layer
+    @(108.5328 mm, 110.9566 mm): Pad 2 [N$73] of R50 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(85.2425 mm, 114.0000 mm): Pad 2 [N$75] of D25 on Top Layer
+    @(110.5160 mm, 106.3680 mm): Pad 2 [N$75] of R51 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.6675 mm, 114.0000 mm): Pad 1 [N$77] of D26 on Top Layer
+    @(79.5870 mm, 69.2924 mm): Pad 5 [N$77] of U8 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(80.0910 mm, 76.7999 mm): Pad 2 [N$76] of R52 on Top Layer
+    @(80.2425 mm, 114.0000 mm): Pad 2 [N$76] of D26 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.5472 mm, 107.4564 mm): Pad 2 [N$78] of R53 on Top Layer
+    @(107.6375 mm, 114.0000 mm): Pad 2 [N$78] of D27 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.8910 mm, 113.9584 mm): Pad 2 [N$79] of R54 on Top Layer
+    @(102.6375 mm, 114.0000 mm): Pad 2 [N$79] of D28 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.5500 mm, 110.0000 mm): PTH pad A6 [N$80] of J10
+    @(93.4000 mm, 111.3500 mm): PTH pad B6 [N$80] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.0200 mm, 104.6625 mm): Pad 6 [N$80] of D90 on Top Layer
+    @(92.0200 mm, 106.9375 mm): Pad 1 [N$80] of D90 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.0200 mm, 106.9375 mm): Pad 1 [N$80] of D90 on Top Layer
+    @(92.5500 mm, 110.0000 mm): PTH pad A6 [N$80] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.1000 mm, 94.8500 mm): Pad 52 [N$80] of U1 on Top Layer
+    @(92.0200 mm, 104.6625 mm): Pad 6 [N$80] of D90 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.5500 mm, 111.3500 mm): PTH pad B7 [N$81] of J10
+    @(93.4000 mm, 110.0000 mm): PTH pad A7 [N$81] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(93.9200 mm, 106.9375 mm): Pad 3 [N$81] of D90 on Top Layer
+    @(93.9200 mm, 104.6625 mm): Pad 4 [N$81] of D90 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(93.4000 mm, 110.0000 mm): PTH pad A7 [N$81] of J10
+    @(93.9200 mm, 106.9375 mm): Pad 3 [N$81] of D90 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.5000 mm, 94.8500 mm): Pad 51 [N$81] of U1 on Top Layer
+    @(93.9200 mm, 104.6625 mm): Pad 4 [N$81] of D90 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.1000 mm, 111.3500 mm): PTH pad B4 [VBUS] of J10
+    @(95.1000 mm, 110.0000 mm): PTH pad A9 [VBUS] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(90.8500 mm, 110.0000 mm): PTH pad A4 [VBUS] of J10
+    @(90.8500 mm, 111.3500 mm): PTH pad B9 [VBUS] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.1000 mm, 110.0000 mm): PTH pad A9 [VBUS] of J10
+    @(90.8500 mm, 110.0000 mm): PTH pad A4 [VBUS] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.9700 mm, 104.6625 mm): Pad 5 [VBUS] of D90 on Top Layer
+    @(90.8500 mm, 110.0000 mm): PTH pad A4 [VBUS] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.1000 mm, 111.3500 mm): PTH pad B4 [VBUS] of J10
+    @(100.1553 mm, 116.8452 mm): Pad 2 [VBUS] of D30 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.1553 mm, 116.8452 mm): Pad 2 [VBUS] of D30 on Top Layer
+    @(108.7785 mm, 108.4264 mm): Pad 1 [VBUS] of R57 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(75.8722 mm, 94.0891 mm): Pad 1 [UP_A] of R9 on Top Layer
+    @(76.4147 mm, 95.9185 mm): Pad 1 [UP_A] of D80 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.6385 mm, 89.6122 mm): Pad 1 [UP_A] of R7 on Top Layer
+    @(75.8722 mm, 94.0891 mm): Pad 1 [UP_A] of R9 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3000 mm, 88.5400 mm): PTH pad 1 [UP_A] of J1
+    @(75.8722 mm, 94.0891 mm): Pad 1 [UP_A] of R9 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(74.5147 mm, 95.9185 mm): Pad 2 [UP_B] of D80 on Top Layer
+    @(76.8922 mm, 94.0891 mm): Pad 2 [UP_B] of R9 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3000 mm, 93.6200 mm): PTH pad 2 [UP_B] of J1
+    @(74.5147 mm, 95.9185 mm): Pad 2 [UP_B] of D80 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(76.8922 mm, 94.0891 mm): Pad 2 [UP_B] of R9 on Top Layer
+    @(74.9166 mm, 89.6872 mm): Pad 1 [UP_B] of R8 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.8910 mm, 116.4885 mm): Pad 1 [N$82] of R55 on Top Layer
+    @(91.7000 mm, 110.0000 mm): PTH pad A5 [N$82] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(85.6253 mm, 117.3319 mm): Pad 1 [N$83] of R56 on Top Layer
+    @(94.2500 mm, 111.3500 mm): PTH pad B5 [N$83] of J10
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(137.7000 mm, 86.5400 mm): PTH pad 1 [+12V_IN] of J2
+    @(133.2000 mm, 86.5400 mm): Pad 1 [+12V_IN] of TP7 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(133.2000 mm, 86.5400 mm): Pad 1 [+12V_IN] of TP7 on Bottom Layer
+    @(132.4678 mm, 91.9470 mm): Pad 2 [+12V_IN] of D1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(107.3791 mm, 97.9585 mm): Pad 1 [N$48] of R30 on Top Layer
+    @(137.7000 mm, 96.7000 mm): PTH pad 3 [N$48] of J2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(130.6916 mm, 106.9231 mm): Pad 1 [N$50] of R32 on Top Layer
+    @(137.7000 mm, 106.8600 mm): PTH pad 5 [N$50] of J2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(132.7778 mm, 64.0561 mm): Pad 2 [N$41] of D11 on Top Layer
+    @(137.7000 mm, 56.0600 mm): PTH pad 1 [N$41] of J3
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(124.0000 mm, 69.7000 mm): PTH pad 4 [N$41] of K1
+    @(132.7778 mm, 64.0561 mm): Pad 2 [N$41] of D11 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(128.4778 mm, 64.0561 mm): Pad 1 [N$39] of D11 on Top Layer
+    @(131.2803 mm, 72.7613 mm): Pad 1 [N$39] of D10 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(137.7000 mm, 61.1400 mm): PTH pad 2 [N$39] of J3
+    @(128.4778 mm, 64.0561 mm): Pad 1 [N$39] of D11 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(118.0000 mm, 55.5000 mm): PTH pad 1 [N$39] of K1
+    @(128.4778 mm, 64.0561 mm): Pad 1 [N$39] of D11 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(131.2803 mm, 68.4613 mm): Pad 2 [N$40] of D10 on Top Layer
+    @(137.7000 mm, 66.2200 mm): PTH pad 3 [N$40] of J3
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(112.0000 mm, 69.7000 mm): PTH pad 3 [N$40] of K1
+    @(131.2803 mm, 68.4613 mm): Pad 2 [N$40] of D10 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(130.8585 mm, 83.3603 mm): Pad 2 [N$46] of D13 on Top Layer
+    @(137.7000 mm, 71.3000 mm): PTH pad 4 [N$46] of J3
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(112.0000 mm, 93.7000 mm): PTH pad 3 [N$46] of K2
+    @(130.8585 mm, 83.3603 mm): Pad 2 [N$46] of D13 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(124.0000 mm, 93.7000 mm): PTH pad 4 [N$47] of K2
+    @(137.7000 mm, 76.3800 mm): PTH pad 5 [N$47] of J3
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(90.7803 mm, 70.9914 mm): Pad 2 [N$47] of D14 on Top Layer
+    @(124.0000 mm, 93.7000 mm): PTH pad 4 [N$47] of K2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(137.7000 mm, 81.4600 mm): PTH pad 6 [N$45] of J3
+    @(130.8585 mm, 79.0603 mm): Pad 1 [N$45] of D13 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(130.8585 mm, 79.0603 mm): Pad 1 [N$45] of D13 on Top Layer
+    @(118.0000 mm, 79.5000 mm): PTH pad 1 [N$45] of K2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(90.7803 mm, 75.2914 mm): Pad 1 [N$45] of D14 on Top Layer
+    @(118.0000 mm, 79.5000 mm): PTH pad 1 [N$45] of K2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3000 mm, 63.1400 mm): PTH pad 2 [N$20] of J4
+    @(75.0428 mm, 57.3115 mm): Pad 3 [N$20] of Q1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3000 mm, 68.2200 mm): PTH pad 3 [N$23] of J4
+    @(54.0891 mm, 79.4727 mm): Pad 3 [N$23] of Q3 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.8253 mm, 86.9555 mm): Pad 3 [N$23] of Q2 on Top Layer
+    @(70.3000 mm, 68.2200 mm): PTH pad 3 [N$23] of J4
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3000 mm, 73.3000 mm): PTH pad 4 [RDR_D1_B] of J4
+    @(74.3253 mm, 79.0501 mm): Pad 2 [RDR_D1_B] of D81 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(79.3000 mm, 60.6000 mm): PTH pad 2 [RDR_D1_B] of JP1
+    @(70.3000 mm, 73.3000 mm): PTH pad 4 [RDR_D1_B] of J4
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(74.3253 mm, 79.0501 mm): Pad 2 [RDR_D1_B] of D81 on Top Layer
+    @(53.8228 mm, 96.0125 mm): Pad 1 [RDR_D1_B] of R11 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(89.8441 mm, 102.3962 mm): Pad 1 [RDR_D1_B] of R24 on Top Layer
+    @(74.3253 mm, 79.0501 mm): Pad 2 [RDR_D1_B] of D81 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(74.3253 mm, 77.1501 mm): Pad 1 [RDR_D0_A] of D81 on Top Layer
+    @(73.8128 mm, 75.1632 mm): Pad 1 [RDR_D0_A] of R12 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3000 mm, 78.3800 mm): PTH pad 5 [RDR_D0_A] of J4
+    @(74.3253 mm, 77.1501 mm): Pad 1 [RDR_D0_A] of D81 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(74.3253 mm, 77.1501 mm): Pad 1 [RDR_D0_A] of D81 on Top Layer
+    @(91.5316 mm, 89.7456 mm): Pad 1 [RDR_D0_A] of R22 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3000 mm, 78.3800 mm): PTH pad 5 [RDR_D0_A] of J4
+    @(56.2791 mm, 95.9375 mm): Pad 1 [RDR_D0_A] of R10 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(70.3000 mm, 83.4600 mm): PTH pad 6 [N$29] of J4
+    @(74.6566 mm, 81.9102 mm): Pad 1 [N$29] of R39 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(74.6566 mm, 81.9102 mm): Pad 1 [N$29] of R39 on Top Layer
+    @(88.6691 mm, 55.1890 mm): Pad 3 [N$29] of Q4 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(61.8900 mm, 109.8500 mm): PTH pad 1 [N$53] of J5
+    @(86.8166 mm, 106.5014 mm): Pad 1 [N$53] of R35 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(77.0460 mm, 110.8683 mm): Pad 1 [+12V_RDR] of C29 on Top Layer
+    @(80.8567 mm, 111.1199 mm): Pad 1 [+12V_RDR] of D12 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(81.7785 mm, 101.6795 mm): Pad 1 [+12V_RDR] of R5 on Top Layer
+    @(78.5000 mm, 99.0000 mm): Pad 1 [+12V_RDR] of TP8 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(81.7785 mm, 101.6795 mm): Pad 1 [+12V_RDR] of R5 on Top Layer
+    @(86.9791 mm, 102.0296 mm): Pad 1 [+12V_RDR] of C28 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(112.0000 mm, 57.5000 mm): PTH pad 2 [+12V_RDR] of K1
+    @(106.1334 mm, 59.2169 mm): Pad 1 [+12V_RDR] of D9 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(81.7785 mm, 101.6795 mm): Pad 1 [+12V_RDR] of R5 on Top Layer
+    @(80.8567 mm, 111.1199 mm): Pad 1 [+12V_RDR] of D12 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.5000 mm, 99.0000 mm): Pad 1 [+12V_RDR] of TP8 on Bottom Layer
+    @(84.6085 mm, 89.4058 mm): Pad 2 [+12V_RDR] of L3 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(106.1334 mm, 59.2169 mm): Pad 1 [+12V_RDR] of D9 on Top Layer
+    @(93.0116 mm, 64.6502 mm): Pad 1 [+12V_RDR] of F1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(106.1334 mm, 59.2169 mm): Pad 1 [+12V_RDR] of D9 on Top Layer
+    @(112.0000 mm, 81.5000 mm): PTH pad 2 [+12V_RDR] of K2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(84.6085 mm, 89.4058 mm): Pad 2 [+12V_RDR] of L3 on Top Layer
+    @(93.0116 mm, 64.6502 mm): Pad 1 [+12V_RDR] of F1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(130.0266 mm, 58.3883 mm): Pad 3 [N$38] of Q6 on Top Layer
+    @(124.0000 mm, 57.5000 mm): PTH pad 5 [N$38] of K1
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(124.0000 mm, 57.5000 mm): PTH pad 5 [N$38] of K1
+    @(106.1334 mm, 55.9169 mm): Pad 2 [N$38] of D9 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(106.1334 mm, 55.9169 mm): Pad 2 [N$38] of D9 on Top Layer
+    @(63.1647 mm, 103.3467 mm): Pad 1 [N$38] of TP17 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(66.1647 mm, 103.3467 mm): Pad 1 [N$44] of TP18 on Bottom Layer
+    @(84.1567 mm, 111.1199 mm): Pad 2 [N$44] of D12 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(153.2159 mm, 77.5384 mm): Pad 3 [N$44] of Q7 on Top Layer
+    @(124.0000 mm, 81.5000 mm): PTH pad 5 [N$44] of K2
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(124.0000 mm, 81.5000 mm): PTH pad 5 [N$44] of K2
+    @(84.1567 mm, 111.1199 mm): Pad 2 [N$44] of D12 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.1300 mm, 92.8400 mm): Pad 1 [N$1] of L1 on Top Layer
+    @(100.7000 mm, 94.8500 mm): Pad 48 [N$1] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.2500 mm, 97.5000 mm): Pad 6 [+1V1] of U1 on Top Layer
+    @(95.3890 mm, 97.4209 mm): Pad 1 [+1V1] of C10 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.7000 mm, 102.5800 mm): Pad 1 [+1V1] of C11 on Bottom Layer
+    @(98.7000 mm, 101.7500 mm): Pad 23 [+1V1] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 97.9000 mm): Pad 39 [+1V1] of U1 on Top Layer
+    @(103.3950 mm, 98.3000 mm): Pad 1 [+1V1] of C16 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.5112 mm, 100.1760 mm): Pad 1 [+1V1] of C12 on Bottom Layer
+    @(103.3950 mm, 98.3000 mm): Pad 1 [+1V1] of C16 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.9000 mm, 94.8500 mm): Pad 50 [+1V1] of U1 on Top Layer
+    @(102.1500 mm, 97.9000 mm): Pad 39 [+1V1] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.1300 mm, 90.0400 mm): Pad 2 [+1V1] of L1 on Top Layer
+    @(95.7403 mm, 93.2857 mm): Pad 1 [+1V1] of C17 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.5112 mm, 100.1760 mm): Pad 1 [+1V1] of C12 on Bottom Layer
+    @(98.7000 mm, 101.7500 mm): Pad 23 [+1V1] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.3890 mm, 97.4209 mm): Pad 1 [+1V1] of C10 on Bottom Layer
+    @(95.7403 mm, 93.2857 mm): Pad 1 [+1V1] of C17 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.9000 mm, 94.8500 mm): Pad 50 [+1V1] of U1 on Top Layer
+    @(95.7403 mm, 93.2857 mm): Pad 1 [+1V1] of C17 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(107.1820 mm, 88.1820 mm): Pad 1 [+1V1] of TP6 on Bottom Layer
+    @(98.1300 mm, 90.0400 mm): Pad 2 [+1V1] of L1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(103.7866 mm, 89.1705 mm): Pad 2 [N$4] of U2 on Top Layer
+    @(104.0000 mm, 88.0000 mm): Pad 1 [N$4] of TP12 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(89.9703 mm, 91.1373 mm): Pad 2 [N$4] of R2 on Top Layer
+    @(86.4591 mm, 86.9604 mm): Pad 1 [N$4] of C20 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.6000 mm, 96.5000 mm): Pad 1 [N$4] of SW1 on Top Layer
+    @(89.9703 mm, 91.1373 mm): Pad 2 [N$4] of R2 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(79.4000 mm, 96.5000 mm): Pad 1 [N$4] of SW1 on Top Layer
+    @(86.6000 mm, 96.5000 mm): Pad 1 [N$4] of SW1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.9000 mm, 101.7500 mm): Pad 26 [N$4] of U1 on Top Layer
+    @(103.7866 mm, 89.1705 mm): Pad 2 [N$4] of U2 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(103.7866 mm, 89.1705 mm): Pad 2 [N$4] of U2 on Top Layer
+    @(89.9703 mm, 91.1373 mm): Pad 2 [N$4] of R2 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.3994 mm, 99.6150 mm): Pad 1 [+3V3] of C5 on Bottom Layer
+    @(95.2500 mm, 99.5000 mm): Pad 11 [+3V3] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.4582 mm, 95.2794 mm): Pad 1 [+3V3] of C4 on Bottom Layer
+    @(95.2500 mm, 95.5000 mm): Pad 1 [+3V3] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.3000 mm, 94.8500 mm): Pad 54 [+3V3] of U1 on Top Layer
+    @(98.7000 mm, 94.8500 mm): Pad 53 [+3V3] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.7206 mm, 102.5018 mm): Pad 1 [+3V3] of C7 on Bottom Layer
+    @(101.5000 mm, 101.7500 mm): Pad 30 [+3V3] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(97.3850 mm, 102.5606 mm): Pad 1 [+3V3] of C6 on Bottom Layer
+    @(97.5000 mm, 101.7500 mm): Pad 20 [+3V3] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.9800 mm, 98.3000 mm): Pad 1 [+3V3] of C8 on Bottom Layer
+    @(102.1500 mm, 98.3000 mm): Pad 38 [+3V3] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.7531 mm, 95.4897 mm): Pad 1 [+3V3] of C13 on Bottom Layer
+    @(95.4582 mm, 95.2794 mm): Pad 1 [+3V3] of C4 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(82.1870 mm, 75.0174 mm): Pad 16 [+3V3] of U8 on Top Layer
+    @(83.5059 mm, 75.0366 mm): Pad 1 [+3V3] of C37 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.5922 mm, 77.2316 mm): Pad 1 [+3V3] of C38 on Top Layer
+    @(85.0416 mm, 77.3084 mm): Pad 7 [+3V3] of U9 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.7000 mm, 94.8500 mm): Pad 53 [+3V3] of U1 on Top Layer
+    @(99.2584 mm, 93.5074 mm): Pad 1 [+3V3] of C9 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.3000 mm, 94.8500 mm): Pad 49 [+3V3] of U1 on Top Layer
+    @(98.7000 mm, 94.8500 mm): Pad 53 [+3V3] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(53.9747 mm, 103.2896 mm): Pad 1 [+3V3] of C32 on Top Layer
+    @(53.8959 mm, 101.6811 mm): Pad 8 [+3V3] of U6 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.7866 mm, 85.2354 mm): Pad 8 [+3V3] of U5 on Top Layer
+    @(78.8653 mm, 86.8438 mm): Pad 1 [+3V3] of C31 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.5678 mm, 107.5848 mm): Pad 8 [+3V3] of U7 on Top Layer
+    @(101.6466 mm, 109.1932 mm): Pad 1 [+3V3] of C36 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(80.0910 mm, 78.0650 mm): Pad 1 [+3V3] of R38 on Top Layer
+    @(81.1110 mm, 76.7999 mm): Pad 1 [+3V3] of R52 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.7531 mm, 95.4897 mm): Pad 1 [+3V3] of C13 on Bottom Layer
+    @(98.3000 mm, 94.8500 mm): Pad 54 [+3V3] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(88.9503 mm, 89.4505 mm): Pad 1 [+3V3] of R34 on Top Layer
+    @(88.9503 mm, 91.1373 mm): Pad 1 [+3V3] of R2 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.6466 mm, 109.1932 mm): Pad 1 [+3V3] of C36 on Top Layer
+    @(103.2022 mm, 110.0249 mm): Pad 1 [+3V3] of C26 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.3518 mm, 93.3570 mm): Pad 1 [+3V3] of C1 on Top Layer
+    @(100.3000 mm, 94.8500 mm): Pad 49 [+3V3] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(107.9747 mm, 88.1089 mm): Pad 1 [+3V3] of C21 on Top Layer
+    @(106.0616 mm, 88.2205 mm): Pad 3 [+3V3] of U2 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.3000 mm, 94.8500 mm): Pad 49 [+3V3] of U1 on Top Layer
+    @(102.1500 mm, 95.5000 mm): Pad 45 [+3V3] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(81.1110 mm, 76.7999 mm): Pad 1 [+3V3] of R52 on Top Layer
+    @(82.1870 mm, 75.0174 mm): Pad 16 [+3V3] of U8 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.2392 mm, 93.2530 mm): Pad 1 [+3V3] of C15 on Bottom Layer
+    @(95.4582 mm, 95.2794 mm): Pad 1 [+3V3] of C4 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.5059 mm, 75.0366 mm): Pad 1 [+3V3] of C37 on Top Layer
+    @(83.5922 mm, 77.2316 mm): Pad 1 [+3V3] of C38 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.5472 mm, 108.4764 mm): Pad 1 [+3V3] of R53 on Top Layer
+    @(101.5678 mm, 107.5848 mm): Pad 8 [+3V3] of U7 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(103.7660 mm, 100.8861 mm): Pad 1 [+3V3] of R42 on Top Layer
+    @(105.9660 mm, 101.8211 mm): Pad 2 [+3V3] of D16 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.5000 mm, 101.7500 mm): Pad 30 [+3V3] of U1 on Top Layer
+    @(103.7660 mm, 100.8861 mm): Pad 1 [+3V3] of R42 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.5472 mm, 108.4764 mm): Pad 1 [+3V3] of R53 on Top Layer
+    @(99.0753 mm, 110.9566 mm): Pad 1 [+3V3] of R37 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(103.7660 mm, 100.8861 mm): Pad 1 [+3V3] of R42 on Top Layer
+    @(102.9800 mm, 98.3000 mm): Pad 1 [+3V3] of C8 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 95.5000 mm): Pad 45 [+3V3] of U1 on Top Layer
+    @(102.1500 mm, 98.3000 mm): Pad 38 [+3V3] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.2392 mm, 93.2530 mm): Pad 1 [+3V3] of C15 on Bottom Layer
+    @(95.1172 mm, 90.6248 mm): Pad 2 [+3V3] of D15 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(103.8922 mm, 84.8120 mm): Pad 1 [+3V3] of R1 on Top Layer
+    @(101.0000 mm, 85.0000 mm): Pad 1 [+3V3] of TP2 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(94.3410 mm, 84.6004 mm): Pad 2 [+3V3] of D17 on Top Layer
+    @(96.1722 mm, 86.9704 mm): Pad 1 [+3V3] of R36 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.3994 mm, 99.6150 mm): Pad 1 [+3V3] of C5 on Bottom Layer
+    @(97.5000 mm, 101.7500 mm): Pad 20 [+3V3] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.1253 mm, 75.1632 mm): Pad 1 [+3V3] of R3 on Top Layer
+    @(101.9366 mm, 73.9908 mm): Pad 2 [+3V3] of D8 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(51.9659 mm, 83.4754 mm): Pad 1 [+3V3] of D5 on Top Layer
+    @(51.4534 mm, 80.4685 mm): Pad 2 [+3V3] of R18 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.0000 mm, 85.0000 mm): Pad 1 [+3V3] of TP2 on Bottom Layer
+    @(98.3522 mm, 83.0369 mm): Pad 1 [+3V3] of C25 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(93.3291 mm, 102.6845 mm): Pad 1 [+3V3] of FB1 on Top Layer
+    @(95.3994 mm, 99.6150 mm): Pad 1 [+3V3] of C5 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.1172 mm, 90.6248 mm): Pad 2 [+3V3] of D15 on Top Layer
+    @(96.1722 mm, 86.9704 mm): Pad 1 [+3V3] of R36 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.2500 mm, 99.5000 mm): Pad 11 [+3V3] of U1 on Top Layer
+    @(95.2500 mm, 95.5000 mm): Pad 1 [+3V3] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(105.9660 mm, 101.8211 mm): Pad 2 [+3V3] of D16 on Top Layer
+    @(109.9522 mm, 101.4004 mm): Pad 2 [+3V3] of D18 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(106.0616 mm, 88.2205 mm): Pad 3 [+3V3] of U2 on Top Layer
+    @(103.8922 mm, 84.8120 mm): Pad 1 [+3V3] of R1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(103.8922 mm, 84.8120 mm): Pad 1 [+3V3] of R1 on Top Layer
+    @(105.0741 mm, 80.7669 mm): Pad 2 [+3V3] of L2 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(94.3410 mm, 84.6004 mm): Pad 2 [+3V3] of D17 on Top Layer
+    @(98.3522 mm, 83.0369 mm): Pad 1 [+3V3] of C25 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(88.9503 mm, 89.4505 mm): Pad 1 [+3V3] of R34 on Top Layer
+    @(88.0147 mm, 84.5329 mm): Pad 2 [+3V3] of D7 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.5678 mm, 107.5848 mm): Pad 8 [+3V3] of U7 on Top Layer
+    @(101.7206 mm, 102.5018 mm): Pad 1 [+3V3] of C7 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.1172 mm, 90.6248 mm): Pad 2 [+3V3] of D15 on Top Layer
+    @(88.9503 mm, 91.1373 mm): Pad 1 [+3V3] of R2 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.7866 mm, 85.2354 mm): Pad 8 [+3V3] of U5 on Top Layer
+    @(80.0910 mm, 78.0650 mm): Pad 1 [+3V3] of R38 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(105.0741 mm, 80.7669 mm): Pad 2 [+3V3] of L2 on Top Layer
+    @(101.9366 mm, 73.9908 mm): Pad 2 [+3V3] of D8 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(85.0416 mm, 77.3084 mm): Pad 7 [+3V3] of U9 on Top Layer
+    @(88.0147 mm, 84.5329 mm): Pad 2 [+3V3] of D7 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(51.9659 mm, 83.4754 mm): Pad 1 [+3V3] of D5 on Top Layer
+    @(53.8959 mm, 101.6811 mm): Pad 8 [+3V3] of U6 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.7866 mm, 85.2354 mm): Pad 8 [+3V3] of U5 on Top Layer
+    @(51.9659 mm, 83.4754 mm): Pad 1 [+3V3] of D5 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.7366 mm, 81.4254 mm): Pad 4 [N$11] of U5 on Top Layer
+    @(95.2500 mm, 95.9000 mm): Pad 2 [N$11] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.7366 mm, 85.2354 mm): Pad 1 [N$12] of U5 on Top Layer
+    @(95.2500 mm, 96.3000 mm): Pad 3 [N$12] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.7366 mm, 82.6954 mm): Pad 3 [N$13] of U5 on Top Layer
+    @(83.7366 mm, 83.9654 mm): Pad 2 [N$13] of U5 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.7366 mm, 83.9654 mm): Pad 2 [N$13] of U5 on Top Layer
+    @(95.2500 mm, 96.7000 mm): Pad 4 [N$13] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(58.8460 mm, 99.1411 mm): Pad 3 [N$16] of U6 on Top Layer
+    @(58.8460 mm, 100.4111 mm): Pad 2 [N$16] of U6 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.2500 mm, 97.1000 mm): Pad 5 [N$16] of U1 on Top Layer
+    @(58.8460 mm, 99.1411 mm): Pad 3 [N$16] of U6 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(58.8460 mm, 97.8711 mm): Pad 4 [N$14] of U6 on Top Layer
+    @(95.2500 mm, 97.9000 mm): Pad 7 [N$14] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(58.8460 mm, 101.6811 mm): Pad 1 [N$15] of U6 on Top Layer
+    @(95.2500 mm, 98.3000 mm): Pad 8 [N$15] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(88.9647 mm, 86.4079 mm): Pad 3 [N$34] of D7 on Top Layer
+    @(89.7941 mm, 88.1855 mm): Pad 1 [N$34] of R23 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(89.7941 mm, 88.1855 mm): Pad 1 [N$34] of R23 on Top Layer
+    @(91.5316 mm, 90.7656 mm): Pad 2 [N$34] of R22 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.2500 mm, 98.7000 mm): Pad 9 [N$34] of U1 on Top Layer
+    @(91.5316 mm, 90.7656 mm): Pad 2 [N$34] of R22 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(89.8441 mm, 103.4162 mm): Pad 2 [N$35] of R24 on Top Layer
+    @(95.2500 mm, 99.1000 mm): Pad 10 [N$35] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.2500 mm, 99.1000 mm): Pad 10 [N$35] of U1 on Top Layer
+    @(104.7360 mm, 94.9325 mm): Pad 1 [N$35] of R25 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(104.7360 mm, 94.9325 mm): Pad 1 [N$35] of R25 on Top Layer
+    @(102.8866 mm, 75.8658 mm): Pad 3 [N$35] of D8 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.2500 mm, 99.9000 mm): Pad 12 [N$36] of U1 on Top Layer
+    @(127.3910 mm, 58.2957 mm): Pad 1 [N$36] of R26 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.2500 mm, 100.3000 mm): Pad 13 [N$42] of U1 on Top Layer
+    @(156.0785 mm, 83.5969 mm): Pad 1 [N$42] of R28 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.5953 mm, 110.9566 mm): Pad 1 [N$21] of R15 on Top Layer
+    @(95.2500 mm, 100.7000 mm): Pad 14 [N$21] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.8910 mm, 109.7415 mm): Pad 1 [N$18] of R13 on Top Layer
+    @(95.2500 mm, 101.1000 mm): Pad 15 [N$18] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.4660 mm, 85.5504 mm): Pad 3 [N$52] of D17 on Top Layer
+    @(90.6478 mm, 82.7136 mm): Pad 1 [N$52] of C35 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(89.9703 mm, 89.4505 mm): Pad 2 [N$52] of R34 on Top Layer
+    @(92.4660 mm, 85.5504 mm): Pad 3 [N$52] of D17 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(89.7416 mm, 106.5014 mm): Pad 2 [N$52] of R35 on Top Layer
+    @(95.9000 mm, 101.7500 mm): Pad 16 [N$52] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(89.9703 mm, 89.4505 mm): Pad 2 [N$52] of R34 on Top Layer
+    @(95.9000 mm, 101.7500 mm): Pad 16 [N$52] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.7000 mm, 101.7500 mm): Pad 18 [N$62] of U1 on Top Layer
+    @(99.0753 mm, 109.6915 mm): Pad 1 [N$62] of R45 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(97.1000 mm, 101.7500 mm): Pad 19 [N$64] of U1 on Top Layer
+    @(104.1878 mm, 113.3601 mm): Pad 1 [N$64] of R46 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.7403 mm, 108.0448 mm): Pad 1 [N$2] of C18 on Top Layer
+    @(96.7022 mm, 105.5064 mm): Pad 1 [N$2] of Y1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.7022 mm, 105.5064 mm): Pad 1 [N$2] of Y1 on Top Layer
+    @(97.9000 mm, 101.7500 mm): Pad 21 [N$2] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.9022 mm, 103.8064 mm): Pad 3 [N$3] of Y1 on Top Layer
+    @(98.3000 mm, 101.7500 mm): Pad 22 [N$3] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.3509 mm, 112.2316 mm): Pad 1 [N$3] of C19 on Top Layer
+    @(98.9022 mm, 103.8064 mm): Pad 3 [N$3] of Y1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(104.8622 mm, 92.1657 mm): PTH pad 2 [N$86] of J11
+    @(107.0000 mm, 85.0000 mm): Pad 1 [N$86] of TP11 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.1000 mm, 101.7500 mm): Pad 24 [N$86] of U1 on Top Layer
+    @(104.8622 mm, 92.1657 mm): PTH pad 2 [N$86] of J11
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(106.1322 mm, 92.1657 mm): PTH pad 1 [N$85] of J11
+    @(104.0000 mm, 85.0000 mm): Pad 1 [N$85] of TP10 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.5000 mm, 101.7500 mm): Pad 25 [N$85] of U1 on Top Layer
+    @(106.1322 mm, 92.1657 mm): PTH pad 1 [N$85] of J11
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.5678 mm, 103.7748 mm): Pad 5 [N$54] of U7 on Top Layer
+    @(100.3000 mm, 101.7500 mm): Pad 27 [N$54] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.3416 mm, 75.5084 mm): Pad 4 [N$54] of U9 on Top Layer
+    @(81.5370 mm, 75.0174 mm): Pad 15 [N$54] of U8 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.1722 mm, 85.9504 mm): Pad 2 [N$54] of R36 on Top Layer
+    @(86.3416 mm, 75.5084 mm): Pad 4 [N$54] of U9 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.3000 mm, 101.7500 mm): Pad 27 [N$54] of U1 on Top Layer
+    @(96.1722 mm, 85.9504 mm): Pad 2 [N$54] of R36 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.5678 mm, 105.0448 mm): Pad 6 [N$55] of U7 on Top Layer
+    @(100.7000 mm, 101.7500 mm): Pad 28 [N$55] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.3416 mm, 76.4084 mm): Pad 3 [N$55] of U9 on Top Layer
+    @(80.8870 mm, 75.0174 mm): Pad 14 [N$55] of U8 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.0953 mm, 110.9566 mm): Pad 2 [N$55] of R37 on Top Layer
+    @(101.5678 mm, 105.0448 mm): Pad 6 [N$55] of U7 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.7000 mm, 101.7500 mm): Pad 28 [N$55] of U1 on Top Layer
+    @(86.3416 mm, 76.4084 mm): Pad 3 [N$55] of U9 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.3416 mm, 77.3084 mm): Pad 2 [N$58] of U9 on Top Layer
+    @(101.1000 mm, 101.7500 mm): Pad 29 [N$58] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(106.6691 mm, 109.6915 mm): Pad 1 [N$84] of R58 on Top Layer
+    @(109.7985 mm, 108.4264 mm): Pad 2 [N$84] of R57 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 101.1000 mm): Pad 31 [N$84] of U1 on Top Layer
+    @(106.6691 mm, 109.6915 mm): Pad 1 [N$84] of R58 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 100.7000 mm): Pad 32 [N$66] of U1 on Top Layer
+    @(109.2503 mm, 106.1914 mm): Pad 1 [N$66] of R47 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 100.3000 mm): Pad 33 [N$68] of U1 on Top Layer
+    @(113.4191 mm, 107.5831 mm): Pad 1 [N$68] of R48 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 99.9000 mm): Pad 34 [N$60] of U1 on Top Layer
+    @(103.7660 mm, 99.8661 mm): Pad 2 [N$60] of R42 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(89.9522 mm, 93.0561 mm): Pad 1 [N$60] of SW2 on Top Layer
+    @(89.9522 mm, 100.2561 mm): Pad 1 [N$60] of SW2 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(89.9522 mm, 100.2561 mm): Pad 1 [N$60] of SW2 on Top Layer
+    @(102.1500 mm, 99.9000 mm): Pad 34 [N$60] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(97.9860 mm, 107.1614 mm): Pad 1 [N$24] of R17 on Top Layer
+    @(102.1500 mm, 99.5000 mm): Pad 35 [N$24] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 99.1000 mm): Pad 36 [N$70] of U1 on Top Layer
+    @(111.3097 mm, 108.8481 mm): Pad 1 [N$70] of R49 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 98.7000 mm): Pad 37 [N$72] of U1 on Top Layer
+    @(107.5128 mm, 110.9566 mm): Pad 1 [N$72] of R50 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(113.4691 mm, 104.0830 mm): Pad 2 [N$51] of R33 on Top Layer
+    @(118.5216 mm, 104.1330 mm): Pad 1 [N$51] of C34 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(107.8410 mm, 100.8711 mm): Pad 3 [N$51] of D16 on Top Layer
+    @(113.4691 mm, 104.0830 mm): Pad 2 [N$51] of R33 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 97.5000 mm): Pad 40 [N$51] of U1 on Top Layer
+    @(107.8410 mm, 100.8711 mm): Pad 3 [N$51] of D16 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(133.6166 mm, 106.9231 mm): Pad 2 [N$51] of R32 on Top Layer
+    @(118.5216 mm, 104.1330 mm): Pad 1 [N$51] of C34 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(108.4066 mm, 90.5890 mm): Pad 2 [N$49] of R31 on Top Layer
+    @(108.3966 mm, 86.9604 mm): Pad 1 [N$49] of C33 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(107.3791 mm, 95.0335 mm): Pad 2 [N$49] of R30 on Top Layer
+    @(108.4066 mm, 90.5890 mm): Pad 2 [N$49] of R31 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 97.1000 mm): Pad 41 [N$49] of U1 on Top Layer
+    @(107.3791 mm, 95.0335 mm): Pad 2 [N$49] of R30 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(94.1672 mm, 88.7498 mm): Pad 3 [N$49] of D15 on Top Layer
+    @(102.1500 mm, 97.1000 mm): Pad 41 [N$49] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(112.2035 mm, 105.3480 mm): Pad 2 [N$61] of R43 on Top Layer
+    @(110.9022 mm, 103.2754 mm): Pad 3 [N$61] of D18 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 96.7000 mm): Pad 42 [N$61] of U1 on Top Layer
+    @(110.9022 mm, 103.2754 mm): Pad 3 [N$61] of D18 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(105.8253 mm, 85.6554 mm): Pad 1 [N$61] of R44 on Top Layer
+    @(102.1500 mm, 96.7000 mm): Pad 42 [N$61] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 96.3000 mm): Pad 43 [N$74] of U1 on Top Layer
+    @(110.5160 mm, 105.3480 mm): Pad 1 [N$74] of R51 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(103.7259 mm, 96.2075 mm): Pad 1 [+3V3_ADC] of C3 on Top Layer
+    @(104.2979 mm, 96.1461 mm): Pad 1 [+3V3_ADC] of C14 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 95.9000 mm): Pad 44 [+3V3_ADC] of U1 on Top Layer
+    @(103.7259 mm, 96.2075 mm): Pad 1 [+3V3_ADC] of C3 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(104.2979 mm, 96.1461 mm): Pad 1 [+3V3_ADC] of C14 on Bottom Layer
+    @(108.4066 mm, 91.6090 mm): Pad 1 [+3V3_ADC] of R31 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(108.4066 mm, 91.6090 mm): Pad 1 [+3V3_ADC] of R31 on Top Layer
+    @(104.0000 mm, 82.0000 mm): Pad 1 [+3V3_ADC] of TP5 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.1500 mm, 95.9000 mm): Pad 44 [+3V3_ADC] of U1 on Top Layer
+    @(91.7541 mm, 102.6845 mm): Pad 2 [+3V3_ADC] of FB1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(113.4691 mm, 105.1030 mm): Pad 1 [+3V3_ADC] of R33 on Top Layer
+    @(104.2979 mm, 96.1461 mm): Pad 1 [+3V3_ADC] of C14 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.5000 mm, 94.8500 mm): Pad 46 [VREG_AVDD_F] of U1 on Top Layer
+    @(101.7206 mm, 95.3532 mm): Pad 1 [VREG_AVDD_F] of C2 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.8722 mm, 84.8120 mm): Pad 2 [VREG_AVDD_F] of R1 on Top Layer
+    @(101.5000 mm, 94.8500 mm): Pad 46 [VREG_AVDD_F] of U1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(76.3441 mm, 75.5849 mm): Pad 1 [N$57] of R40 on Top Layer
+    @(74.6566 mm, 80.8902 mm): Pad 2 [N$57] of R39 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(80.2370 mm, 69.2924 mm): Pad 4 [N$57] of U8 on Top Layer
+    @(76.3441 mm, 75.5849 mm): Pad 1 [N$57] of R40 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.9370 mm, 69.2924 mm): Pad 6 [N$32] of U8 on Top Layer
+    @(85.7516 mm, 61.6192 mm): Pad 1 [N$32] of R21 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(80.2370 mm, 75.0174 mm): Pad 13 [N$56] of U8 on Top Layer
+    @(81.1110 mm, 78.0650 mm): Pad 2 [N$56] of R38 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.7866 mm, 82.6954 mm): Pad 6 [UP_A_IC] of U5 on Top Layer
+    @(80.2884 mm, 89.6122 mm): Pad 2 [UP_A_IC] of R7 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(80.2884 mm, 89.6122 mm): Pad 2 [UP_A_IC] of R7 on Top Layer
+    @(92.0000 mm, 99.0000 mm): Pad 1 [UP_A_IC] of TP13 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(78.7866 mm, 83.9654 mm): Pad 7 [UP_B_IC] of U5 on Top Layer
+    @(74.9166 mm, 88.0372 mm): Pad 2 [UP_B_IC] of R8 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(98.0000 mm, 99.0000 mm): Pad 1 [UP_B_IC] of TP14 on Bottom Layer
+    @(78.7866 mm, 83.9654 mm): Pad 7 [UP_B_IC] of U5 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(53.8959 mm, 99.1411 mm): Pad 6 [DN_A_IC] of U6 on Top Layer
+    @(56.0000 mm, 99.0000 mm): Pad 1 [DN_A_IC] of TP15 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(56.0000 mm, 99.0000 mm): Pad 1 [DN_A_IC] of TP15 on Bottom Layer
+    @(57.9291 mm, 95.9375 mm): Pad 2 [DN_A_IC] of R10 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(53.8959 mm, 100.4111 mm): Pad 7 [DN_B_IC] of U6 on Top Layer
+    @(59.0000 mm, 99.0000 mm): Pad 1 [DN_B_IC] of TP16 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(53.8228 mm, 94.3625 mm): Pad 2 [DN_B_IC] of R11 on Top Layer
+    @(53.8959 mm, 100.4111 mm): Pad 7 [DN_B_IC] of U6 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(99.0753 mm, 76.3783 mm): Pad 1 [N$7] of R4 on Top Layer
+    @(99.1253 mm, 74.1432 mm): Pad 2 [N$7] of R3 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(97.9303 mm, 78.2993 mm): Pad 1 [N$7] of U3 on Top Layer
+    @(99.0753 mm, 76.3783 mm): Pad 1 [N$7] of R4 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(82.2709 mm, 104.6663 mm): Pad 2 [+12V] of U4 on Top Layer
+    @(82.2709 mm, 105.6163 mm): Pad 3 [+12V] of U4 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.9803 mm, 78.2993 mm): Pad 2 [+12V] of U3 on Top Layer
+    @(96.0303 mm, 78.2993 mm): Pad 3 [+12V] of U3 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.0303 mm, 78.2993 mm): Pad 3 [+12V] of U3 on Top Layer
+    @(93.7291 mm, 78.4151 mm): Pad 1 [+12V] of C23 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(82.5303 mm, 107.9164 mm): Pad 1 [+12V] of C30 on Top Layer
+    @(82.2709 mm, 105.6163 mm): Pad 3 [+12V] of U4 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.8910 mm, 112.9384 mm): Pad 1 [+12V] of R54 on Top Layer
+    @(82.5303 mm, 107.9164 mm): Pad 1 [+12V] of C30 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(112.2035 mm, 106.3680 mm): Pad 1 [+12V] of R43 on Top Layer
+    @(119.1966 mm, 108.3332 mm): Pad 1 [+12V] of D2 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(89.0000 mm, 99.0000 mm): Pad 1 [+12V] of TP1 on Bottom Layer
+    @(82.2709 mm, 104.6663 mm): Pad 2 [+12V] of U4 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(73.3506 mm, 105.3650 mm): Pad 1 [+12V] of C22 on Top Layer
+    @(82.2709 mm, 105.6163 mm): Pad 3 [+12V] of U4 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(112.2035 mm, 106.3680 mm): Pad 1 [+12V] of R43 on Top Layer
+    @(104.1553 mm, 116.8452 mm): Pad 1 [+12V] of D30 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.8910 mm, 112.9384 mm): Pad 1 [+12V] of R54 on Top Layer
+    @(104.1553 mm, 116.8452 mm): Pad 1 [+12V] of D30 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(119.1966 mm, 108.3332 mm): Pad 1 [+12V] of D2 on Top Layer
+    @(132.4678 mm, 95.9470 mm): Pad 1 [+12V] of D1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(89.0000 mm, 99.0000 mm): Pad 1 [+12V] of TP1 on Bottom Layer
+    @(93.7291 mm, 78.4151 mm): Pad 1 [+12V] of C23 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.9803 mm, 80.5743 mm): Pad 5 [N$5] of U3 on Top Layer
+    @(100.9241 mm, 80.7669 mm): Pad 1 [N$5] of L2 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.9241 mm, 80.7669 mm): Pad 1 [N$5] of L2 on Top Layer
+    @(100.3809 mm, 74.1932 mm): Pad 2 [N$5] of C24 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(97.9303 mm, 80.5743 mm): Pad 6 [N$6] of U3 on Top Layer
+    @(100.3809 mm, 75.1532 mm): Pad 1 [N$6] of C24 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(80.5628 mm, 103.4162 mm): Pad 1 [N$10] of R6 on Top Layer
+    @(82.2709 mm, 103.7163 mm): Pad 1 [N$10] of U4 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(82.2709 mm, 103.7163 mm): Pad 1 [N$10] of U4 on Top Layer
+    @(82.7985 mm, 101.6795 mm): Pad 2 [N$10] of R5 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(84.5460 mm, 104.6663 mm): Pad 5 [N$8] of U4 on Top Layer
+    @(85.2797 mm, 102.1111 mm): Pad 2 [N$8] of C27 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(85.2797 mm, 102.1111 mm): Pad 2 [N$8] of C27 on Top Layer
+    @(84.6085 mm, 93.5558 mm): Pad 1 [N$8] of L3 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(84.3197 mm, 102.1111 mm): Pad 1 [N$9] of C27 on Top Layer
+    @(84.5460 mm, 103.7163 mm): Pad 6 [N$9] of U4 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(100.8433 mm, 66.1586 mm): Pad 1 [VBAT] of C39 on Top Layer
+    @(85.0416 mm, 76.4084 mm): Pad 6 [VBAT] of U9 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(85.0416 mm, 76.4084 mm): Pad 6 [VBAT] of U9 on Top Layer
+    @(75.5000 mm, 99.0000 mm): Pad 1 [VBAT] of TP4 on Bottom Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.4660 mm, 73.8481 mm): Pad 1 [N$59] of R41 on Top Layer
+    @(85.0416 mm, 78.2084 mm): Pad 8 [N$59] of U9 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(92.5016 mm, 51.9204 mm): Pad 1 [N$28] of R19 on Top Layer
+    @(90.5441 mm, 54.2390 mm): Pad 2 [N$28] of Q4 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(95.5786 mm, 54.4356 mm): Pad 1 [N$28] of D6 on Top Layer
+    @(92.5016 mm, 51.9204 mm): Pad 1 [N$28] of R19 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(93.0116 mm, 60.3752 mm): Pad 2 [N$27] of F1 on Top Layer
+    @(99.5786 mm, 54.4356 mm): Pad 2 [N$27] of D6 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(73.8128 mm, 74.1432 mm): Pad 2 [N$17] of R12 on Top Layer
+    @(79.3000 mm, 58.0600 mm): PTH pad 1 [N$17] of JP1
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(53.8409 mm, 84.4254 mm): Pad 3 [N$26] of D5 on Top Layer
+    @(55.0391 mm, 81.3477 mm): Pad 2 [N$26] of Q3 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(86.8910 mm, 108.7215 mm): Pad 2 [N$19] of R13 on Top Layer
+    @(102.0785 mm, 86.7938 mm): Pad 1 [N$19] of R14 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(102.0785 mm, 86.7938 mm): Pad 1 [N$19] of R14 on Top Layer
+    @(75.9928 mm, 55.4365 mm): Pad 1 [N$19] of Q1 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(101.6566 mm, 90.3439 mm): Pad 1 [N$22] of R16 on Top Layer
+    @(97.9503 mm, 86.0055 mm): Pad 1 [N$22] of Q2 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(85.5753 mm, 110.9566 mm): Pad 2 [N$22] of R15 on Top Layer
+    @(101.6566 mm, 90.3439 mm): Pad 1 [N$22] of R16 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(53.1391 mm, 81.3477 mm): Pad 1 [N$25] of Q3 on Top Layer
+    @(51.4534 mm, 81.4885 mm): Pad 1 [N$25] of R18 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(96.9660 mm, 107.1614 mm): Pad 2 [N$25] of R17 on Top Layer
+    @(53.1391 mm, 81.3477 mm): Pad 1 [N$25] of Q3 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(91.4816 mm, 51.9204 mm): Pad 2 [N$30] of R19 on Top Layer
+    @(88.5285 mm, 52.3421 mm): Pad 1 [N$30] of R20 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(88.5285 mm, 52.3421 mm): Pad 1 [N$30] of R20 on Top Layer
+    @(90.5441 mm, 56.1390 mm): Pad 1 [N$30] of Q4 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(84.7316 mm, 61.6192 mm): Pad 2 [N$33] of R21 on Top Layer
+    @(84.8522 mm, 52.9064 mm): Pad 1 [N$33] of Q5 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(83.9022 mm, 54.7814 mm): Pad 3 [N$31] of Q5 on Top Layer
+    @(89.5485 mm, 52.3421 mm): Pad 2 [N$31] of R20 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(129.0766 mm, 60.2633 mm): Pad 1 [N$37] of Q6 on Top Layer
+    @(127.3910 mm, 57.2757 mm): Pad 2 [N$37] of R26 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(127.3910 mm, 57.2757 mm): Pad 2 [N$37] of R26 on Top Layer
+    @(107.6891 mm, 61.6192 mm): Pad 1 [N$37] of R27 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(155.0909 mm, 78.4884 mm): Pad 1 [N$43] of Q7 on Top Layer
+    @(155.1847 mm, 80.5951 mm): Pad 1 [N$43] of R29 on Top Layer
+[unconnected_items]: Missing connection between items
+    Local override; error
+    @(155.1847 mm, 80.5951 mm): Pad 1 [N$43] of R29 on Top Layer
+    @(156.0785 mm, 82.5769 mm): Pad 2 [N$43] of R28 on Top Layer
+
+** Found 0 Footprint errors **
+
+** End of Report **
