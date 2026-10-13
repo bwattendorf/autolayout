@@ -76,6 +76,9 @@ pub struct VerifyReport {
   /// an island split off by antipads or tracks (KiCad did, on Freerouting's
   /// m1: 17 unconnected items the verifier missed). Not a finding; a limit.
   pub plane_items_assumed: usize,
+  /// `filled_polygon` islands read from zones in the file; each is its own
+  /// component until a same-net pad, via or track lies on it.
+  pub fill_polygons: usize,
   pub issues: Vec<Issue>,
 }
 
@@ -105,9 +108,15 @@ impl VerifyReport {
       self.track_width,
       self.via_size
     );
+    if self.fill_polygons > 0 {
+      s += &format!(
+        "\n  zone fills read: {} polygons (each island is a component of its net)",
+        self.fill_polygons
+      );
+    }
     if self.plane_items_assumed > 0 {
       s += &format!(
-        "\n  LIMIT: {} pads/vias on plane nets were assumed connected to their plane; zone fills are not read, so islands in a plane are NOT checked (unconnected 0 does not cover them)",
+        "\n  LIMIT: {} pads/vias on plane nets were assumed connected to their plane because this file holds no zone fill for that layer and net (a stripped board); islands in a plane are NOT checked (unconnected 0 does not cover them)",
         self.plane_items_assumed
       );
     }
@@ -333,7 +342,36 @@ pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(Str
     v
   };
 
-  let mut uf = Uf((0..items.len() + planes.len()).collect());
+  // Zone fills: every `filled_polygon` of a net zone is one island of copper.
+  let mut fills: Vec<(u32, usize, Vec<Point>)> = Vec::new();
+  for z in root.children("zone") {
+    if z.child("keepout").is_some() {
+      continue;
+    }
+    let net = z.child("net").and_then(|n| n.number(1)).map_or(0, |n| n as u32);
+    if net == 0 {
+      continue;
+    }
+    for f in z.children("filled_polygon") {
+      let Some(li) = f
+        .child("layer")
+        .and_then(|l| l.atom(1))
+        .and_then(|l| cu.iter().position(|c| *c == *l))
+      else {
+        continue;
+      };
+      let pts: Vec<Point> = f
+        .child("pts")
+        .map(|p| p.children("xy").filter_map(|l| xy(Some(l))).collect())
+        .unwrap_or_default();
+      if pts.len() >= 3 {
+        fills.push((net, li, pts));
+      }
+    }
+  }
+  rep.fill_polygons = fills.len();
+  let fill_base = items.len() + planes.len();
+  let mut uf = Uf((0..fill_base + fills.len()).collect());
   let mut end_joined: Vec<(bool, bool)> = vec![(false, false); items.len()];
   let share = |a: &Item, b: &Item| a.layers.iter().any(|l| b.layers.contains(l));
   let mut issues: Vec<Issue> = Vec::new();
@@ -455,12 +493,77 @@ pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(Str
     }
   }
 
-  // Plane nodes: a via of the net, or a pad with copper on the plane layer.
+  // Fill islands: a same-net pad, via or track lying on an island joins it; a
+  // track end inside one is not dangling. Sample points stand in for the exact
+  // overlap: a pad's centre, corners and edge midpoints, a via's centre and a
+  // ring inside its disc, a track every 0.05 mm along its centre line.
+  for (k, (net, li, poly)) in fills.iter().enumerate() {
+    let node = fill_base + k;
+    for (i, it) in items.iter().enumerate() {
+      if it.net != *net || !it.layers.contains(li) {
+        continue;
+      }
+      let hit = |pt: Point| crate::shape::polygon_contains(poly, pt);
+      let touches = match &it.shape {
+        Shape::RoundRect(c, h, _, a) => {
+          let mut pts = vec![*c];
+          for (sx, sy) in [
+            (-0.9, -0.9),
+            (0.9, -0.9),
+            (-0.9, 0.9),
+            (0.9, 0.9),
+            (0.0, -0.9),
+            (0.0, 0.9),
+            (-0.9, 0.0),
+            (0.9, 0.0),
+          ] {
+            pts.push(*c + Point::new(h.x * sx, h.y * sy).rotated(*a));
+          }
+          pts.iter().any(|p| hit(*p))
+        }
+        Shape::Capsule(p, q, r) => {
+          let len = (*q - *p).length();
+          let n = ((len / 0.05).ceil() as usize).clamp(1, 400);
+          let along = (0..=n).any(|t| {
+            let f = t as f64 / n as f64;
+            hit(Point::new(p.x + (q.x - p.x) * f, p.y + (q.y - p.y) * f))
+          });
+          along
+            || (it.kind == Kind::Via
+              && [(0.7, 0.0), (-0.7, 0.0), (0.0, 0.7), (0.0, -0.7)]
+                .iter()
+                .any(|(dx, dy)| hit(Point::new(p.x + r * dx, p.y + r * dy))))
+        }
+        Shape::Polygon(_) => false,
+      };
+      if touches {
+        uf.union(i, node);
+      }
+      if it.kind == Kind::Track
+        && let (Some((p, q)), Some(ej)) = (it.ends, end_joined.get_mut(i))
+      {
+        if hit(p) {
+          ej.0 = true;
+        }
+        if hit(q) {
+          ej.1 = true;
+        }
+      }
+    }
+  }
+
+  let mut assumed_planes: Vec<usize> = Vec::new();
+  // Plane nodes, only where the file holds no fill for that layer and net: a
+  // via of the net, or a pad with copper on the plane layer, is ASSUMED joined.
   for (k, (layer, net)) in planes.iter().enumerate() {
     let node = items.len() + k;
     let Some(li) = cu.iter().position(|l| l == layer) else {
       continue;
     };
+    if fills.iter().any(|(n, l, _)| n == net && *l == li) {
+      continue;
+    }
+    assumed_planes.push(k);
     for (i, it) in items.iter().enumerate() {
       if it.net == *net && ((it.kind == Kind::Via) || (it.kind == Kind::Pad && it.layers.contains(&li))) {
         uf.union(i, node);
@@ -548,7 +651,12 @@ pub fn verify(doc: &Document, board: &Board, rules: &DesignRules, planes: &[(Str
       per_net.entry(it.net).or_default().push(root);
     }
   }
-  for (k, (_, net)) in planes.iter().enumerate() {
+  for (k, (net, _, _)) in fills.iter().enumerate() {
+    let root = uf.find(fill_base + k);
+    per_net.entry(*net).or_default().push(root);
+  }
+  for &k in &assumed_planes {
+    let Some((_, net)) = planes.get(k) else { continue };
     if per_net.contains_key(net) {
       let root = uf.find(items.len() + k);
       per_net.entry(*net).or_default().push(root);
@@ -732,5 +840,77 @@ mod tests {
     assert_eq!(rep.plane_items_assumed, 2, "both net-A pads sit on F.Cu");
     assert!(rep.summary().contains("LIMIT"));
     assert!(!run("").summary().contains("LIMIT"));
+  }
+
+  fn fill(net: u32, layer: &str, x0: f64, y0: f64, x1: f64, y1: f64) -> String {
+    format!(
+      "(zone (net {net}) (net_name \"n\") (layer \"{layer}\") (filled_polygon (layer \"{layer}\") (pts (xy {x0} {y0}) (xy {x1} {y0}) (xy {x1} {y1}) (xy {x0} {y1}))))"
+    )
+  }
+
+  fn run_planes(copper: &str, planes: &[(String, u32)]) -> VerifyReport {
+    let doc = parse(&board(copper)).unwrap();
+    let b = Board::read(&doc).unwrap();
+    let mut r = DesignRules::explicit(0.1, 0.1, 0.4, 0.2).unwrap();
+    r.min.copper_edge_clearance = 0.3;
+    verify(&doc, &b, &r, planes)
+  }
+
+  /// KiCad's findings on Freerouting's m1 were separate fill polygons of one
+  /// net with nothing joining them. One fill under both pads joins them.
+  #[test]
+  fn one_fill_under_both_pads_joins_them() {
+    let r = run(&fill(1, "F.Cu", 2.0, 3.0, 17.0, 7.0));
+    assert_eq!(r.unconnected, 0, "{r:?}");
+    assert_eq!(r.fill_polygons, 1);
+  }
+
+  #[test]
+  fn two_separate_fills_leave_the_net_split() {
+    let z = format!(
+      "{} {}",
+      fill(1, "F.Cu", 2.0, 3.0, 8.0, 7.0),
+      fill(1, "F.Cu", 12.0, 3.0, 18.0, 7.0)
+    );
+    let r = run(&z);
+    assert_eq!(r.unconnected, 1, "{r:?}");
+  }
+
+  #[test]
+  fn a_fill_island_touching_nothing_is_unconnected() {
+    let z = format!(
+      "{} {}",
+      fill(1, "F.Cu", 2.0, 3.0, 17.0, 7.0),
+      fill(1, "F.Cu", 9.0, 1.0, 10.0, 2.0)
+    );
+    let r = run(&z);
+    assert_eq!(r.unconnected, 1, "{r:?}");
+    // A track that ties the island to the main fill repairs it.
+    let both = format!("{z} (segment (start 9.5 1.5) (end 9.5 4.0) (width 0.1) (layer \"F.Cu\") (net 1))");
+    assert_eq!(run(&both).unconnected, 0);
+  }
+
+  #[test]
+  fn a_fill_of_another_net_or_layer_joins_nothing() {
+    // Net A's pads stay apart (1), and the stray fill is itself a component
+    // of its own net (B's pad + the fill island: 1 more), or of net A on the
+    // wrong layer (3 components: 2 more).
+    let other_net = run(&fill(2, "F.Cu", 2.0, 3.0, 17.0, 7.0));
+    assert_eq!(other_net.unconnected, 2, "{other_net:?}");
+    let other_layer = run(&fill(1, "B.Cu", 2.0, 3.0, 17.0, 7.0));
+    assert_eq!(other_layer.unconnected, 2, "{other_layer:?}");
+  }
+
+  #[test]
+  fn a_declared_plane_with_a_fill_is_read_not_assumed() {
+    let with_fill = run_planes(&fill(1, "F.Cu", 2.0, 3.0, 8.0, 7.0), &[("F.Cu".to_string(), 1)]);
+    assert_eq!(with_fill.plane_items_assumed, 0);
+    assert_eq!(
+      with_fill.unconnected, 1,
+      "pad 2 is outside the fill: {with_fill:?}"
+    );
+    let without = run_planes("", &[("F.Cu".to_string(), 1)]);
+    assert_eq!(without.plane_items_assumed, 2);
+    assert_eq!(without.unconnected, 0);
   }
 }

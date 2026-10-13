@@ -227,3 +227,49 @@ the directory is gone, rerun round 2 steps 2 and 4 first):
 command and its exact output (the probe output is small; do not trim it),
 the 17 entries, and anything that failed. Commit and `git push origin
 m7-router`. Reply with the file name and the hash.
+
+
+---
+
+# Round 4 (2026-10-13): does the fill-reading verifier now see what KiCad saw?
+
+Why: `autolayout verify` now reads zone `filled_polygon` islands (commit after
+813530a). On Freerouting's round-2 board KiCad found 17 unconnected items and
+the old verifier 0. This round only runs the verifier on the two existing
+boards: no routing, no code change.
+
+## Prompt to paste
+
+> Follow "Round 4" in docs/windows-handoff.md. Change no code and no boards.
+> Report KiCad's counts and the verifier's counts side by side, and every
+> difference, without reconciling them. No PR.
+
+## Steps
+
+`git fetch origin && git checkout m7-router && git pull`; record the hash;
+`cargo build --release`. Use the round-2 boards under `out/m7r2/` (each needs
+its `.kicad_pro` beside it, as in round 2).
+
+1. Ours:
+   `./target/release/autolayout verify out/m7r2/ours_check.kicad_pcb --plane In1.Cu=GND --plane In2.Cu=+3V3`
+   Expected from KiCad: unconnected 0. Note whether a `LIMIT:` line appears
+   (it should not: the fills are in the file) and the "zone fills read" line.
+2. Freerouting:
+   `./target/release/autolayout verify out/m7r2/fr/m1_fab_routed.kicad_pcb --plane In1.Cu=GND --plane F.Cu=GND --plane B.Cu=GND --plane In2.Cu=+3V3 > out/m7r2/verify_fr_round4.txt`
+   KiCad's round-2 numbers: unconnected 17 (14 GND: 13 zone-vs-zone + the pad
+   pair C2.2/U1.47; 3 +3V3 track pairs), clearance 2, shorting 2, track_width
+   45. Paste the verifier's full output.
+3. Per net, say whether the verifier's unconnected issues land on the same
+   places KiCad's do: GND fragments around (50.425, 50.425), the pad pair at
+   (101.7206, 93.8032)/(101.1, 94.85), and the three +3V3 pairs at
+   (95.4582, 95.2794), (102.6653, 97.9853), (100.3, 95.1956). The verifier
+   prints one location per extra component, which may be a different item of
+   the same component; compare counts per net first.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-verify-fills.md`: hash, KiCad version, the two
+commands and their exit codes, the full verifier output for both boards, a
+table of verifier vs KiCad per category and per net (GND, +3V3), and every
+difference. Commit and `git push origin m7-router`. Reply with the table and
+the hash.

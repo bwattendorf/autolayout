@@ -45,7 +45,7 @@ impl Shape {
             d = d.min(seg_dist(p, a, b));
           }
         }
-        if inside(pts, p) { -d } else { d }
+        if polygon_contains(pts, p) { -d } else { d }
       }
     }
   }
@@ -84,7 +84,9 @@ pub fn seg_dist(p: Point, a: Point, b: Point) -> f64 {
   (p - Point::new(a.x + ab.x * t, a.y + ab.y * t)).length()
 }
 
-fn inside(pts: &[Point], p: Point) -> bool {
+/// Even-odd point-in-polygon. KiCad writes a zone fill with holes as one ring
+/// that visits each hole through a zero-width slit, which this handles.
+pub fn polygon_contains(pts: &[Point], p: Point) -> bool {
   let mut c = false;
   let mut j = pts.len().saturating_sub(1);
   for i in 0..pts.len() {
@@ -196,5 +198,29 @@ mod tests {
     ]);
     assert!((p.sdf(Point::new(1.0, 1.0)) + 1.0).abs() < 1e-12);
     assert!((p.sdf(Point::new(3.0, 1.0)) - 1.0).abs() < 1e-12);
+  }
+
+  /// KiCad writes a hole in a zone fill as a slit in one ring (m1 round-3 data).
+  #[test]
+  fn a_ring_with_a_slit_hole_excludes_the_hole() {
+    let p = |x: f64, y: f64| Point::new(x, y);
+    let ring = vec![
+      p(0.0, 0.0),
+      p(10.0, 0.0),
+      p(10.0, 10.0),
+      p(0.0, 10.0),
+      p(0.0, 5.0),
+      p(4.0, 5.0),
+      p(4.0, 6.0),
+      p(6.0, 6.0),
+      p(6.0, 4.0),
+      p(4.0, 4.0),
+      p(4.0, 5.0),
+      p(0.0, 5.0),
+    ];
+    assert!(polygon_contains(&ring, p(8.0, 8.0)));
+    assert!(polygon_contains(&ring, p(2.0, 2.0)));
+    assert!(!polygon_contains(&ring, p(5.0, 5.0)), "inside the hole");
+    assert!(!polygon_contains(&ring, p(12.0, 5.0)));
   }
 }
