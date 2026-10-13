@@ -19,6 +19,8 @@
 //!   for rectangular outlines only.
 //! - Wirelength is measured pad to pad in a straight line; no routing.
 
+pub mod escape;
+
 use std::collections::HashMap;
 
 use autolayout_board::{BBox, Board, Footprint, Point, Seg, outlines_overlap};

@@ -173,6 +173,29 @@
   with sides now identical, the difference is where parts sit. Next levers:
   field parts to their own terminals (the service spreads to the edges and
   beside the connectors; ours still gathers toward the MCU), and rotation.
+- 2026-10-13 — **Diagnosis of the routability gap (m1), first round.**
+  Facts established:
+  - *The comparison was fair:* both DSNs carry identical rules (0.2 mm
+    track, 0.2 mm clearance, 0.6/0.3 mm via), and every placement started
+    fan-out from the identical state (338 of 452 SMD pins needing fan-out,
+    96 already connected through the pours).
+  - *Where the router failed* (KiCad DRC on the two 10-pass routes): the MCU
+    U1 dominates both, ~56 of ours and ~48 of the service's 65 unconnected
+    endpoints. U1 is locked identically on both; on those runs its 13 bypass
+    caps sat on the back beneath it — the ring Portcullis measured costing
+    escape. Portcullis turned that off today (owner's decision), so this
+    share is addressed outside the placer.
+  - *Our placer's own deficit:* outside U1, ~60 more unconnected than the
+    service's, mostly plane-net pins (GND 38, +3V3 29 vs 14 and 7) — pins
+    needing only a stub and a via.
+  - *Rejected hypotheses:* local via space per pad (99.8–100 % on every
+    board) and via-to-via competition (`autolayout escape`; ranks the two
+    routed boards right, the three halo boards wrong). Recorded as NOT
+    VALIDATED in `grade/src/escape.rs`.
+  Open: the mechanism behind the plane-pin failures is not yet known.
+- 2026-10-13 — **Decoupling record** (`place --pairs`): with the cap→pin
+  record, 17 of 22 m1 caps within 3 mm of their pin, all on the front
+  (without it 2 of 22; back-side ring 13 of 22). Escape unchanged (60.4 %).
 - 2026-10-12 — record fix: the M0.1 ROADMAP/gaps updates were made with a
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss

@@ -258,6 +258,30 @@ fn strip(pcb: &str, out: &str) -> Result<bool, String> {
   Ok(true)
 }
 
+/// Which SMD pads have no via site within reach (see grade::escape).
+fn escape(files: &[String]) -> Result<bool, String> {
+  for file in files {
+    let (_, doc) = load(file)?;
+    let board = Board::read(&doc).map_err(|e| format!("{file}: {e}"))?;
+    let e = autolayout_grade::escape::escape(&board, autolayout_grade::escape::DEFAULT_RULES);
+    let pct = if e.smd_pads == 0 {
+      0.0
+    } else {
+      100.0 * (e.smd_pads - e.blocked) as f64 / e.smd_pads as f64
+    };
+    println!("{file}");
+    println!(
+      "  SMD pads with a via site: {}/{} ({pct:.1}%)",
+      e.smd_pads - e.blocked,
+      e.smd_pads
+    );
+    for (r, b, t) in e.by_part.iter().take(25) {
+      println!("    {r:6} {b:3} of {t:3} blocked");
+    }
+  }
+  Ok(true)
+}
+
 /// Placement metrics for each file, read back off disk.
 fn grade(files: &[String]) -> Result<bool, String> {
   for file in files {
@@ -325,6 +349,7 @@ fn main() -> ExitCode {
       place(pcb, net, out, true, Some(pairs))
     }
     Some((cmd, [pcb, out])) if cmd == "strip" => strip(pcb, out),
+    Some((cmd, files)) if cmd == "escape" && !files.is_empty() => escape(files),
     Some((cmd, [input, output, refs @ ..])) if cmd == "flip" && !refs.is_empty() => {
       flip_parts(input, output, refs)
     }
