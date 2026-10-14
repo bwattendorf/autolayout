@@ -860,3 +860,55 @@ B2. Variance. Run the same batch a second time on the same commit; report any
     deterministic, so any difference is a tooling or KiCad problem) and the
     summed `route_s` of both.
 B3. Timing. For the five slowest boards, report `route_s` three times each.
+
+---
+
+# Round 15: reconcile the placement table, run c2 Freerouting once, close Round 14
+
+Decisions made for you (do not reopen them): (1) J90 narrowing is dropped. The
+assertion is a warning, the DSN is written, and Round 14 spent ~60 dialogs on
+it. Do not run any more bisect exports. (2) The c2 Freerouting run is on: start
+it FIRST, in the background, and accept the assertion dialogs of that one
+export (4 of them). (3) Round 14's step 3 table is NOT comparable with
+Rounds 12-13 and has to be redone: for c4 the service row says 119/190 nets and
+85 KiCad unconnected, while Round 13 has the same board at 189/190 nets and 2
+unconnected, and Round 12's m7_place_compare gave 2. A rules mismatch is the
+likely cause (a wrong or default `.kicad_project`/`--pro` for the stripped
+returned board).
+
+## Prompt to paste
+
+> Follow "Round 15" in docs/windows-handoff.md exactly. You are in charge of
+> this round: docs/windows-agent.md, section "You are in charge of this round".
+
+## Steps
+
+`git fetch origin && git checkout m7-router && git pull`; record the hash;
+`cargo build --release`.
+
+1. Start c2 Freerouting in the background now:
+   `"$KPY" tools/m7_batch.py out/m7r15_c2 --boards "quilter/returned/c2/**/*.kicad_pcb" --freerouting --fr-timeout 14400 --fr-passes 5`
+   Redirect output to a file; check on it at the end, not repeatedly.
+2. Redo the placement table for c4, emu and g2 with the RIGHT rules. For each
+   board find the `.kicad_pro` that sits beside the returned board you compare
+   against (not the one beside the freeplace board, not a copy from another
+   SKU) and pass it as `--pro`. First check the service row: it must match
+   Round 13's numbers for that board (nets complete and KiCad unconnected from
+   `docs/m7-results/2026-10-14-round13/results.csv`). If it does not, say what
+   differs (rules file, plane nets, layer count) and fix the command until it
+   does, then run ours default and ours nohalo with the same `--pro`. Give the
+   table with footprints, off-board, nets complete, KiCad unconnected, KiCad
+   clearance, track mm, vias.
+3. c4 footprints: ours has D29, D34, D35, D36, D38, D39, D40, D41 and the
+   service board does not. Look each up in c4's netlist and BOM/schematic
+   (populate flags, DNP, `exclude_from_board`) and say whether they are real
+   parts the service dropped or parts that should not be on the board.
+4. When the c2 job finishes, report Freerouting's KiCad unconnected on c2
+   beside ours (0), seconds, and whether it timed out.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-round15.md`: hash, commands and exit codes, the
+step 2 service-row reconciliation, the table, step 3 answer, step 4 result
+(or "still running at <time>, output in <path>" if you must write before it
+ends, then append when it does). Commit; `git push origin m7-router`.

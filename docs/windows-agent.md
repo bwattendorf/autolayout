@@ -45,6 +45,27 @@ the decision as the user's". The same applies here:
 - One round, one commit of logs; message `M7.5: round N record`.
 - A number in a log names the board, the command, and whether it was measured.
 
+## You are in charge of this round
+
+The cloud session writes the round, but once you are running it the decisions
+are yours. Specifically:
+
+- Do not hand a decision back that you can make. "I would rather fix X first"
+  or "I am deliberately not doing Y" is a decision the round already made if
+  the round lists Y. Do Y. If Y has a side effect (a KiCad assertion dialog,
+  a long run), run it ONCE, say so in one line first, and carry on; do not run
+  it in a loop.
+- Every step in a round gets one of three outcomes in the log: done, done
+  partly (say which half is missing), or blocked (say by what exact error).
+  "Skipped" and "not run" are not outcomes unless the round says to skip.
+- When a step shows the plan was wrong (a premise of the round is false, two
+  tables disagree), say so at the top of the log, work out the corrected
+  command yourself, and run that. Do not stop at the discrepancy.
+- Start long jobs (Freerouting, full batches) in the background first, then do
+  the short steps while they run.
+- A step that finds an unrouted pin or a router weakness is a finding for the
+  cloud session, not a reason to stop: log it and go on to the next step.
+
 ## When to restart
 
 A long chat costs more on every turn, and all state is in the repo, so a fresh
