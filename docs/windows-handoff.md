@@ -981,3 +981,60 @@ may have netlists; one result per board is not a placer yet.
 ## Log
 
 `docs/m7-results/YYYY-MM-DD-round17.md`; commit; `git push origin m7-router`.
+
+---
+
+# Round 18: why our footprint counts exceed the service's
+
+Why: Rounds 15 and 17 compared our placed boards with the service's returns on
+15 boards. Ours has MORE footprints on seven of them (m2 +12, c2 +4, c2g +4,
+e2 +4, c1 +2, e1 +2, c4 +8), so on those the service routed a smaller board.
+c4's 8 extra are real parts (D29, D34-D36 BAT54S, D38 SS34, D39-D41 LEDs) that
+the netlist and the freeplace board have and the return lacks. We need to know,
+per board, whether the extras are real parts the service dropped, parts that
+should not be on the board, or a stale return (CLAUDE.md says the r and m2
+returns are stale: missing R28/R29 and R94-R97). Cloud-side nothing can be read
+without the netlists and boards, so this is all Windows work. No autolayout code
+change.
+
+## Prompt to paste
+
+> Follow "Round 18" in docs/windows-handoff.md exactly. You are in charge of
+> this round (docs/windows-agent.md). Do it after Round 16 is logged; run the
+> steps in the background where they are long.
+
+## Steps
+
+`git pull`; record the hash; `export AUTOLAYOUT_CORPUS=C:/Portcullis/controller/boards`.
+
+1. For each of c1, c2, c2g, c4, e1, e2, m2 (and r, as a check: its counts are
+   equal), take three footprint reference sets: from the netlist (`.net`), from
+   the freeplace board, and from the returned board you compared against in
+   Round 17 (the newest `3p5mil-candidate*`). Compare references, not counts.
+   Write a script under `tools/footprint_diff.py` if it is more than a few
+   lines, so the cloud session can reuse it (it reads files only; no
+   board is written).
+2. For every board give three lists: in netlist and freeplace but not the
+   returned board (the service dropped them); in the returned board but not
+   the netlist (extra); in the freeplace board but not the netlist.
+3. For each dropped reference, say what it is (value, footprint) and classify
+   it: connector or mechanical, passive, diode/LED/IC, test point, DNP or
+   excluded from the board in the schematic (`dnp yes`,
+   `exclude_from_board yes`). Count by class per board.
+4. Are the dropped parts the same on every board that dropped any? Check the
+   dates of the returned boards against the freeplace boards (as Round 15 did
+   for c4): say for each board whether the returned file is older than the
+   freeplace file, which would make the return stale rather than the service
+   dropping parts.
+5. For m2 specifically (+12): list all 12.
+6. The two off-board 10 uF caps in our placement: c2 C29 and io C25. Where are
+   they in the freeplace board, in our placed board and in the returned board,
+   and what are their nets? Say whether the service has them on the board and
+   where.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-round18.md`: hash, commands and exit codes, the
+per-board lists and the classification table, the staleness answer for each
+board, the m2 list, the cap answer. Commit (including `tools/footprint_diff.py`
+if written); `git push origin m7-router`.
