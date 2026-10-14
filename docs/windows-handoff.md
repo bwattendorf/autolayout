@@ -912,3 +912,72 @@ returned board).
 step 2 service-row reconciliation, the table, step 3 answer, step 4 result
 (or "still running at <time>, output in <path>" if you must write before it
 ends, then append when it does). Commit; `git push origin m7-router`.
+
+---
+
+# Round 16: is the m1 MCU-pin ceiling the placement or our router?
+
+Why: the weak m1 returns (candidate6 20, doublesided-candidate4 15,
+locked-candidate5 29 KiCad unconnected) are mostly unrouted MCU (U1) pins. If
+Freerouting also leaves U1 pins unrouted on the same boards, the ceiling is the
+placement, and no router change will move it. If Freerouting escapes them, our
+router is leaving routes on the table. This decides what the cloud session
+works on next.
+
+## Prompt to paste
+
+> Follow "Round 16" in docs/windows-handoff.md exactly. You are in charge of
+> this round (docs/windows-agent.md). Start the Freerouting jobs in the
+> background first.
+
+## Steps
+
+`git pull`; record the hash; `export AUTOLAYOUT_CORPUS=C:/Portcullis/controller/boards`.
+
+1. Background jobs, one batch each, 10 passes, 14400 s limit, output to files:
+   `"$KPY" tools/m7_batch.py out/m7r16_<name> --boards "quilter/returned/m1/<dir>/*.kicad_pcb" --freerouting --fr-timeout 14400 --fr-passes 10`
+   for `<dir>` = `candidate6`, `locked-candidate5`, `doublesided-candidate4`.
+2. For each board, when it finishes: Freerouting's KiCad unconnected, seconds,
+   timed out or not, beside our router's KiCad unconnected from Round 13
+   (20, 29, 15). Then LIST the pads still unconnected in KiCad's report for
+   both routers (reference.pin and net) and say how many are U1 pins in each.
+3. Say in one line per board which it is: both leave U1 pins unrouted (placement
+   ceiling), only ours does (router gap), or neither.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-round16.md`; append each board as it ends. Commit;
+`git push origin m7-router`.
+
+---
+
+# Round 17: placement by routability on every board that has a netlist
+
+Why: m1, c4, emu and g2 are at parity (Rounds 12 and 15). Thirteen more boards
+may have netlists; one result per board is not a placer yet.
+
+## Prompt to paste
+
+> Follow "Round 17" in docs/windows-handoff.md exactly. You are in charge of
+> this round (docs/windows-agent.md).
+
+## Steps
+
+1. List every SKU with all three of: a freeplace board, a netlist, and a
+   returned board (use the newest `3p5mil-candidate*` return when there are
+   several). Skip c4, emu, g2 and m1 (done). Write the list to the log.
+2. For each, `python tools/m7_place_compare.py FREEPLACE NETLIST RETURNED out/m7r17_<sku> --pro <.kicad_pro beside the RETURNED board> --plane In1.Cu=GND --plane In2.Cu=+3V3 --judge GND +3V3`
+   (default halo only; `--variant nohalo=--no-halo` is not needed). Before
+   trusting a board, check its service row against Round 13's `results.csv`
+   (nets complete and KiCad unconnected); if it differs, fix the command (rules
+   file, plane nets) until it matches, or log the board as blocked with the
+   exact difference.
+3. One table: sku, footprints ours/service, off-board ours, nets complete
+   ours/service, KiCad unconnected ours/service, KiCad clearance ours/service,
+   track mm ours/service. Then one line: how many boards are within 2
+   unconnected of the service, and the worst three.
+4. For every board where ours leaves parts off the board, list the references.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-round17.md`; commit; `git push origin m7-router`.
