@@ -1,0 +1,18 @@
+counts netlist/freeplace/returned: 253 247 243
+dropped (5):
+  D21	IOX_ALARM	LED_SMD:LED_0603_1608Metric
+  D26	SS34	Diode_SMD:D_SMA
+  D27	IOX_HB	LED_SMD:LED_0603_1608Metric
+  D28	CLOCK	LED_SMD:LED_0603_1608Metric
+  D29	BOOT	LED_SMD:LED_0603_1608Metric
+extra (1):
+  D25	BOOT	LED_SMD:LED_0603_1608Metric
+fp_only (0):
+net_only (6):
+  R67	30k	Resistor_SMD:R_0402_1005Metric
+  R68	5.1k	Resistor_SMD:R_0402_1005Metric
+  R69	5.1k	Resistor_SMD:R_0402_1005Metric
+  R70	680R	Resistor_SMD:R_0402_1005Metric
+  R71	680R	Resistor_SMD:R_0402_1005Metric
+  R72	680R	Resistor_SMD:R_0402_1005Metric
+mtime freeplace Tue Sep  1 09:21:30 2026 | returned Mon Aug 31 16:00:53 2026 | returned_older_than_freeplace True

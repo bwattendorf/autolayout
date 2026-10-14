@@ -1,0 +1,16 @@
+counts netlist/freeplace/returned: 152 154 154
+dropped (0):
+extra (4):
+  H1	M3	MountingHole:MountingHole_3.2mm_Pad
+  H2	M3	MountingHole:MountingHole_3.2mm_Pad
+  H3	M3	MountingHole:MountingHole_3.2mm_Pad
+  H4	M3	MountingHole:MountingHole_3.2mm_Pad
+fp_only (4):
+  H1	M3	MountingHole:MountingHole_3.2mm_Pad
+  H2	M3	MountingHole:MountingHole_3.2mm_Pad
+  H3	M3	MountingHole:MountingHole_3.2mm_Pad
+  H4	M3	MountingHole:MountingHole_3.2mm_Pad
+net_only (2):
+  R28	5.1k	Resistor_SMD:R_0402_1005Metric
+  R29	5.1k	Resistor_SMD:R_0402_1005Metric
+mtime freeplace Tue Sep  1 10:14:59 2026 | returned Mon Aug 31 16:03:49 2026 | returned_older_than_freeplace True

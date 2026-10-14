@@ -1,0 +1,22 @@
+counts netlist/freeplace/returned: 308 304 292
+dropped (12):
+  D49	SMBJ28CA	Diode_SMD:D_SMB
+  D51	DOOR0	LED_SMD:LED_0603_1608Metric
+  D52	DOOR1	LED_SMD:LED_0603_1608Metric
+  D53	ALARM	LED_SMD:LED_0603_1608Metric
+  D54	BUS	LED_SMD:LED_0603_1608Metric
+  D55	FAULT	LED_SMD:LED_0603_1608Metric
+  D56	UPLINK	LED_SMD:LED_0603_1608Metric
+  D57	CLOCK	LED_SMD:LED_0603_1608Metric
+  D58	BOOT	LED_SMD:LED_0603_1608Metric
+  D59	PWR_12V	LED_SMD:LED_0603_1608Metric
+  D60	PWR_3V3	LED_SMD:LED_0603_1608Metric
+  D62	SS34	Diode_SMD:D_SMA
+extra (0):
+fp_only (0):
+net_only (4):
+  R94	5.1k	Resistor_SMD:R_0402_1005Metric
+  R95	5.1k	Resistor_SMD:R_0402_1005Metric
+  R96	5.6k	Resistor_SMD:R_0402_1005Metric
+  R97	10k	Resistor_SMD:R_0402_1005Metric
+mtime freeplace Tue Sep  1 10:14:40 2026 | returned Mon Aug 31 15:54:57 2026 | returned_older_than_freeplace True

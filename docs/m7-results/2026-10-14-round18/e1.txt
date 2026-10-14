@@ -1,0 +1,12 @@
+counts netlist/freeplace/returned: 183 179 177
+dropped (2):
+  D29	PWR_12V	LED_SMD:LED_0603_1608Metric
+  D32	SS34	Diode_SMD:D_SMA
+extra (0):
+fp_only (0):
+net_only (4):
+  R50	5.1k	Resistor_SMD:R_0402_1005Metric
+  R51	2.2k	Resistor_SMD:R_0402_1005Metric
+  R52	5.1k	Resistor_SMD:R_0402_1005Metric
+  R53	5.1k	Resistor_SMD:R_0402_1005Metric
+mtime freeplace Tue Sep  1 10:12:27 2026 | returned Mon Aug 31 09:19:00 2026 | returned_older_than_freeplace True

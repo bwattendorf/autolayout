@@ -1,0 +1,20 @@
+counts netlist/freeplace/returned: 313 307 299
+dropped (8):
+  D29	BAT54S	Package_TO_SOT_SMD:SOT-23
+  D34	BAT54S	Package_TO_SOT_SMD:SOT-23
+  D35	BAT54S	Package_TO_SOT_SMD:SOT-23
+  D36	BAT54S	Package_TO_SOT_SMD:SOT-23
+  D38	SS34	Diode_SMD:D_SMA
+  D39	IOX_HB	LED_SMD:LED_0603_1608Metric
+  D40	CLOCK	LED_SMD:LED_0603_1608Metric
+  D41	BOOT	LED_SMD:LED_0603_1608Metric
+extra (0):
+fp_only (0):
+net_only (6):
+  R89	30k	Resistor_SMD:R_0402_1005Metric
+  R90	5.1k	Resistor_SMD:R_0402_1005Metric
+  R91	5.1k	Resistor_SMD:R_0402_1005Metric
+  R92	680R	Resistor_SMD:R_0402_1005Metric
+  R93	680R	Resistor_SMD:R_0402_1005Metric
+  R94	680R	Resistor_SMD:R_0402_1005Metric
+mtime freeplace Tue Sep  1 10:11:49 2026 | returned Mon Aug 31 16:03:49 2026 | returned_older_than_freeplace True
