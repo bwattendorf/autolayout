@@ -308,10 +308,14 @@ mod negotiation_tests {
     let p = r.classes[0].clone();
     let m = RoutingModel::build(&doc, &b, &r, &p, &[]).unwrap();
     let (n, _) = route_negotiated(&b, &m, Costs::default(), Params::default());
-    // Known limit: the two middle pads of a 0.5 mm-pitch row lose to their
-    // neighbours' stub corridors (2 of 4 complete, measured); the point here
-    // is that what is written is legal.
-    assert!(n.nets_complete >= 2, "{}", n.nets_complete);
+    // Stubs of adjacent 0.5 mm-pitch pads keep a legal distance, so they may
+    // share corridor cells (`Costs::share_stubs`): all four pads escape.
+    assert_eq!(
+      n.nets_complete,
+      4,
+      "{:?}",
+      n.routes.iter().map(|r| &r.failed).collect::<Vec<_>>()
+    );
     let c = judge(FINE, &b, &m, &n.routes);
     assert_eq!(c.unconnected, 4 - n.nets_complete, "{c:?}");
     assert_eq!(

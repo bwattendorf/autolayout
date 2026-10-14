@@ -52,6 +52,9 @@ pub const PENALTY_CAP: u32 = 1_000_000;
 pub const NEAR_REACH_NARROW: f64 = 1.5;
 pub const NEAR_REACH_PITCHES: f64 = 4.5;
 
+/// Hard-mode owner of a cell two isolated stubs share: nobody may route there.
+const SHARED: u32 = u32::MAX - 2;
+
 /// Cost of one grid step in the layer's preferred direction.
 pub const STEP: u32 = 10;
 
@@ -64,6 +67,11 @@ pub struct Costs {
   /// How far, in pitches beyond a pad's half-size, a stub may reach for a
   /// grid cell when none lies inside the pad (see [`NEAR_REACH_PITCHES`]).
   pub reach: f64,
+  /// Let stubs of different nets share corridor cells when they keep a legal
+  /// distance (see [`NetRoute::stub_cells`]). On: adjacent fine-pitch pads
+  /// can all escape. Off: the older, stricter rule, which wins on some boards
+  /// (local 37-board sweep: 163 off, 152 on, 141 best of the two per board).
+  pub share_stubs: bool,
 }
 
 impl Default for Costs {
@@ -73,6 +81,7 @@ impl Default for Costs {
       wrong_way: 25,
       via: 60,
       reach: NEAR_REACH_NARROW,
+      share_stubs: true,
     }
   }
 }
@@ -101,6 +110,12 @@ pub struct NetRoute {
   pub stubs: Vec<Stub>,
   /// Every grid cell (layer, ix, iy) the paths pass through, sorted, no repeats.
   pub cells: Vec<(usize, usize, usize)>,
+  /// Corridor cells of stubs that keep a legal distance from every other
+  /// net's stub. Two such stubs may share a corridor cell (adjacent pads of a
+  /// 0.4 mm-pitch part are 0.4 mm apart, less than two corridors wide), so
+  /// these cells conflict with tracks but not with each other. Disjoint from
+  /// `cells` after [`Router::footprint_s`].
+  pub stub_cells: Vec<(usize, usize, usize)>,
   /// Pads (footprint index, pad index) joined into the net.
   pub connected: Vec<(usize, usize)>,
   /// Pads that could not be reached.
@@ -129,6 +144,8 @@ struct Terminal {
 /// how often each cell has been fought over, and how hard sharing is punished.
 pub struct Soft {
   pub occ: Vec<Vec<u16>>,
+  /// Nets holding the cell only as an isolated stub corridor.
+  pub occ_s: Vec<Vec<u16>>,
   pub hist: Vec<Vec<u32>>,
   pub pres: u32,
 }
@@ -156,6 +173,14 @@ pub struct Router<'a> {
   /// Via sites the current search must avoid (they broke the spacing rule
   /// against another via of the same path).
   banned: std::collections::HashSet<(usize, usize)>,
+  /// Stubs of every net routed so far, to test a new stub's distance to them.
+  stub_reg: std::collections::HashMap<u32, Vec<Stub>>,
+  /// Stubs placed before negotiation began (plane taps): never re-routed, so
+  /// they outlive [`Router::leave_soft`], which drops the negotiated ones.
+  stub_fixed: std::collections::HashMap<u32, Vec<Stub>>,
+  /// Hard mode: cells claimed only by an isolated stub (a track of the owner
+  /// may use them; another net's isolated stub may share them).
+  stub_only: Vec<Vec<bool>>,
 }
 
 impl<'a> Router<'a> {
@@ -187,6 +212,9 @@ impl<'a> Router<'a> {
       hole_block: vec![false; model.nx * model.ny],
       spacing_offsets,
       banned: std::collections::HashSet::new(),
+      stub_reg: std::collections::HashMap::new(),
+      stub_fixed: std::collections::HashMap::new(),
+      stub_only: vec![vec![false; model.nx * model.ny]; model.layers.len()],
       costs,
       usage: vec![vec![FREE; model.nx * model.ny]; model.layers.len()],
       soft: None,
@@ -251,6 +279,69 @@ impl<'a> Router<'a> {
     if let Some(c) = self.usage.get_mut(layer).and_then(|u| u.get_mut(iy * nx + ix)) {
       *c = net + 1;
     }
+    if let Some(m) = self
+      .stub_only
+      .get_mut(layer)
+      .and_then(|u| u.get_mut(iy * nx + ix))
+    {
+      *m = false;
+    }
+  }
+
+  /// Hard mode: claim a cell for an isolated stub. A free cell becomes the
+  /// stub's (and stays usable by its net's tracks); a cell another isolated
+  /// stub already holds becomes SHARED: no track may use it, as one at its
+  /// centre-line would sit too near both stubs.
+  fn claim_stub_cell(&mut self, layer: usize, ix: usize, iy: usize, net: u32) {
+    if self.soft.is_some() {
+      return;
+    }
+    let i = iy * self.model.nx + ix;
+    let owner = self.usage.get(layer).and_then(|u| u.get(i)).copied();
+    let only = self
+      .stub_only
+      .get(layer)
+      .and_then(|u| u.get(i))
+      .copied()
+      .unwrap_or(false);
+    match owner {
+      Some(o) if o == FREE => {
+        if let Some(c) = self.usage.get_mut(layer).and_then(|u| u.get_mut(i)) {
+          *c = net + 1;
+        }
+        if let Some(m) = self.stub_only.get_mut(layer).and_then(|u| u.get_mut(i)) {
+          *m = true;
+        }
+      }
+      Some(o) if o != net + 1 && only && o != SHARED => {
+        if let Some(c) = self.usage.get_mut(layer).and_then(|u| u.get_mut(i)) {
+          *c = SHARED;
+        }
+      }
+      _ => {}
+    }
+  }
+
+  /// Is the segment `a..b` on `layer` at least a pitch from every stub of any
+  /// other net? A pitch is track + clearance + margin: the least that keeps
+  /// two centre-lines legal.
+  fn stub_isolated(&self, layer: usize, a: Point, b: Point, net: u32) -> bool {
+    let need = self.model.pitch - 1e-9;
+    self
+      .stub_reg
+      .iter()
+      .chain(self.stub_fixed.iter())
+      .all(|(&n, stubs)| {
+        n == net
+          || stubs.iter().all(|t| {
+            t.layer != layer
+              || (crate::shape::seg_dist(a, t.from, t.to)
+                .min(crate::shape::seg_dist(b, t.from, t.to))
+                .min(crate::shape::seg_dist(t.from, a, b))
+                .min(crate::shape::seg_dist(t.to, a, b))
+                >= need)
+          })
+      })
   }
 
   fn claim_via(&mut self, ix: usize, iy: usize, net: u32) {
@@ -281,9 +372,11 @@ impl<'a> Router<'a> {
 
   /// Start negotiating. `present` is the first present-sharing penalty.
   pub fn enable_soft(&mut self, present: u32) {
+    self.stub_fixed = self.stub_reg.clone();
     let (n, l) = (self.model.nx * self.model.ny, self.model.layers.len());
     self.soft = Some(Soft {
       occ: vec![vec![0; n]; l],
+      occ_s: vec![vec![0; n]; l],
       hist: vec![vec![0; n]; l],
       pres: present,
     });
@@ -296,6 +389,7 @@ impl<'a> Router<'a> {
     let i = iy * self.model.nx + ix;
     let h = s.hist.get(layer).and_then(|v| v.get(i)).copied().unwrap_or(0);
     let o = s.occ.get(layer).and_then(|v| v.get(i)).copied().unwrap_or(0);
+    let o = o.saturating_add(s.occ_s.get(layer).and_then(|v| v.get(i)).copied().unwrap_or(0));
     h.saturating_add(s.pres.saturating_mul(u32::from(o)))
   }
 
@@ -311,6 +405,7 @@ impl<'a> Router<'a> {
       let i = y as usize * self.model.nx + x as usize;
       for l in 0..s.occ.len() {
         let o = s.occ.get(l).and_then(|v| v.get(i)).copied().unwrap_or(0);
+        let o = o.saturating_add(s.occ_s.get(l).and_then(|v| v.get(i)).copied().unwrap_or(0));
         let hist = s.hist.get(l).and_then(|v| v.get(i)).copied().unwrap_or(0) / 4;
         sum = sum
           .saturating_add(s.pres.saturating_mul(u32::from(o)))
@@ -344,6 +439,35 @@ impl<'a> Router<'a> {
     v
   }
 
+  /// Cells the net holds only as an isolated stub corridor: not among its
+  /// track cells ([`Router::footprint`]). Sorted, no repeats.
+  pub fn footprint_s(&self, r: &NetRoute) -> Vec<(usize, usize)> {
+    let t: std::collections::HashSet<(usize, usize)> = self.footprint(r).into_iter().collect();
+    let mut v: Vec<(usize, usize)> = r
+      .stub_cells
+      .iter()
+      .map(|&(l, x, y)| (l, y * self.model.nx + x))
+      .filter(|c| !t.contains(c))
+      .collect();
+    v.sort_unstable();
+    v.dedup();
+    v
+  }
+
+  /// As [`Router::occupy`], for the stub-only cells.
+  pub fn occupy_s(&mut self, fp: &[(usize, usize)], add: bool) {
+    let Some(s) = &mut self.soft else { return };
+    for &(l, i) in fp {
+      if let Some(c) = s.occ_s.get_mut(l).and_then(|v| v.get_mut(i)) {
+        *c = if add {
+          c.saturating_add(1)
+        } else {
+          c.saturating_sub(1)
+        };
+      }
+    }
+  }
+
   /// Add (`+1`) or remove (`-1`) a net's footprint from the occupancy.
   pub fn occupy(&mut self, fp: &[(usize, usize)], add: bool) {
     let Some(s) = &mut self.soft else { return };
@@ -361,16 +485,25 @@ impl<'a> Router<'a> {
   /// Cells held by more than one net.
   pub fn conflicts(&self) -> usize {
     self.soft.as_ref().map_or(0, |s| {
-      s.occ.iter().map(|v| v.iter().filter(|&&o| o > 1).count()).sum()
+      s.occ
+        .iter()
+        .zip(&s.occ_s)
+        .map(|(v, w)| {
+          v.iter()
+            .zip(w)
+            .filter(|&(&o, &p)| o > 1 || (o >= 1 && p >= 1))
+            .count()
+        })
+        .sum()
     })
   }
 
   /// Raise the history of every contested cell by `inc`.
   pub fn bump_history(&mut self, inc: u32) {
     if let Some(s) = &mut self.soft {
-      for (h, o) in s.hist.iter_mut().zip(&s.occ) {
-        for (h, &o) in h.iter_mut().zip(o) {
-          if o > 1 {
+      for ((h, o), w) in s.hist.iter_mut().zip(&s.occ).zip(&s.occ_s) {
+        for ((h, &o), &p) in h.iter_mut().zip(o).zip(w) {
+          if o > 1 || (o >= 1 && p >= 1) {
             *h = h.saturating_add(inc).min(PENALTY_CAP);
           }
         }
@@ -382,6 +515,7 @@ impl<'a> Router<'a> {
   /// hard obstacles again (used to repair nets dropped at the end).
   pub fn leave_soft(&mut self) {
     self.soft = None;
+    self.stub_reg.clear();
   }
 
   /// Claim a finished route's cells and via halos in `usage` as hard obstacles.
@@ -390,15 +524,26 @@ impl<'a> Router<'a> {
     for &(l, x, y) in &r.cells {
       self.claim_cell(l, x, y, r.net);
     }
+    for &(l, x, y) in &r.stub_cells {
+      self.claim_stub_cell(l, x, y, r.net);
+    }
+    for s in &r.stubs {
+      self.stub_reg.entry(r.net).or_default().push(s.clone());
+    }
     for &(x, y) in &r.vias {
       self.claim_via(x, y, r.net);
     }
   }
 
-  pub fn is_contested(&self, fp: &[(usize, usize)]) -> bool {
+  /// Does a net's footprint (track cells `fp`, stub-only cells `fps`) share a
+  /// cell it may not? Tracks conflict with tracks and with stubs; isolated
+  /// stubs conflict only with tracks.
+  pub fn is_contested(&self, fp: &[(usize, usize)], fps: &[(usize, usize)]) -> bool {
     self.soft.as_ref().is_some_and(|s| {
+      let at = |a: &Vec<Vec<u16>>, l: usize, i: usize| a.get(l).and_then(|v| v.get(i)).copied().unwrap_or(0);
       fp.iter()
-        .any(|&(l, i)| s.occ.get(l).and_then(|v| v.get(i)).is_some_and(|&o| o > 1))
+        .any(|&(l, i)| at(&s.occ, l, i) > 1 || at(&s.occ_s, l, i) >= 1)
+        || fps.iter().any(|&(l, i)| at(&s.occ, l, i) >= 1)
     })
   }
 
@@ -528,22 +673,38 @@ impl<'a> Router<'a> {
   /// `usage` only; while negotiating, conflicts are priced by occupancy).
   fn corridor_free(&self, layer: usize, from: Point, to: Point, net: u32) -> bool {
     let nx = self.model.nx;
+    let iso = self.costs.share_stubs && self.stub_isolated(layer, from, to, net);
     self.corridor(from, to).iter().all(|&(ix, iy)| {
-      self
-        .usage
-        .get(layer)
-        .and_then(|u| u.get(iy * nx + ix))
-        .is_some_and(|&o| o == FREE || o == net + 1)
+      let i = iy * nx + ix;
+      self.usage.get(layer).and_then(|u| u.get(i)).is_some_and(|&o| {
+        o == FREE
+          || o == net + 1
+          || (iso
+            && o != SHARED
+            && self
+              .stub_only
+              .get(layer)
+              .and_then(|u| u.get(i))
+              .copied()
+              .unwrap_or(false))
+      })
     })
   }
 
   /// Make a stub part of the net's footprint: its corridor cells are claimed
   /// (hard) and listed in the route's cells (so occupancy sees them).
   fn adopt_stub(&mut self, stub: Stub, net: u32, out: &mut NetRoute) {
+    let iso = self.costs.share_stubs && self.stub_isolated(stub.layer, stub.from, stub.to, net);
     for (ix, iy) in self.corridor(stub.from, stub.to) {
-      self.claim_cell(stub.layer, ix, iy, net);
-      out.cells.push((stub.layer, ix, iy));
+      if iso {
+        self.claim_stub_cell(stub.layer, ix, iy, net);
+        out.stub_cells.push((stub.layer, ix, iy));
+      } else {
+        self.claim_cell(stub.layer, ix, iy, net);
+        out.cells.push((stub.layer, ix, iy));
+      }
     }
+    self.stub_reg.entry(net).or_default().push(stub.clone());
     out.stubs.push(stub);
   }
 
@@ -598,6 +759,7 @@ impl<'a> Router<'a> {
       net,
       ..NetRoute::default()
     };
+    self.stub_reg.remove(&net);
     let mut terms: Vec<Terminal> = Vec::new();
     for &(fi, pi) in pads {
       match self.terminal(board, fi, pi, net) {
