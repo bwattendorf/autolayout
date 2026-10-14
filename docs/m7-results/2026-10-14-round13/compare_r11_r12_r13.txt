@@ -1,0 +1,51 @@
+== r11: boards 37, ok 37 | zero routing violations 19 | zero unc & zero new 23 | unconnected 186 | new c/s/h [1, 0, 0] | abs c/s/h [122, 5, 4] | nets 4604/4749 | via_dangling [('returned/c4/3p5mil-candidate3/c4.kicad_pcb', '1'), ('returned/r/3p5mil-candidate2/r.kicad_pcb', '1')]
+== r12: boards 37, ok 37 | zero routing violations 19 | zero unc & zero new 23 | unconnected 196 | new c/s/h [1, 0, 0] | abs c/s/h [122, 5, 4] | nets 4636/4749 | via_dangling [('returned/c4/3p5mil-candidate3/c4.kicad_pcb', '1'), ('returned/r/3p5mil-candidate2/r.kicad_pcb', '1')]
+== r13: boards 37, ok 37 | zero routing violations 19 | zero unc & zero new 23 | unconnected 163 | new c/s/h [1, 0, 0] | abs c/s/h [122, 5, 4] | nets 4626/4749 | via_dangling [('returned/c4/3p5mil-candidate3/c4.kicad_pcb', '1'), ('returned/r/3p5mil-candidate2/r.kicad_pcb', '1')]
+
+== changed vs round 11 (KiCad unconnected, new violations, nets complete)
+returned/c4/candidate2/c4.kicad_pcb | unconnected r11 25 | r12 18 | r13 18; nets 163 -> 169 (r12 169) of 185
+returned/emu/candidate2/emu.kicad_pcb | unconnected r11 28 | r12 25 | r13 25; nets 188 -> 191 (r12 191) of 214
+returned/m1/tp18-candidate2/m1.kicad_pcb | unconnected r11 23 | r12 20 | r13 20; nets 86 -> 89 (r12 89) of 99
+returned/m1/tp18-candidate3/m1.kicad_pcb | unconnected r11 22 | r12 15 | r13 15; nets 86 -> 93 (r12 93) of 99
+finish/g2i/g2i.kicad_pcb | unconnected r11 6 | r12 3 | r13 3; nets 26 -> 29 (r12 29) of 32
+worse than round 11: []
+
+== the nine boards that moved in round 12: KiCad unconnected r11 | r12 | r13 ; nets r11 | r12 | r13
+returned/m1/candidate4 unc [12, 14, 12] nets [87, 91, 87] of 99
+returned/m1/candidate6 unc [20, 34, 20] nets [86, 87, 86] of 99
+returned/m1/doublesided-candidate4 unc [15, 26, 15] nets [86, 90, 86] of 99
+returned/m1/locked-candidate5 unc [29, 35, 29] nets [76, 77, 76] of 99
+returned/m1/tp18-candidate2 unc [23, 20, 20] nets [86, 89, 89] of 99
+returned/m1/tp18-candidate3 unc [22, 15, 15] nets [86, 93, 93] of 99
+finish/g2i unc [6, 3, 3] nets [26, 29, 29] of 32
+returned/c4/candidate2 unc [25, 18, 18] nets [163, 169, 169] of 185
+returned/emu/candidate2 unc [28, 25, 25] nets [188, 191, 191] of 214
+
+== verifier vs KiCad (unconnected; new clearance/shorting/h2h) round 13
+boards that differ: 0
+
+== timing: five slowest boards (route_s, our router)
+returned/emu/candidate2/emu.kicad_pcb r13 286.6 s | r12 446.3 s | r11 161.2 s
+returned/c4/candidate2/c4.kicad_pcb r13 238.3 s | r12 352.1 s | r11 149.2 s
+returned/c4/3p5mil-candidate3/c4.kicad_pcb r13 119.9 s | r12 187.4 s | r11 105.7 s
+returned/m1/locked-candidate5/m1.kicad_pcb r13 68.5 s | r12 121.1 s | r11 43.7 s
+returned/emu/cinfront-candidate1/emu.kicad_pcb r13 51.2 s | r12 29.6 s | r11 34.4 s
+slowest five in r12: [('returned/emu/candidate2/emu.kicad_pcb', 446.3, 286.6), ('returned/c4/candidate2/c4.kicad_pcb', 352.1, 238.3), ('returned/c4/3p5mil-candidate3/c4.kicad_pcb', 187.4, 119.9), ('returned/m1/locked-candidate5/m1.kicad_pcb', 121.1, 68.5), ('returned/m1/tp18-candidate2/m1.kicad_pcb', 98.5, 45.2)]
+total route_s: r11 695 r12 1596 r13 1007
+
+== pocket check on fill-stripped copies (verifier unconnected vs KiCad)
+returned/c4/3p5mil-candidate3 removed fills 2 | verify exit 1
+    C:/autolayout/out/m7r13_nofill/quilter__returned__c4__3p5mil-candidate3__c4.kicad_pcb/b_routed_nofill.kicad_pcb: 1516 segments, 829 vias: unconnected 2, track_dangling 0, hole_to_hole 0, clearance 0, shorting 0, copper_edge 0, track_width 0, via_size 0
+      LIMIT: 272 pads/vias on plane nets were assumed connected to their plane because this file holds no zone fill for that layer and net (a stripped board); islands in a plane are NOT checked (unconnected 0 does not cover them)
+      plane pockets (EMULATED raster fill, not KiCad's; a cut-off tap is left out of its plane, so it shows in `unconnected` unless a track takes it elsewhere): 1 tap(s) cut off from the main plane
+      plane_island at (132.0772, 73.0328): net +3V3 via: tap cut off from the main In2.Cu fill (emulated)
+      unconnected at (132.1209, 73.0228): net +3V3 part 2 of 2 (main part has 85 pads): pads [U1.5], 0 tracks, 1 vias
+      unconnected at (130.9210, 73.0228): net N$41 part 2 of 2 (main part has 1 pads): pads [U1.2], 0 tracks, 0 vias
+    KiCad unconnected_after: 2 | verifier (filled, batch): 2
+returned/r/3p5mil-candidate2 removed fills 2 | verify exit 1
+    C:/autolayout/out/m7r13_nofill/quilter__returned__r__3p5mil-candidate2__r.kicad_pcb/b_routed_nofill.kicad_pcb: 792 segments, 455 vias: unconnected 1, track_dangling 0, hole_to_hole 0, clearance 0, shorting 0, copper_edge 0, track_width 0, via_size 0
+      LIMIT: 184 pads/vias on plane nets were assumed connected to their plane because this file holds no zone fill for that layer and net (a stripped board); islands in a plane are NOT checked (unconnected 0 does not cover them)
+      plane pockets (EMULATED raster fill, not KiCad's; a cut-off tap is left out of its plane, so it shows in `unconnected` unless a track takes it elsewhere): 1 tap(s) cut off from the main plane
+      plane_island at (81.2588, 62.6132): net +3V3 via: tap cut off from the main In2.Cu fill (emulated)
+      unconnected at (81.2945, 62.5915): net +3V3 part 2 of 2 (main part has 61 pads): pads [U1.38], 0 tracks, 1 vias
+    KiCad unconnected_after: 1 | verifier (filled, batch): 1
