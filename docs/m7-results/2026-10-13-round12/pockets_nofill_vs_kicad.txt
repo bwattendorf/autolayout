@@ -1,0 +1,48 @@
+fab/emu/emu.kicad_pcb | removed 2 fill polygons; verify exit 1 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+fab/m1/m1.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/c1/3p5mil-candidate3/c1.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/c2/3p5mil-candidate2/c2.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 1 | KiCad plane-net entries 0 | both 0, emulation-only 1, KiCad-only 0 | emulation only
+     emulated: (136.0988, 73.0328) net +3V3 via: tap cut off from the main In2.Cu fill (emulated)
+returned/c2g/3p5mil-candidate1/c2g.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/c4/3p5mil-candidate3/c4.kicad_pcb | removed 2 fill polygons; verify exit 1 | emulated 1 | KiCad plane-net entries 1 | both 1, emulation-only 0, KiCad-only 0 | both agree
+     emulated: (132.0772, 73.0328) net +3V3 via: tap cut off from the main In2.Cu fill (emulated)
+     KiCad via_dangling+unconnected_items: @(132.0772 mm, 73.0328 mm): Via [+3V3] on Top Layer - Bottom Layer | @(129.3709 mm, 70.2728 mm): Pad 76 [+3V3] of U1 on Top Layer
+returned/c4/candidate2/c4.kicad_pcb | removed 2 fill polygons; verify exit 1 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/cm/3p5mil-candidate4/cm.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/e1/3p5mil-candidate1/e1.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/e2/3p5mil-candidate3/e2.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/el/3p5mil-candidate1/el.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 1 | KiCad plane-net entries 0 | both 0, emulation-only 1, KiCad-only 0 | emulation only
+     emulated: (194.4120, 135.3676) net +3V3 via: tap cut off from the main In2.Cu fill (emulated)
+returned/emu/3p5mil-candidate3/emu.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 1 | KiCad plane-net entries 0 | both 0, emulation-only 1, KiCad-only 0 | emulation only
+     emulated: (165.5296, 173.7556) net +3V3 via: tap cut off from the main In2.Cu fill (emulated)
+returned/emu/candidate2/emu.kicad_pcb | removed 2 fill polygons; verify exit 1 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/emu/cinfront-candidate1/emu.kicad_pcb | removed 2 fill polygons; verify exit 1 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/emu/loop-locked-candidate6/emu.kicad_pcb | removed 2 fill polygons; verify exit 1 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/g2/3p5mil-candidate6/g2.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 1 | KiCad plane-net entries 0 | both 0, emulation-only 1, KiCad-only 0 | emulation only
+     emulated: (119.0984, 96.9796) net +3V3 via: tap cut off from the main In2.Cu fill (emulated)
+returned/io/3p5mil-candidate4/io.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/m1-2026-08-06-candidate5/m1.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/m1/3p5mil-candidate1/m1.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/m1/3p5mil-radial-candidate2/m1.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/m1/3p5mil-radialv2-candidate6/m1.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/m1/3p5mil-radialv3-candidate3/m1.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/m1/candidate4/m1.kicad_pcb | removed 2 fill polygons; verify exit 1 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/m1/candidate6/m1.kicad_pcb | removed 2 fill polygons; verify exit 1 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/m1/cinfront-candidate1/m1.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/m1/doublesided-candidate4/m1.kicad_pcb | removed 2 fill polygons; verify exit 1 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/m1/locked-candidate5/m1.kicad_pcb | removed 2 fill polygons; verify exit 1 | emulated 0 | KiCad plane-net entries 1 | both 0, emulation-only 0, KiCad-only 1 | KiCad only
+     KiCad unconnected_items: @(103.8300 mm, 98.3000 mm): Pad 1 [+3V3] of C6 on Bottom Layer | @(102.1500 mm, 98.3000 mm): Pad 38 [+3V3] of U1 on Top Layer
+returned/m1/loop-locked-candidate4/m1.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/m1/tp18-candidate2/m1.kicad_pcb | removed 2 fill polygons; verify exit 1 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/m1/tp18-candidate3/m1.kicad_pcb | removed 2 fill polygons; verify exit 1 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/m1/tvs-seriesR-candidate4/m1.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/m1/tvs-seriesR-candidate5/m1.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/m2/3p5mil-candidate3/m2.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+returned/r/3p5mil-candidate2/r.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 2 | KiCad plane-net entries 1 | both 1, emulation-only 1, KiCad-only 0 | MIXED
+     emulated: (79.0652, 79.4308) net +3V3 via: tap cut off from the main In2.Cu fill (emulated)
+     emulated: (81.2588, 62.6132) net +3V3 via: tap cut off from the main In2.Cu fill (emulated)
+     KiCad via_dangling+unconnected_items: @(81.2588 mm, 62.6132 mm): Via [+3V3] on Top Layer - Bottom Layer | @(78.8945 mm, 62.5915 mm): Pad 44 [+3V3] of U1 on Top Layer
+returned/t/3p5mil-candidate6/t.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+finish/g2i/g2i.kicad_pcb | removed 2 fill polygons; verify exit 1 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+routed/m1/m1.kicad_pcb | removed 2 fill polygons; verify exit 0 | emulated 0 | KiCad plane-net entries 0 | both 0, emulation-only 0, KiCad-only 0 | none either
+TOTAL pockets: both 2, emulation-only 5, KiCad-only 1 (match tolerance 0.5 mm)

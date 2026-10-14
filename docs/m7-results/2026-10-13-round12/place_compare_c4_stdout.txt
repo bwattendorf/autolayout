@@ -1,0 +1,84 @@
+label=ours:default  footprints=307  courtyard_overlaps=17  off_board=2  nets_complete=188  nets_total=190  verifier_unconnected=2  clearance=0  track_mm=10790.3  vias=819
+label=ours:nohalo  footprints=307  courtyard_overlaps=17  off_board=2  nets_complete=187  nets_total=190  verifier_unconnected=3  clearance=0  track_mm=10656.7  vias=820
+label=service  footprints=299  courtyard_overlaps=16  off_board=0  nets_complete=189  nets_total=190  verifier_unconnected=1  clearance=0  track_mm=18201.2  vias=829
+UNVERIFIED: our router and verifier produced these numbers, not KiCad.
+--- KiCad judge: ours_default (exit 0)
+ "GND",
+    "In2.Cu": "+3V3"
+  },
+  "router_summary": [
+    "negotiated (PathFinder) route (UNVERIFIED: not written, not checked by KiCad): nets complete 188 of 190; pads connected 868 of 870; 10790.3 mm of track, 819 vias, 16.6 s",
+    "  12 iteration(s); contested cells per iteration [134, 60, 35, 20, 16, 14, 11, 8, 5, 4, 2, 0]; nets dropped to make the result legal 0 (completed by hard re-route: 0)"
+  ],
+  "segments": 1650,
+  "vias": 819,
+  "track_mm": 10794.5,
+  "drc": {
+    "unconnected_before_routing": 499,
+    "unconnected_after": 2,
+    "violations_by_kind": {
+      "courtyards_overlap": 17,
+      "copper_edge_clearance": 1,
+      "silk_edge_clearance": 2,
+      "lib_footprint_issues": 25,
+      "silk_over_copper": 191,
+      "silk_overlap": 199,
+      "unconnected_items": 2
+    }
+  },
+  "routed_board": "out/m7r12_place_c4\\judge_ours_default\\ours_default_stripped_routed.kicad_pcb"
+}
+
+--- KiCad judge: ours_nohalo (exit 0)
+    "In2.Cu": "+3V3"
+  },
+  "router_summary": [
+    "negotiated (PathFinder) route (UNVERIFIED: not written, not checked by KiCad): nets complete 187 of 190; pads connected 867 of 870; 10656.7 mm of track, 820 vias, 25.0 s",
+    "  15 iteration(s); contested cells per iteration [172, 76, 50, 43, 24, 17, 15, 12, 6, 4, 3, 2, 2, 2, 0]; nets dropped to make the result legal 0 (completed by hard re-route: 0)"
+  ],
+  "segments": 1743,
+  "vias": 820,
+  "track_mm": 10662.7,
+  "drc": {
+    "unconnected_before_routing": 499,
+    "unconnected_after": 3,
+    "violations_by_kind": {
+      "courtyards_overlap": 17,
+      "copper_edge_clearance": 1,
+      "silk_edge_clearance": 2,
+      "lib_footprint_issues": 25,
+      "silk_over_copper": 199,
+      "silk_overlap": 199,
+      "unconnected_items": 3
+    }
+  },
+  "routed_board": "out/m7r12_place_c4\\judge_ours_nohalo\\ours_nohalo_stripped_routed.kicad_pcb"
+}
+
+--- KiCad judge: service (exit 0)
+",
+    "  61 iteration(s); contested cells per iteration [94, 45, 21, 12, 10, 4, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]; nets dropped to make the result legal 1 (completed by hard re-route: 0)"
+  ],
+  "segments": 1516,
+  "vias": 829,
+  "track_mm": 18202.7,
+  "drc": {
+    "unconnected_before_routing": 499,
+    "unconnected_after": 2,
+    "violations_by_kind": {
+      "via_dangling": 1,
+      "clearance": 3,
+      "shorting_items": 1,
+      "courtyards_overlap": 16,
+      "silk_edge_clearance": 6,
+      "hole_to_hole": 2,
+      "lib_footprint_issues": 25,
+      "silk_over_copper": 193,
+      "solder_mask_bridge": 8,
+      "silk_overlap": 199,
+      "unconnected_items": 2
+    }
+  },
+  "routed_board": "out/m7r12_place_c4\\judge_service\\service_stripped_routed.kicad_pcb"
+}
+
