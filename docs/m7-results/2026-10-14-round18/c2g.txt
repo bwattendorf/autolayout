@@ -1,0 +1,14 @@
+counts netlist/freeplace/returned: 228 224 220
+dropped (4):
+  D24	CELL	LED_SMD:LED_0603_1608Metric
+  D26	FAULT	LED_SMD:LED_0603_1608Metric
+  D27	BOOT	LED_SMD:LED_0603_1608Metric
+  D29	SS34	Diode_SMD:D_SMA
+extra (0):
+fp_only (0):
+net_only (4):
+  R68	680R	Resistor_SMD:R_0402_1005Metric
+  R69	680R	Resistor_SMD:R_0402_1005Metric
+  R70	5.1k	Resistor_SMD:R_0402_1005Metric
+  R71	5.1k	Resistor_SMD:R_0402_1005Metric
+mtime freeplace Tue Sep  1 09:31:16 2026 | returned Mon Aug 31 16:00:53 2026 | returned_older_than_freeplace True

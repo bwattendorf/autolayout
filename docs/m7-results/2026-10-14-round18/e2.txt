@@ -1,0 +1,14 @@
+counts netlist/freeplace/returned: 234 230 226
+dropped (4):
+  D37	CLOCK	LED_SMD:LED_0603_1608Metric
+  D39	PWR_12V	LED_SMD:LED_0603_1608Metric
+  D40	PWR_3V3	LED_SMD:LED_0603_1608Metric
+  D42	SS34	Diode_SMD:D_SMA
+extra (0):
+fp_only (0):
+net_only (4):
+  R75	5.1k	Resistor_SMD:R_0402_1005Metric
+  R76	2.2k	Resistor_SMD:R_0402_1005Metric
+  R77	5.1k	Resistor_SMD:R_0402_1005Metric
+  R78	5.1k	Resistor_SMD:R_0402_1005Metric
+mtime freeplace Tue Sep  1 10:12:59 2026 | returned Mon Aug 31 09:20:32 2026 | returned_older_than_freeplace True
