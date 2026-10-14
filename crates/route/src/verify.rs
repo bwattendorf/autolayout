@@ -278,6 +278,33 @@ pub fn verify_with_probes(
   planes: &[(String, u32)],
   probes: &[Point],
 ) -> VerifyReport {
+  verify_core(doc, board, rules, planes, probes, false)
+}
+
+/// Judge copper this tool has just added to a board that may hold zone fills
+/// poured BEFORE routing. Fills of the declared `planes` are ignored (the new
+/// vias and tracks make them stale; on the harness's boards they are computed
+/// on the bare board, so they have no pockets by construction) and those planes
+/// are emulated instead, as on a stripped board. Round 20 (KiCad): without
+/// this the island repair saw no island in the batch pipeline, because the
+/// pre-routing fill hid every pocket the routed vias create.
+pub fn verify_fresh_planes(
+  doc: &Document,
+  board: &Board,
+  rules: &DesignRules,
+  planes: &[(String, u32)],
+) -> VerifyReport {
+  verify_core(doc, board, rules, planes, &[], true)
+}
+
+fn verify_core(
+  doc: &Document,
+  board: &Board,
+  rules: &DesignRules,
+  planes: &[(String, u32)],
+  probes: &[Point],
+  ignore_plane_fills: bool,
+) -> VerifyReport {
   let mut rep = VerifyReport::default();
   let Some(root) = doc.root() else { return rep };
   let cu = copper_layers(root);
@@ -450,6 +477,13 @@ pub fn verify_with_probes(
       else {
         continue;
       };
+      if ignore_plane_fills
+        && planes
+          .iter()
+          .any(|(pl, pn)| *pn == net && cu.get(li).is_some_and(|c| c == pl))
+      {
+        continue;
+      }
       let pts: Vec<Point> = f
         .child("pts")
         .map(|p| p.children("xy").filter_map(|l| xy(Some(l))).collect())
@@ -1271,6 +1305,23 @@ mod tests {
     let without = run_planes("", &[("F.Cu".to_string(), 1)]);
     assert_eq!(without.plane_items_assumed, 2);
     assert_eq!(without.unconnected, 0);
+  }
+
+  #[test]
+  fn fresh_plane_judging_ignores_a_pre_routing_fill() {
+    let doc = parse(&board(&fill(1, "F.Cu", 2.0, 3.0, 8.0, 7.0))).unwrap();
+    let b = Board::read(&doc).unwrap();
+    let mut r = DesignRules::explicit(0.1, 0.1, 0.4, 0.2).unwrap();
+    r.min.copper_edge_clearance = 0.3;
+    let planes = [("F.Cu".to_string(), 1)];
+    let read = verify(&doc, &b, &r, &planes);
+    let fresh = verify_fresh_planes(&doc, &b, &r, &planes);
+    assert_eq!(read.plane_items_assumed, 0, "the fill is read");
+    assert_eq!(
+      fresh.plane_items_assumed, 2,
+      "the fill is ignored, the plane emulated"
+    );
+    assert_eq!(fresh.unconnected, 0);
   }
 
   /// Each extra component is described by its members, so it can be compared
