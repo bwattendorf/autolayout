@@ -456,9 +456,10 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     .collect();
   // One routing attempt at a stub reach, judged from the text it would be
   // written as (the same judge the final report uses).
-  let attempt = |reach: f64| -> Result<_, String> {
+  let attempt = |reach: f64, share_stubs: bool| -> Result<_, String> {
     let costs = Costs {
       reach,
+      share_stubs,
       ..Costs::default()
     };
     let (s, stats) = if greedy {
@@ -473,23 +474,41 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     let jdoc = parse(&jtext).map_err(|e| format!("internal: {e}"))?;
     let jboard = Board::read(&jdoc).map_err(|e| e.to_string())?;
     let v = autolayout_route::verify::verify(&jdoc, &jboard, &rules, &plane_codes);
-    Ok((s, stats, judged, written, v, reach))
+    Ok((s, stats, judged, written, v, (reach, share_stubs)))
   };
-  // Stub reach is a portfolio: the narrow setting leaves corridors free, the
-  // wide one reaches pads the narrow one cannot, and neither dominates across
-  // boards (see `search::NEAR_REACH_NARROW`). The attempt with fewer
-  // unconnected items by the file verifier wins; ties go to the narrow one.
-  let mut best = attempt(autolayout_route::search::NEAR_REACH_NARROW)?;
-  if !greedy && !(best.0.nets_complete == best.0.nets_total && best.4.clean()) {
-    let wide = attempt(autolayout_route::search::NEAR_REACH_PITCHES)?;
-    let key = |a: &(_, _, _, _, autolayout_route::verify::VerifyReport, f64)| {
-      (a.4.unconnected, a.4.clearance + a.4.shorting + a.4.hole_to_hole)
-    };
-    if key(&wide) < key(&best) {
-      best = wide;
+  // The stub settings are a portfolio: stub reach (narrow leaves corridors
+  // free, wide reaches pads narrow cannot) and whether stubs of different nets
+  // may share corridor cells. None dominates across boards (see
+  // `search::NEAR_REACH_NARROW`, `Costs::share_stubs`). Attempts run in this
+  // order until one is complete and clean; the one with the fewest
+  // verifier-unconnected wins, ties to the earlier.
+  use autolayout_route::search::{NEAR_REACH_NARROW, NEAR_REACH_PITCHES};
+  type Attempt = (
+    autolayout_route::driver::Summary,
+    Option<autolayout_route::negotiate::NegotiationStats>,
+    autolayout_sexpr::Document,
+    autolayout_route::write::Written,
+    autolayout_route::verify::VerifyReport,
+    (f64, bool),
+  );
+  let mut best: Attempt = attempt(NEAR_REACH_NARROW, true)?;
+  if !greedy {
+    for (reach, share) in [
+      (NEAR_REACH_PITCHES, true),
+      (NEAR_REACH_NARROW, false),
+      (NEAR_REACH_PITCHES, false),
+    ] {
+      if best.0.nets_complete == best.0.nets_total && best.4.clean() {
+        break;
+      }
+      let next = attempt(reach, share)?;
+      let key = |a: &Attempt| (a.4.unconnected, a.4.clearance + a.4.shorting + a.4.hole_to_hole);
+      if key(&next) < key(&best) {
+        best = next;
+      }
     }
   }
-  let (s, stats, judged, written, v, chosen_reach) = best;
+  let (s, stats, judged, written, v, chosen) = best;
   println!(
     "rules from {}; pitch {:.4} mm; grid {} x {} x {}",
     rules.source,
@@ -499,12 +518,14 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     m.layers.len()
   );
   println!(
-    "{} route (UNVERIFIED: not written, not checked by KiCad; stub reach {chosen_reach} pitches): nets complete {} of {}; pads connected {} of {}; {:.1} mm of track, {} vias, {:.1} s",
+    "{} route (UNVERIFIED: not written, not checked by KiCad; stub reach {} pitches, shared stub corridors {}): nets complete {} of {}; pads connected {} of {}; {:.1} mm of track, {} vias, {:.1} s",
     if greedy {
       "greedy sequential"
     } else {
       "negotiated (PathFinder)"
     },
+    chosen.0,
+    chosen.1,
     s.nets_complete,
     s.nets_total,
     s.pads_connected,

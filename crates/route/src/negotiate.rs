@@ -75,6 +75,7 @@ pub fn route_negotiated(
     })
     .collect();
   let mut fps: Vec<Vec<(usize, usize)>> = vec![Vec::new(); nets.len()];
+  let mut fpss: Vec<Vec<(usize, usize)>> = vec![Vec::new(); nets.len()];
   let mut stats = NegotiationStats::default();
   let mut best: Option<(usize, Vec<NetRoute>)> = None;
   let mut stuck = 0usize;
@@ -88,19 +89,29 @@ pub fn route_negotiated(
       router.grow_present(params.present_growth.0, params.present_growth.1);
     }
     for (k, (_, net, pads)) in nets.iter().enumerate() {
-      let again = it == 0 || router.is_contested(fps.get(k).map_or(&[][..], Vec::as_slice));
+      let again = it == 0
+        || router.is_contested(
+          fps.get(k).map_or(&[][..], Vec::as_slice),
+          fpss.get(k).map_or(&[][..], Vec::as_slice),
+        );
       if !again {
         continue;
       }
       if let Some(fp) = fps.get(k) {
         router.occupy(fp, false);
       }
+      if let Some(fp) = fpss.get(k) {
+        router.occupy_s(fp, false);
+      }
       let r = router.route_net(board, *net, pads);
       let fp = router.footprint(&r);
+      let fs = router.footprint_s(&r);
       router.occupy(&fp, true);
-      if let (Some(slot), Some(f)) = (routes.get_mut(k), fps.get_mut(k)) {
+      router.occupy_s(&fs, true);
+      if let (Some(slot), Some(f), Some(g)) = (routes.get_mut(k), fps.get_mut(k), fpss.get_mut(k)) {
         *slot = r;
         *f = fp;
+        *g = fs;
       }
     }
     let c = router.conflicts();
@@ -125,14 +136,17 @@ pub fn route_negotiated(
   // survived the iterations cost a net all of its pads: m1's N$4, round 7).
   let (_, best_routes) = best.unwrap_or((0, routes));
   let mut taken: std::collections::HashSet<(usize, usize)> = std::collections::HashSet::new();
+  let mut taken_s: std::collections::HashSet<(usize, usize)> = std::collections::HashSet::new();
   let mut kept: Vec<Option<NetRoute>> = Vec::new();
   for r in best_routes {
     let fp = router.footprint(&r);
-    if fp.iter().any(|c| taken.contains(c)) {
+    let fs = router.footprint_s(&r);
+    if fp.iter().any(|c| taken.contains(c) || taken_s.contains(c)) || fs.iter().any(|c| taken.contains(c)) {
       stats.dropped_nets += 1;
       kept.push(None);
     } else {
       taken.extend(fp);
+      taken_s.extend(fs);
       kept.push(Some(r));
     }
   }
