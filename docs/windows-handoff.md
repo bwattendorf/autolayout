@@ -781,3 +781,82 @@ expectation, NOT KiCad: unconnected 163 over the 37 boards (Round 12 KiCad:
 totals, the changed-board table, the step 2 and 3 tables, what was not run.
 Copy `summary.md`, `results.csv`. Commit; `git push origin m7-router`; reply
 with the new totals and the hash.
+
+---
+
+# Round 14: find the c2 DSN failure, placement on more boards, one open island
+
+Cloud-side findings that shape this round (read from the c2 board file, not
+KiCad): c2's Edge.Cuts is exactly four `gr_line`s forming a closed rectangle,
+all ends identical, so the Round 12 "non-closed outline" assertion
+(`SHAPE_POLY_SET::AddOutline`) is NOT the board outline. Something else in the
+DSN export is an open polygon: a zone or rule area, a custom pad primitive, a
+footprint graphic, or a courtyard. Round 12's batch also hung 3600 s while the
+direct run aborted in 3.8 s; a modal assertion dialog waiting for a click is the
+likely cause. No new autolayout code is needed for any step.
+
+## Prompt to paste
+
+> Follow "Round 14" in docs/windows-handoff.md exactly, then the Backlog
+> section below it if you have time left. Change no autolayout Rust code. Fresh
+> output dirs; never overwrite a board; no PR; nothing over 1 MB committed.
+
+## Steps
+
+`git fetch origin && git checkout m7-router && git pull`; record the hash;
+`cargo build --release`.
+
+1. c2 DSN bisect. Take the stripped c2 board from Round 12
+   (`out/m7r12_c2_direct`, or `autolayout strip` the c2 return again). Write a
+   small script (keep it under `out/`, do not commit it unless it is generally
+   useful; if so put it in `tools/dsn_bisect.py`) that, for each variant, loads
+   the board in KiCad's Python, applies the variant, calls
+   `pcbnew.ExportSpecctraDSN` in a SUBPROCESS with a 60 s timeout (an assertion
+   aborts the process; a dialog hangs it), and records exit code and time:
+   A as is; B with all zones removed; C with every footprint's non-pad
+   graphics removed; D with every footprint's custom pads replaced by their
+   anchor shapes; E with every rule area/keepout removed. Then bisect the
+   footprints (halves) on whichever variant first exports cleanly, down to the
+   one footprint or zone that triggers it. Report: the variant table, the
+   offending item (reference, pad number, zone name or layer, or "not found"),
+   and what about it is open (for a pad: the `gr_poly` points).
+2. If step 1 found the cause and a one-line in-memory workaround is obvious
+   (e.g. drop that footprint's courtyard for the export only), apply it to
+   `tools/route_check.py` (smallest change), run
+   `"$KPY" tools/m7_batch.py out/m7r14_c2 --boards "quilter/returned/c2/**/*.kicad_pcb" --freerouting --fr-timeout 14400 --fr-passes 5`
+   and report Freerouting's KiCad unconnected on c2 beside ours (0).
+3. Placement on more boards. For each of c4, emu and one more board that has a
+   netlist (find them under the Portcullis tree), run
+   `python tools/m7_place_compare.py FREEPLACE NETLIST RETURNED out/m7r14_place_<sku> --pro <.kicad_pro> --plane In1.Cu=GND --plane In2.Cu=+3V3 --variant nohalo=--no-halo --judge GND +3V3`
+   and give the table per board. For c4 explain the footprint counts (ours 307,
+   service 299): list the references present in one board and not the other.
+4. m1/locked-candidate5: KiCad reports `unconnected_items` Pad 1 [+3V3] of C6
+   (103.83, 98.3) to Pad 38 [+3V3] of U1 (102.15, 98.3), and our emulation
+   found no pocket there. With `autolayout verify --probe` on that board's
+   routed file at both points, and `tools/zone_probe.py`, say what separates
+   the two pads in KiCad: a fill gap (and between which copper), a missing
+   track, or something else.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-round14.md`: hash, commands and exit codes, the
+step 1 variant table and offender, step 2 result or why skipped, step 3 tables,
+step 4 answer, what was not run. Commit; `git push origin m7-router`.
+
+---
+
+# Backlog (do these when no round is pending)
+
+Do the first item whose condition holds; log it under
+`docs/m7-results/YYYY-MM-DD-backlog-<item>.md`; commit and push; stop after one.
+
+B1. Regression sweep. If `origin/m7-router` has commits touching `crates/` newer
+    than the commit of the latest `roundN` log or backlog sweep, run
+    `"$KPY" tools/m7_batch.py out/m7b1_<hash>` and compare to the newest
+    `results.csv` in `docs/m7-results/`: totals, and every board whose KiCad
+    unconnected or any new violation changed. Say "worse" or "not worse".
+B2. Variance. Run the same batch a second time on the same commit; report any
+    board whose KiCad unconnected differs between the two runs (the router is
+    deterministic, so any difference is a tooling or KiCad problem) and the
+    summed `route_s` of both.
+B3. Timing. For the five slowest boards, report `route_s` three times each.
