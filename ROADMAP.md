@@ -15,7 +15,7 @@
 | boards placed legally (KiCad DRC clean)    | 1 (m1)      | measured 2026-10-12, `autolayout place` + `kicad-cli pcb drc` |
 | m1 unconnected after 10 Freerouting passes | ours 135, service 65 | measured 2026-10-12, `tools/route_check.py` + KiCad DRC |
 | boards routed with 0 KiCad routing violations (own router, 37 service-placed boards) | 19 of 37 (23 with no unconnected and no new violation) | measured 2026-10-13, `tools/m7_batch.py`, KiCad 9.0.1, round 11 |
-| own router, KiCad unconnected summed over the 37 boards | 163 (round 11: 186; round 8: 307) | measured 2026-10-14, round 13 |
+| own router, KiCad unconnected summed over the 37 boards | 141 (round 13: 163; round 11: 186; round 8: 307) | measured 2026-10-14, round 19 |
 | own router vs Freerouting, service-final boards, KiCad unconnected | ours 0 vs 12-36 (m1, emu, g2, t); seconds vs 118-2 326 s | measured 2026-10-13, round 10 |
 
 ## Milestones
