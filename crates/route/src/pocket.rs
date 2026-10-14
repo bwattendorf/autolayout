@@ -19,7 +19,7 @@ use crate::shape::Shape;
 use autolayout_board::Point;
 
 /// Raster cell, mm.
-pub const RES: f64 = 0.1;
+pub const RES: f64 = 0.05;
 /// A tap touches fill when an opened free cell centre lies within this many
 /// cells of its copper. A thin sliver between the tap and the fill is removed
 /// by KiCad's minimum width, leaving the tap cut off (c4/3p5, round 11: a
@@ -225,59 +225,67 @@ pub fn analyse(pour: &Pour, blocks: &[Block], taps: &[&Shape]) -> Option<Analysi
   })
 }
 
-fn erode(a: &[bool], nx: usize, ny: usize, k: usize) -> Vec<bool> {
-  // Separable box erosion: a cell stays only if its (2k+1)^2 box is free.
-  let pass = |src: &[bool], horizontal: bool| {
-    let mut out = vec![false; src.len()];
-    for iy in 0..ny {
-      for ix in 0..nx {
-        let ok = (0..=2 * k).all(|d| {
-          let (x, y) = if horizontal {
-            (ix as i64 + d as i64 - k as i64, iy as i64)
-          } else {
-            (ix as i64, iy as i64 + d as i64 - k as i64)
-          };
-          x >= 0
-            && y >= 0
-            && (x as usize) < nx
-            && (y as usize) < ny
-            && src.get(y as usize * nx + x as usize) == Some(&true)
-        });
-        if let Some(o) = out.get_mut(iy * nx + ix) {
-          *o = ok;
-        }
+/// Offsets (dx, dy) inside a disc of `k` cells: KiCad's minimum-width pass
+/// rounds by a circle, and a square would cut diagonal channels a circle keeps.
+fn disc(k: usize) -> Vec<(i64, i64)> {
+  let k = k as i64;
+  let mut v = Vec::new();
+  for dy in -k..=k {
+    for dx in -k..=k {
+      if dx * dx + dy * dy <= k * k {
+        v.push((dx, dy));
       }
     }
-    out
-  };
-  pass(&pass(a, true), false)
+  }
+  v
 }
 
+/// Cells whose whole disc is free (cells outside the raster count as blocked).
+fn erode(a: &[bool], nx: usize, ny: usize, k: usize) -> Vec<bool> {
+  let d = disc(k);
+  let at = |x: i64, y: i64| {
+    x >= 0
+      && y >= 0
+      && (x as usize) < nx
+      && (y as usize) < ny
+      && a.get(y as usize * nx + x as usize) == Some(&true)
+  };
+  let mut out = vec![false; a.len()];
+  for iy in 0..ny {
+    for ix in 0..nx {
+      if a.get(iy * nx + ix) == Some(&true)
+        && d.iter().all(|&(dx, dy)| at(ix as i64 + dx, iy as i64 + dy))
+        && let Some(o) = out.get_mut(iy * nx + ix)
+      {
+        *o = true;
+      }
+    }
+  }
+  out
+}
+
+/// Cells within a disc of `k` cells of a set cell.
 fn dilate(a: &[bool], nx: usize, ny: usize, k: usize) -> Vec<bool> {
-  let pass = |src: &[bool], horizontal: bool| {
-    let mut out = vec![false; src.len()];
-    for iy in 0..ny {
-      for ix in 0..nx {
-        let any = (0..=2 * k).any(|d| {
-          let (x, y) = if horizontal {
-            (ix as i64 + d as i64 - k as i64, iy as i64)
-          } else {
-            (ix as i64, iy as i64 + d as i64 - k as i64)
-          };
-          x >= 0
+  let d = disc(k);
+  let mut out = vec![false; a.len()];
+  for iy in 0..ny {
+    for ix in 0..nx {
+      if a.get(iy * nx + ix) == Some(&true) {
+        for &(dx, dy) in &d {
+          let (x, y) = (ix as i64 + dx, iy as i64 + dy);
+          if x >= 0
             && y >= 0
             && (x as usize) < nx
             && (y as usize) < ny
-            && src.get(y as usize * nx + x as usize) == Some(&true)
-        });
-        if let Some(o) = out.get_mut(iy * nx + ix) {
-          *o = any;
+            && let Some(o) = out.get_mut(y as usize * nx + x as usize)
+          {
+            *o = true;
+          }
         }
       }
     }
-    out
-  };
-  pass(&pass(a, true), false)
+  }
+  out
 }
 
 #[cfg(test)]
@@ -375,6 +383,42 @@ mod tests {
     };
     let a = analyse(&p, &blocks, &[&tap, &far, &far2]).unwrap();
     assert_eq!(a.islands, vec![0], "{a:?}");
+  }
+
+  /// c2/3p5mil-candidate2, round 12: the +3V3 via at (136.0988, 73.0328) has a
+  /// wall of antipads on one side and open copper on the other; KiCad reports
+  /// it connected.
+  #[test]
+  fn a_via_at_the_edge_of_an_antipad_wall_is_not_an_island() {
+    let (cx, cy) = (136.0988, 73.0328);
+    let foreign: Vec<Shape> = [
+      (1.280, 0.183),
+      (0.366, 0.183),
+      (-0.366, 0.183),
+      (0.366, 0.731),
+      (-0.731, -0.183),
+    ]
+    .iter()
+    .map(|&(dx, dy)| circle(cx + dx, cy + dy, 0.125))
+    .collect();
+    let blocks: Vec<Block> = foreign
+      .iter()
+      .map(|s| Block {
+        shape: s,
+        margin: 0.25,
+      })
+      .collect();
+    let tap = circle(cx, cy, 0.125);
+    let far = circle(cx - 8.0, cy + 6.0, 0.125);
+    let far2 = circle(cx - 7.0, cy + 6.0, 0.125);
+    let p = Pour {
+      min: Point::new(cx - 10.0, cy - 8.0),
+      max: Point::new(cx + 10.0, cy + 8.0),
+      inset: 0.5,
+      min_thickness: 0.2,
+    };
+    let a = analyse(&p, &blocks, &[&tap, &far, &far2]).unwrap();
+    assert!(a.islands.is_empty(), "{a:?}");
   }
 
   #[test]

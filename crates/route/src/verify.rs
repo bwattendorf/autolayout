@@ -114,8 +114,10 @@ pub struct VerifyReport {
   /// m1: 17 unconnected items the verifier missed). Not a finding; a limit.
   pub plane_items_assumed: usize,
   /// Taps (pads/vias of a plane's net) the plane-pocket EMULATION found cut off
-  /// from the main plane (see `pocket`); counted apart from `unconnected`
-  /// until a KiCad round has compared them. Zero when no plane was assumed.
+  /// from the main plane (see `pocket`). Such a tap is not joined to its plane,
+  /// so it counts in `unconnected` only if nothing else connects it (Round 12:
+  /// five boards' taps were cut off by the emulation yet connected by tracks,
+  /// and KiCad reported nothing). Zero when no plane was assumed.
   pub plane_islands: usize,
   /// `filled_polygon` islands read from zones in the file; each is its own
   /// component until a same-net pad, via or track lies on it.
@@ -165,7 +167,7 @@ impl VerifyReport {
     }
     if self.plane_items_assumed > 0 {
       s += &format!(
-        "\n  plane pockets (EMULATED raster fill, not KiCad's; not in `unconnected`): {} tap(s) cut off from the main plane",
+        "\n  plane pockets (EMULATED raster fill, not KiCad's; a cut-off tap is left out of its plane, so it shows in `unconnected` unless a track takes it elsewhere): {} tap(s) cut off from the main plane",
         self.plane_islands
       );
     }
@@ -661,7 +663,6 @@ pub fn verify_with_probes(
   // Plane nodes, only where the file holds no fill for that layer and net: a
   // via of the net, or a pad with copper on the plane layer, is ASSUMED joined.
   for (k, (layer, net)) in planes.iter().enumerate() {
-    let node = items.len() + k;
     let Some(li) = cu.iter().position(|l| l == layer) else {
       continue;
     };
@@ -669,13 +670,9 @@ pub fn verify_with_probes(
       continue;
     }
     assumed_planes.push(k);
-    for (i, it) in items.iter().enumerate() {
-      if it.net == *net && ((it.kind == Kind::Via) || (it.kind == Kind::Pad && it.layers.contains(&li))) {
-        uf.union(i, node);
-        rep.plane_items_assumed += 1;
-      }
-    }
   }
+  // Taps the emulated fill cannot reach: not joined to the plane below.
+  let mut cut_off: std::collections::HashSet<(usize, usize)> = std::collections::HashSet::new();
 
   // Pockets in the assumed planes (emulated fill).
   if let Some(bb) = board.outline {
@@ -711,13 +708,14 @@ pub fn verify_with_probes(
           margin: hole_cl,
         });
       }
-      let taps: Vec<&Item> = items
+      let taps: Vec<(usize, &Item)> = items
         .iter()
-        .filter(|it| {
+        .enumerate()
+        .filter(|(_, it)| {
           it.net == *net && (it.kind == Kind::Via || (it.kind == Kind::Pad && it.layers.contains(&li)))
         })
         .collect();
-      let shapes: Vec<&Shape> = taps.iter().map(|t| &t.shape).collect();
+      let shapes: Vec<&Shape> = taps.iter().map(|(_, t)| &t.shape).collect();
       let pour = crate::pocket::Pour {
         min: bb.min,
         max: bb.max,
@@ -726,7 +724,7 @@ pub fn verify_with_probes(
       };
       if let Some(an) = crate::pocket::analyse(&pour, &blocks, &shapes) {
         for pr in probes {
-          for (i, t) in taps.iter().enumerate() {
+          for (i, (_, t)) in taps.iter().enumerate() {
             if t.shape.sdf(*pr) <= 0.5 {
               rep.probe_notes.push(format!(
                 "probe ({:.4}, {:.4}): emulated {} fill on {}: tap {} touches component(s) of {:?} cells (main {} cells, 0.1 mm raster){}",
@@ -743,8 +741,9 @@ pub fn verify_with_probes(
           }
         }
         for i in an.islands {
-          if let Some(t) = taps.get(i) {
+          if let Some(&(idx, t)) = taps.get(i) {
             rep.plane_islands += 1;
+            cut_off.insert((k, idx));
             let at = t.anchor.unwrap_or_else(|| {
               t.shape.bbox().map_or(bb.min, |b| {
                 Point::new((b.min.x + b.max.x) / 2.0, (b.min.y + b.max.y) / 2.0)
@@ -765,6 +764,27 @@ pub fn verify_with_probes(
               ),
             });
           }
+        }
+      }
+    }
+  }
+
+  // Join every tap the emulated fill reaches to its plane node. A cut-off tap
+  // keeps only what else touches it (its own tracks and vias): a +3V3 pad whose
+  // via sits in a pocket is unconnected unless a track takes it elsewhere.
+  for &k in &assumed_planes {
+    let Some((layer, net)) = planes.get(k) else {
+      continue;
+    };
+    let Some(li) = cu.iter().position(|l| l == layer) else {
+      continue;
+    };
+    let node = items.len() + k;
+    for (i, it) in items.iter().enumerate() {
+      if it.net == *net && ((it.kind == Kind::Via) || (it.kind == Kind::Pad && it.layers.contains(&li))) {
+        rep.plane_items_assumed += 1;
+        if !cut_off.contains(&(k, i)) {
+          uf.union(i, node);
         }
       }
     }
