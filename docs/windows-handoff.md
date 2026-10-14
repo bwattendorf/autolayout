@@ -1081,3 +1081,47 @@ apart are legal by our rule, and KiCad's clearance check decides.
 
 `docs/m7-results/YYYY-MM-DD-round19.md`; copy `summary.md`, `results.csv`;
 commit; `git push origin m7-router`.
+
+---
+
+# Round 20: KiCad judges the plane-island repair
+
+Commit since Round 19's tested head (`2b0c319` + `be24f91` logs): the island
+repair (the commit whose message starts "M7.5: plane-island repair"). A tap the
+pour emulation cuts off from its plane has its via site forbidden and the board
+is routed again, up to three times. Local verifier expectation, NOT KiCad:
+unconnected 141 -> 139, only r/3p5mil-candidate2 (1 -> 0) and
+c4/3p5mil-candidate3 (2 -> 1) change, nothing else, new violations unchanged.
+KiCad's own islands in Round 11-13 were exactly those two vias, so this round
+asks whether KiCad agrees the islands are gone.
+
+## Prompt to paste
+
+> Follow "Round 20" in docs/windows-handoff.md exactly. You are in charge of
+> this round (docs/windows-agent.md).
+
+## Steps
+
+`git pull`; record the hash (must be later than `be24f91`; the repair commit is
+the newest `crates/` commit); `cargo build --release`;
+`export AUTOLAYOUT_CORPUS=C:/Portcullis/controller/boards`.
+
+1. `"$KPY" tools/m7_batch.py out/m7r20_all > out/m7r20_all.txt 2>&1`. Record the
+   wall time.
+2. Totals vs Round 19 (`docs/m7-results/2026-10-14-round19/results.csv`): KiCad
+   unconnected summed (Round 19: 141), nets complete, boards with 0 unconnected
+   and no new violation, new clearance / shorting / hole-to-hole. List every
+   board whose KiCad unconnected or any new violation changed, both numbers.
+3. The two island boards, specifically: for `returned/r/3p5mil-candidate2` and
+   `returned/c4/3p5mil-candidate3` give KiCad's `via_dangling` and
+   `unconnected_items` entries that name a plane net (+3V3 or ground), whole,
+   as in Round 11 step 4. Say whether each island is gone, and where the +3V3
+   via went (coordinates) if it moved.
+4. Verifier vs KiCad: boards where unconnected differs.
+5. Timing: c4/3p5mil-candidate3's `route_s` against Round 19, and the summed
+   `route_s`.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-round20.md`; copy `summary.md`, `results.csv`;
+commit; `git push origin m7-router`.
