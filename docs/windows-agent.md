@@ -25,6 +25,24 @@ If a step cannot run (missing netlist, Java, a tool breaks), do the others, make
 the smallest fix to a script in `tools/` if that is what broke, and say what
 was skipped in the log. A half-answer is recorded as a half-answer.
 
+## Keep going (adapted from VectorCraft's agent instructions)
+
+VectorCraft's `CLAUDE.md` tells its agents to start every session from the
+ROADMAP and the ranked gaps list, run orient -> plan -> implement + test ->
+verify -> record -> commit, and "don't stop to ask unless the protocol lists
+the decision as the user's". The same applies here:
+
+- Do not stop to ask about anything this file or the round's Steps already
+  decide. Pick the obvious reading, note it in the log, and continue.
+- Ask only for things that need the user: a missing file you cannot find, a
+  tool that needs installing, or anything that would overwrite or delete a
+  board.
+- Record as you go. Write each step's result to the round log as soon as it
+  is done (and commit unfinished work on `m7-router` rather than holding it),
+  so a session that stops loses one step, not the round.
+- One round, one commit of logs; message `M7.5: round N record`.
+- A number in a log names the board, the command, and whether it was measured.
+
 ## Keeping the token use down
 
 - Run batches in the background, redirect their output to files, and read only
