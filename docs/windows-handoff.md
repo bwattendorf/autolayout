@@ -736,3 +736,48 @@ totals, the step 2 table (every board), step 3 tables and judge output, step 4
 results, what was not run. Copy `summary.md`, `results.csv`. Commit; `git push
 origin m7-router`; reply with the new totals, the agree / emulation-only /
 KiCad-only counts for step 2, and the hash.
+
+---
+
+# Round 13: KiCad judges the stub-reach portfolio and the calibrated pockets
+
+Run after Round 12 step 4 (Freerouting c2 / io) has finished, so the two do
+not fight over the machine. Commits since Round 12's tested `a19543f`:
+`f93c772` (route tries stub reach 1.5, then 4.5 only if incomplete, keeps the
+one with fewer verifier-unconnected) and `8b4cf00` (pocket emulation with a
+circular erosion element; cut-off taps leave connectivity). Local verifier
+expectation, NOT KiCad: unconnected 163 over the 37 boards (Round 12 KiCad:
+196), pockets exactly c4/3p5mil-candidate3 and r/3p5mil-candidate2.
+
+## Prompt to paste
+
+> Follow "Round 13" in docs/windows-handoff.md exactly. Change no autolayout
+> code. Fresh output directories; never overwrite a board; no PR; no boards or
+> files over 1 MB committed.
+
+## Steps
+
+`git fetch origin && git checkout m7-router && git pull`; record the hash
+(must include `8b4cf00`); `cargo build --release`.
+
+1. `"$KPY" tools/m7_batch.py out/m7r13_all`. Totals vs Round 12 and vs Round 11
+   (boards with 0 routing violations; 0 unconnected and 0 new violations; KiCad
+   unconnected summed; new clearance / shorting / hole_to_hole; nets complete),
+   then every board where KiCad unconnected changed vs Round 11, both numbers.
+   Specifically the nine boards that moved in Round 12 (the five m1 returns and
+   g2i, c4/candidate2, emu/candidate2, tp18-candidate2/3).
+2. Does the verifier still equal KiCad? Per board, verifier `unconnected` vs
+   KiCad `unconnected`; list every board where they differ. The batch verifies
+   the KiCad-saved file, which carries fills, so the pocket emulation does not
+   run there; for the pocket check use the fill-stripped copies as in Round 12
+   (`out/m7r12_nofill_b` method) on c4/3p5mil-candidate3 and r/3p5mil-candidate2
+   and say whether the verifier's `unconnected` equals KiCad's (expected 2 and 1).
+3. Timing: seconds per board for the five slowest boards vs Round 12 (the
+   portfolio may run each twice).
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-round13.md`: hash, commands and exit codes, the
+totals, the changed-board table, the step 2 and 3 tables, what was not run.
+Copy `summary.md`, `results.csv`. Commit; `git push origin m7-router`; reply
+with the new totals and the hash.
