@@ -66,21 +66,22 @@ are yours. Specifically:
 - A step that finds an unrouted pin or a router weakness is a finding for the
   cloud session, not a reason to stop: log it and go on to the next step.
 
-## When to restart
+## Keep going: do not stop between rounds
 
-A long chat costs more on every turn, and all state is in the repo, so a fresh
-chat loses nothing. After a round is finished, its log pushed, and nothing is
-running:
+The cloud session queues several rounds ahead, so there is normally more to do.
 
-1. End your reply with one line: `Round N done and pushed (<hash>). Start a
-   fresh chat and send: Read docs/windows-agent.md and do what it says.`
-2. Then stop. Do not start the next round in the same chat.
-
-Do the same, mid-round, if the conversation has grown long (many large tool
-outputs, or you have been compacted): commit and push what is done so far
-with a note of the step you were on, say so in the same one line, and stop.
-Never restart while a batch or Freerouting run is still going; wait for it,
-write the log, push, then say it.
+1. When a round is done and pushed, `git pull` and look for the next
+   "Round N+1" without a log. If there is one, do it now, in this chat.
+2. If none, do the first applicable Backlog item. If none applies either, say
+   so in one line and stop.
+3. A long background job (Freerouting, a 4 h batch) never blocks the next
+   round. Start it, record its output path in the log, and go on to the next
+   round. Do not sit watching it. Whoever finishes first appends its result
+   to the log of the round that started it.
+4. Restart in a fresh chat only when the conversation is long (many large tool
+   outputs, or you have been compacted). Then commit and push, and end with one
+   line: `Done through Round N (<hash>). Start a fresh chat and send: Read
+   docs/windows-agent.md and do what it says.`
 
 ## Keeping the token use down
 
