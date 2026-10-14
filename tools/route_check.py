@@ -84,38 +84,60 @@ def pour(board, ground, plane, inset_mm=0.5):
 
 def close_outline(board, tol_mm=0.01):
     """Make the Edge.Cuts outline of `board` closed IN MEMORY, for the DSN
-    export only. KiCad's Specctra exporter asserts on an outline whose pieces
-    do not join end to end (c2, 2026-10-13: no DSN at all). If exactly two
-    segment ends are unmatched, a closing segment joins them; the file that
-    is saved and later imported into is never touched. Returns a note for the
-    log: 'closed', 'already closed' or why it was left alone. UNTESTED on
-    Windows at the time of writing: c2 is the test."""
-    ends = []
-    for d in board.GetDrawings():
-        if d.GetLayer() != pcbnew.Edge_Cuts:
-            continue
-        if d.GetShape() in (pcbnew.SHAPE_T_CIRCLE, pcbnew.SHAPE_T_RECT, pcbnew.SHAPE_T_POLY):
-            continue  # closed by themselves
-        ends.append((pcbnew.ToMM(d.GetStart().x), pcbnew.ToMM(d.GetStart().y)))
-        ends.append((pcbnew.ToMM(d.GetEnd().x), pcbnew.ToMM(d.GetEnd().y)))
-    unmatched = []
-    for i, a in enumerate(ends):
-        mates = sum(1 for j, b in enumerate(ends)
-                    if j != i and abs(a[0] - b[0]) <= tol_mm and abs(a[1] - b[1]) <= tol_mm)
-        if mates == 0:
-            unmatched.append(a)
+    export only. KiCad's Specctra exporter asserts (SHAPE_POLY_SET::AddOutline,
+    "non-closed outline") when the outline's pieces do not join end to end.
+
+    Round 12 on c2 (2026-10-14): the first version of this function matched
+    segment ends within `tol_mm` and reported "already closed", yet KiCad's
+    assertion still fired. KiCad joins ends only when they are EXACTLY equal
+    in integer internal units, so ends that are close but not identical pass
+    the tolerance test and fail KiCad's. This version works in integer units:
+    it snaps every end that lies within `tol_mm` of an earlier end onto that
+    end, then, if exactly two ends are still unmatched, joins them with a
+    segment. The returned note says how many ends were snapped, so the log
+    shows whether the near-miss was the cause. UNTESTED on Windows: c2 is the
+    test. The saved/imported board is never touched.
+    """
+    tol = pcbnew.FromMM(tol_mm)
+    shapes = [d for d in board.GetDrawings()
+              if d.GetLayer() == pcbnew.Edge_Cuts
+              and d.GetShape() not in (pcbnew.SHAPE_T_CIRCLE, pcbnew.SHAPE_T_RECT, pcbnew.SHAPE_T_POLY)]
+    anchors = []  # distinct points ends are snapped to
+    snapped = 0
+
+    def snap(pt):
+        nonlocal snapped
+        for a in anchors:
+            dx, dy = pt.x - a.x, pt.y - a.y
+            if dx * dx + dy * dy <= tol * tol:
+                if (dx, dy) != (0, 0):
+                    snapped += 1
+                return pcbnew.VECTOR2I(a.x, a.y)
+        anchors.append(pcbnew.VECTOR2I(pt.x, pt.y))
+        return pcbnew.VECTOR2I(pt.x, pt.y)
+
+    for d in shapes:
+        s, e = snap(d.GetStart()), snap(d.GetEnd())
+        d.SetStart(s)
+        d.SetEnd(e)
+    counts = {}
+    for d in shapes:
+        for pt in (d.GetStart(), d.GetEnd()):
+            counts[(pt.x, pt.y)] = counts.get((pt.x, pt.y), 0) + 1
+    unmatched = [k for k, n in counts.items() if n % 2 == 1]
+    note = f"snapped {snapped} near-miss end(s); "
     if not unmatched:
-        return "already closed"
+        return note + "already closed"
     if len(unmatched) != 2:
-        return f"left alone: {len(unmatched)} unmatched outline ends, expected 2"
+        return note + f"left alone: {len(unmatched)} unmatched outline ends, expected 2"
     seg = pcbnew.PCB_SHAPE(board)
     seg.SetShape(pcbnew.SHAPE_T_SEGMENT)
     seg.SetLayer(pcbnew.Edge_Cuts)
-    seg.SetStart(pcbnew.VECTOR2I(pcbnew.FromMM(unmatched[0][0]), pcbnew.FromMM(unmatched[0][1])))
-    seg.SetEnd(pcbnew.VECTOR2I(pcbnew.FromMM(unmatched[1][0]), pcbnew.FromMM(unmatched[1][1])))
+    seg.SetStart(pcbnew.VECTOR2I(*unmatched[0]))
+    seg.SetEnd(pcbnew.VECTOR2I(*unmatched[1]))
     seg.SetWidth(pcbnew.FromMM(0.05))
     board.Add(seg)
-    return f"closed: joined {unmatched[0]} to {unmatched[1]}"
+    return note + f"closed: joined {unmatched[0]} to {unmatched[1]} (internal units)"
 
 
 def drc(pcb, report):
