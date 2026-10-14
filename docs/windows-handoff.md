@@ -1038,3 +1038,46 @@ change.
 per-board lists and the classification table, the staleness answer for each
 board, the m2 list, the cap answer. Commit (including `tools/footprint_diff.py`
 if written); `git push origin m7-router`.
+
+---
+
+# Round 19: KiCad judges the stub-corridor sharing
+
+Commits since Round 13's `2b044bb`: `bf913dc` (stubs of different nets share
+corridor cells when they stay a pitch apart; the route portfolio is now four
+attempts: stub reach 1.5 / 4.5, sharing on, then off). Local verifier
+expectation, NOT KiCad: unconnected 163 -> 141 over the 37 boards, new
+clearance 1 / shorting 0 / hole-to-hole 0 unchanged, no board worse. The risk
+this round checks is the one the verifier could be blind to: two stubs a pitch
+apart are legal by our rule, and KiCad's clearance check decides.
+
+## Prompt to paste
+
+> Follow "Round 19" in docs/windows-handoff.md exactly. You are in charge of
+> this round (docs/windows-agent.md).
+
+## Steps
+
+`git pull`; record the hash (must include `bf913dc`); `cargo build --release`;
+`export AUTOLAYOUT_CORPUS=C:/Portcullis/controller/boards`.
+
+1. `"$KPY" tools/m7_batch.py out/m7r19_all > out/m7r19_all.txt 2>&1` (it is
+   slower now: up to four routing attempts on boards that stay unclean; record
+   the wall time and summed `route_s`).
+2. Totals vs Round 13 (`docs/m7-results/2026-10-14-round13/results.csv`): boards
+   with 0 routing violations; 0 unconnected and 0 new violations; KiCad
+   unconnected summed (Round 13: 163); new clearance / shorting / hole_to_hole;
+   nets complete. Then every board whose KiCad unconnected or any new violation
+   changed, both numbers.
+3. The shared-stub risk: for every board where new KiCad clearance or shorting
+   is higher than Round 13, list the DRC entries (coordinates and the two
+   items) and say whether either item is a stub of a fine-pitch part (U1 or
+   another many-pin IC). If there are none, say so in one line.
+4. Verifier vs KiCad: boards where the verifier's unconnected differs from
+   KiCad's.
+5. Timing: the five slowest boards' `route_s` against Round 13.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-round19.md`; copy `summary.md`, `results.csv`;
+commit; `git push origin m7-router`.
