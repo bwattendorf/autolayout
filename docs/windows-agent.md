@@ -83,6 +83,15 @@ The cloud session queues several rounds ahead, so there is normally more to do.
    line: `Done through Round N (<hash>). Start a fresh chat and send: Read
    docs/windows-agent.md and do what it says.`
 
+## Test the change on the boards it targets before a full batch
+
+A full `m7_batch` takes about an hour. When a round tests a change aimed at
+named boards or at one mechanism, run just those boards first (`--boards GLOB`
+takes several globs) and check the round's premise on them (the log line, the
+count, the coordinates it names). Run the full batch only if the premise holds.
+If the premise fails, that failure is the result: log it with the evidence and
+stop that round there.
+
 ## Keeping the token use down
 
 - Run batches in the background, redirect their output to files, and read only
