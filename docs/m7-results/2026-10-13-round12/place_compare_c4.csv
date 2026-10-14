@@ -1,0 +1,4 @@
+label,footprints,courtyard_overlaps,off_board,nets_complete,nets_total,verifier_unconnected,clearance,track_mm,vias,error
+ours:default,307,17,2,188,190,2,0,10790.3,819,
+ours:nohalo,307,17,2,187,190,3,0,10656.7,820,
+service,299,16,0,189,190,1,0,18201.2,829,

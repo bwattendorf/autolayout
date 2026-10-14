@@ -1,0 +1,29 @@
+== round 11 (9a250fe): boards 37, status ok 37
+zero routing violations (absolute): 19
+zero unconnected and zero new clearance/shorting/h2h: 23
+KiCad unconnected_after summed: 186
+new clearance/shorting/h2h summed: [1, 0, 0]  absolute: [122, 5, 4]
+nets complete / total: 4604 / 4749
+via_dangling nonzero: [('returned/c4/3p5mil-candidate3/c4.kicad_pcb', '1'), ('returned/r/3p5mil-candidate2/r.kicad_pcb', '1')]
+== round 12 (a19543f): boards 37, status ok 37
+zero routing violations (absolute): 19
+zero unconnected and zero new clearance/shorting/h2h: 23
+KiCad unconnected_after summed: 196
+new clearance/shorting/h2h summed: [1, 0, 0]  absolute: [122, 5, 4]
+nets complete / total: 4636 / 4749
+via_dangling nonzero: [('returned/c4/3p5mil-candidate3/c4.kicad_pcb', '1'), ('returned/r/3p5mil-candidate2/r.kicad_pcb', '1')]
+
+== changed boards (round 11 -> round 12)
+quilter/returned/c4/candidate2/c4.kicad_pcb | unconnected 25 -> 18; nets complete 163 -> 169 of 185
+quilter/returned/emu/candidate2/emu.kicad_pcb | unconnected 28 -> 25; nets complete 188 -> 191 of 214
+quilter/returned/m1/candidate4/m1.kicad_pcb | unconnected 12 -> 14; nets complete 87 -> 91 of 99
+quilter/returned/m1/candidate6/m1.kicad_pcb | unconnected 20 -> 34; nets complete 86 -> 87 of 99
+quilter/returned/m1/doublesided-candidate4/m1.kicad_pcb | unconnected 15 -> 26; nets complete 86 -> 90 of 99
+quilter/returned/m1/locked-candidate5/m1.kicad_pcb | unconnected 29 -> 35; nets complete 76 -> 77 of 99
+quilter/returned/m1/tp18-candidate2/m1.kicad_pcb | unconnected 23 -> 20; nets complete 86 -> 89 of 99
+quilter/returned/m1/tp18-candidate3/m1.kicad_pcb | unconnected 22 -> 15; nets complete 86 -> 93 of 99
+quilter/finish/g2i/g2i.kicad_pcb | unconnected 6 -> 3; nets complete 26 -> 29 of 32
+
+worse: ['quilter/returned/m1/candidate4/m1.kicad_pcb', 'quilter/returned/m1/candidate6/m1.kicad_pcb', 'quilter/returned/m1/doublesided-candidate4/m1.kicad_pcb', 'quilter/returned/m1/locked-candidate5/m1.kicad_pcb']
+
+== verifier vs KiCad (new/unconnected), round 12
