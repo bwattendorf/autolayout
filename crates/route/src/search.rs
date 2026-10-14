@@ -43,9 +43,13 @@ pub const TAP_REACH_PITCHES: f64 = 5.0;
 pub const PENALTY_CAP: u32 = 1_000_000;
 
 /// How far from a pad's centre (in pitches, beyond its half-size) to look for
-/// grid cells to land a stub on when no cell lies inside the pad. 1.5 -> 4.5
-/// moved the 37-board local sweep from 209 to 194 verifier-unconnected
-/// (measured here, not KiCad; the 1.5 run predates the shorter stubs).
+/// grid cells to land a stub on when no cell lies inside the pad. Two settings
+/// are tried and the better result kept (`route` portfolio): the narrow one
+/// leaves corridors free, the wide one reaches pads the narrow one cannot.
+/// Neither dominates (local 37-board sweep, verifier not KiCad, unconnected
+/// narrow 184 / 2.25 -> 207 / 3.0 -> 199 / wide 194, KiCad on the wide one 196
+/// with four m1 returns 6-14 worse), so the choice is made per board.
+pub const NEAR_REACH_NARROW: f64 = 1.5;
 pub const NEAR_REACH_PITCHES: f64 = 4.5;
 
 /// Cost of one grid step in the layer's preferred direction.
@@ -57,6 +61,9 @@ pub struct Costs {
   /// Step against the layer's preferred direction.
   pub wrong_way: u32,
   pub via: u32,
+  /// How far, in pitches beyond a pad's half-size, a stub may reach for a
+  /// grid cell when none lies inside the pad (see [`NEAR_REACH_PITCHES`]).
+  pub reach: f64,
 }
 
 impl Default for Costs {
@@ -65,6 +72,7 @@ impl Default for Costs {
       step: STEP,
       wrong_way: 25,
       via: 60,
+      reach: NEAR_REACH_NARROW,
     }
   }
 }
@@ -431,7 +439,7 @@ impl<'a> Router<'a> {
     let Some(pad) = board.footprints.get(fi).and_then(|f| f.pads.get(pi)) else {
       return Vec::new();
     };
-    let reach = self.model.pitch * NEAR_REACH_PITCHES + pad.size.x.max(pad.size.y) / 2.0;
+    let reach = self.model.pitch * self.costs.reach + pad.size.x.max(pad.size.y) / 2.0;
     let layers = self.model.pad_layer_indices(&pad.layers);
     let m = self.model;
     let lo = |v: f64, o: f64| ((v - o) / m.pitch).floor().max(0.0) as usize;

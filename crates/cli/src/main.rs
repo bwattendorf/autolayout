@@ -449,12 +449,47 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
   let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
   let t = std::time::Instant::now();
-  let (s, stats) = if greedy {
-    (route_all(&board, &m, Costs::default()), None)
-  } else {
-    let (s, st) = route_negotiated(&board, &m, Costs::default(), params);
-    (s, Some(st))
+  let plane_codes: Vec<(String, u32)> = m
+    .planes
+    .iter()
+    .map(|p| (p.layer.clone(), p.net).clone())
+    .collect();
+  // One routing attempt at a stub reach, judged from the text it would be
+  // written as (the same judge the final report uses).
+  let attempt = |reach: f64| -> Result<_, String> {
+    let costs = Costs {
+      reach,
+      ..Costs::default()
+    };
+    let (s, stats) = if greedy {
+      (route_all(&board, &m, costs), None)
+    } else {
+      let (s, st) = route_negotiated(&board, &m, costs, params);
+      (s, Some(st))
+    };
+    let mut judged = doc.clone();
+    let written = autolayout_route::write::add_routes(&mut judged, &m, &board, &s)?;
+    let jtext = judged.to_string();
+    let jdoc = parse(&jtext).map_err(|e| format!("internal: {e}"))?;
+    let jboard = Board::read(&jdoc).map_err(|e| e.to_string())?;
+    let v = autolayout_route::verify::verify(&jdoc, &jboard, &rules, &plane_codes);
+    Ok((s, stats, judged, written, v, reach))
   };
+  // Stub reach is a portfolio: the narrow setting leaves corridors free, the
+  // wide one reaches pads the narrow one cannot, and neither dominates across
+  // boards (see `search::NEAR_REACH_NARROW`). The attempt with fewer
+  // unconnected items by the file verifier wins; ties go to the narrow one.
+  let mut best = attempt(autolayout_route::search::NEAR_REACH_NARROW)?;
+  if !greedy && !(best.0.nets_complete == best.0.nets_total && best.4.clean()) {
+    let wide = attempt(autolayout_route::search::NEAR_REACH_PITCHES)?;
+    let key = |a: &(_, _, _, _, autolayout_route::verify::VerifyReport, f64)| {
+      (a.4.unconnected, a.4.clearance + a.4.shorting + a.4.hole_to_hole)
+    };
+    if key(&wide) < key(&best) {
+      best = wide;
+    }
+  }
+  let (s, stats, judged, written, v, chosen_reach) = best;
   println!(
     "rules from {}; pitch {:.4} mm; grid {} x {} x {}",
     rules.source,
@@ -464,7 +499,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     m.layers.len()
   );
   println!(
-    "{} route (UNVERIFIED: not written, not checked by KiCad): nets complete {} of {}; pads connected {} of {}; {:.1} mm of track, {} vias, {:.1} s",
+    "{} route (UNVERIFIED: not written, not checked by KiCad; stub reach {chosen_reach} pitches): nets complete {} of {}; pads connected {} of {}; {:.1} mm of track, {} vias, {:.1} s",
     if greedy {
       "greedy sequential"
     } else {
@@ -502,9 +537,6 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
       pads.join(" ")
     );
   }
-  // The copper as it would be written; the file and the verifier both use this text.
-  let mut judged = doc.clone();
-  let written = autolayout_route::write::add_routes(&mut judged, &m, &board, &s)?;
   if let Some(o) = &out_path {
     fs::write(o, judged.to_string()).map_err(|e| format!("{o}: {e}"))?;
     // Read it back off disk: it must parse, round-trip byte-exact, and hold
@@ -526,13 +558,6 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
       return Err("read-back copper count differs from what was written".to_owned());
     }
   }
-  // Judge the copper as it would be written, from the file text and the real
-  // pad shapes, not from the router's grid.
-  let judged_text = judged.to_string();
-  let jdoc = parse(&judged_text).map_err(|e| format!("internal: {e}"))?;
-  let jboard = Board::read(&jdoc).map_err(|e| e.to_string())?;
-  let plane_codes: Vec<(String, u32)> = m.planes.iter().map(|p| (p.layer.clone(), p.net)).collect();
-  let v = autolayout_route::verify::verify(&jdoc, &jboard, &rules, &plane_codes);
   println!(
     "verifier (re-derived from the written copper, NOT KiCad; judge is `kicad-cli pcb drc`): {}",
     v.summary()
