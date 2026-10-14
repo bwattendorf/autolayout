@@ -447,7 +447,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   }
   let (_, doc) = load(pcb)?;
   let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
-  let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
+  let mut m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
   let t = std::time::Instant::now();
   let plane_codes: Vec<(String, u32)> = m
     .planes
@@ -456,20 +456,20 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     .collect();
   // One routing attempt at a stub reach, judged from the text it would be
   // written as (the same judge the final report uses).
-  let attempt = |reach: f64, share_stubs: bool| -> Result<_, String> {
+  let attempt = |m: &RoutingModel, reach: f64, share_stubs: bool| -> Result<_, String> {
     let costs = Costs {
       reach,
       share_stubs,
       ..Costs::default()
     };
     let (s, stats) = if greedy {
-      (route_all(&board, &m, costs), None)
+      (route_all(&board, m, costs), None)
     } else {
-      let (s, st) = route_negotiated(&board, &m, costs, params);
+      let (s, st) = route_negotiated(&board, m, costs, params);
       (s, Some(st))
     };
     let mut judged = doc.clone();
-    let written = autolayout_route::write::add_routes(&mut judged, &m, &board, &s)?;
+    let written = autolayout_route::write::add_routes(&mut judged, m, &board, &s)?;
     let jtext = judged.to_string();
     let jdoc = parse(&jtext).map_err(|e| format!("internal: {e}"))?;
     let jboard = Board::read(&jdoc).map_err(|e| e.to_string())?;
@@ -491,7 +491,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     autolayout_route::verify::VerifyReport,
     (f64, bool),
   );
-  let mut best: Attempt = attempt(NEAR_REACH_NARROW, true)?;
+  let mut best: Attempt = attempt(&m, NEAR_REACH_NARROW, true)?;
   if !greedy {
     for (reach, share) in [
       (NEAR_REACH_PITCHES, true),
@@ -501,10 +501,50 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
       if best.0.nets_complete == best.0.nets_total && best.4.clean() {
         break;
       }
-      let next = attempt(reach, share)?;
+      let next = attempt(&m, reach, share)?;
       let key = |a: &Attempt| (a.4.unconnected, a.4.clearance + a.4.shorting + a.4.hole_to_hole);
       if key(&next) < key(&best) {
         best = next;
+      }
+    }
+  }
+  // Island repair: a plane tap the emulated pour leaves cut off from its
+  // plane (`plane_island`) is moved by forbidding its via site and routing
+  // again with the same settings. Kept only if it leaves fewer unconnected (or
+  // as many with fewer islands); otherwise the sites are unblocked and the
+  // earlier result stands. At most three rounds.
+  let mut repair_rounds = 0usize;
+  if !greedy {
+    for _ in 0..3 {
+      let islands: Vec<_> = best
+        .4
+        .issues
+        .iter()
+        .filter(|i| i.kind == "plane_island")
+        .map(|i| i.at)
+        .collect();
+      if islands.is_empty() {
+        break;
+      }
+      let saved = m.via.clone();
+      if islands.iter().filter(|&&p| m.block_via_near(p)).count() == 0 {
+        break;
+      }
+      let (reach, share) = best.5;
+      let next = attempt(&m, reach, share)?;
+      let key = |a: &Attempt| {
+        (
+          a.4.unconnected,
+          a.4.plane_islands,
+          a.4.clearance + a.4.shorting + a.4.hole_to_hole,
+        )
+      };
+      if key(&next) < key(&best) {
+        best = next;
+        repair_rounds += 1;
+      } else {
+        m.via = saved;
+        break;
       }
     }
   }
@@ -518,7 +558,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     m.layers.len()
   );
   println!(
-    "{} route (UNVERIFIED: not written, not checked by KiCad; stub reach {} pitches, shared stub corridors {}): nets complete {} of {}; pads connected {} of {}; {:.1} mm of track, {} vias, {:.1} s",
+    "{} route (UNVERIFIED: not written, not checked by KiCad; stub reach {} pitches, shared stub corridors {}, island repair rounds {repair_rounds}): nets complete {} of {}; pads connected {} of {}; {:.1} mm of track, {} vias, {:.1} s",
     if greedy {
       "greedy sequential"
     } else {

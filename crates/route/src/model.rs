@@ -146,6 +146,30 @@ impl RoutingModel {
     o == FREE || o == net + 1
   }
 
+  /// Forbid a via at the grid cell nearest `p`, for every net. Used to move a
+  /// plane tap off a site where the emulated pour left it cut off from its
+  /// plane (see `pocket`). Returns whether a free site was blocked (false:
+  /// off the grid, or already blocked).
+  pub fn block_via_near(&mut self, p: Point) -> bool {
+    let fx = (p.x - self.origin.x) / self.pitch;
+    let fy = (p.y - self.origin.y) / self.pitch;
+    if !(fx.is_finite() && fy.is_finite()) || fx < -0.5 || fy < -0.5 {
+      return false;
+    }
+    let (ix, iy) = (fx.round() as usize, fy.round() as usize);
+    if ix >= self.nx || iy >= self.ny {
+      return false;
+    }
+    let i = self.index(ix, iy);
+    match self.via.get_mut(i) {
+      Some(c) if *c != BLOCKED => {
+        *c = BLOCKED;
+        true
+      }
+      _ => false,
+    }
+  }
+
   pub fn via_ok(&self, ix: usize, iy: usize, net: u32) -> bool {
     let o = self.via.get(self.index(ix, iy)).copied().unwrap_or(BLOCKED);
     o == FREE || o == net + 1
@@ -599,6 +623,20 @@ mod tests {
     // track 0.2 + clearance 0.2 + the project's max_error margin 0.005
     assert!((m.pitch - 0.405).abs() < 1e-12, "{}", m.pitch);
     assert_eq!(m.layers, vec!["F.Cu", "In1.Cu", "B.Cu"]);
+  }
+
+  #[test]
+  fn blocking_a_via_site_forbids_it_for_every_net_once() {
+    let (_, mut m) = build(&[]);
+    let (ix, iy) = cell_at(&m, 12.0, 7.0);
+    let at = m.centre(ix, iy);
+    assert!(m.via_ok(ix, iy, 1));
+    assert!(m.block_via_near(at));
+    assert!(!m.via_ok(ix, iy, 1) && !m.via_ok(ix, iy, 2));
+    assert!(!m.block_via_near(at), "already blocked");
+    assert!(!m.block_via_near(Point::new(f64::NAN, 1.0)));
+    assert!(!m.block_via_near(Point::new(-50.0, 1.0)));
+    assert!(!m.block_via_near(Point::new(500.0, 1.0)));
   }
 
   #[test]
