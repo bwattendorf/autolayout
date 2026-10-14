@@ -11,8 +11,10 @@ results into `docs/m7-results/` and push. Nobody copies text between chats.
 
 1. `git fetch origin && git checkout m7-router && git pull`. Record the hash.
 2. Find the newest "Round N" heading in `docs/windows-handoff.md`. If
-   `docs/m7-results/*-roundN.md` already exists, nothing is pending: say so in
-   one line and stop (or, under `/loop`, wait and check again).
+   `docs/m7-results/*-roundN.md` already exists, no round is pending: go to the
+   "Backlog" section at the end of `docs/windows-handoff.md` and do its first
+   item whose condition holds. Only if no backlog item applies, say so in one
+   line and stop (or, under `/loop`, wait and check again).
 3. Do that round's Steps exactly, with its "Prompt to paste" rules (no
    autolayout code changes; fresh output dirs; never overwrite a board; no
    PR; nothing over 1 MB committed).
