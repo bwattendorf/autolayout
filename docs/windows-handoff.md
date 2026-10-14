@@ -1125,3 +1125,44 @@ the newest `crates/` commit); `cargo build --release`;
 
 `docs/m7-results/YYYY-MM-DD-round20.md`; copy `summary.md`, `results.csv`;
 commit; `git push origin m7-router`.
+
+---
+
+# Round 21: rerun the batch now that `route` ignores pre-routing plane fills
+
+Why: Round 20 found the island repair idle ("island repair rounds 0") because
+`tools/m7_batch.py` fills the planes before `autolayout route` runs, and the
+verifier read those fills instead of emulating the pour. The fix is
+`verify_fresh_planes` (newest `crates/` commit). Local expectation, NOT KiCad:
+unconnected 141 -> 139 (r/3p5mil-candidate2 1 -> 0, c4/3p5mil-candidate3 2 -> 1),
+nothing else changes.
+
+## Prompt to paste
+
+> Follow "Round 21" in docs/windows-handoff.md exactly. You are in charge of
+> this round (docs/windows-agent.md).
+
+## Steps
+
+`git pull`; record the hash (must be later than `344bc73`); `cargo build --release`;
+`export AUTOLAYOUT_CORPUS=C:/Portcullis/controller/boards`.
+
+1. `"$KPY" tools/m7_batch.py out/m7r21_all > out/m7r21_all.txt 2>&1`; wall time.
+2. Before reading totals, check the premise: in `b_route.log` of
+   `returned/r/3p5mil-candidate2` and `returned/c4/3p5mil-candidate3` the line
+   must say `island repair rounds 1` (or more). If it still says 0, stop there,
+   paste that route line and the route command line the batch used, and say
+   whether the board file passed to `autolayout route` contains
+   `(filled_polygon` blocks; that is the whole finding.
+3. If it engaged: totals vs Round 20 (KiCad unconnected summed 141, nets
+   complete 4641, 122 / 5 / 4); every board whose KiCad unconnected or new
+   violations changed, both numbers; and for r and c4 the KiCad plane-net
+   entries (`via_dangling`, `unconnected_items`) whole, with the new +3V3 via
+   coordinates if it moved.
+4. Verifier vs KiCad: boards where unconnected differs.
+5. Timing: summed `route_s` and c4/3p5mil-candidate3 against Round 20.
+
+## Log
+
+`docs/m7-results/YYYY-MM-DD-round21.md`; copy `summary.md`, `results.csv`;
+commit; `git push origin m7-router`.

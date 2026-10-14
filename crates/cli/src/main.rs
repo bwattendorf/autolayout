@@ -473,7 +473,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     let jtext = judged.to_string();
     let jdoc = parse(&jtext).map_err(|e| format!("internal: {e}"))?;
     let jboard = Board::read(&jdoc).map_err(|e| e.to_string())?;
-    let v = autolayout_route::verify::verify(&jdoc, &jboard, &rules, &plane_codes);
+    let v = autolayout_route::verify::verify_fresh_planes(&jdoc, &jboard, &rules, &plane_codes);
     Ok((s, stats, judged, written, v, (reach, share_stubs)))
   };
   // The stub settings are a portfolio: stub reach (narrow leaves corridors
