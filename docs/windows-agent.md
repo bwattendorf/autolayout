@@ -43,6 +43,22 @@ the decision as the user's". The same applies here:
 - One round, one commit of logs; message `M7.5: round N record`.
 - A number in a log names the board, the command, and whether it was measured.
 
+## When to restart
+
+A long chat costs more on every turn, and all state is in the repo, so a fresh
+chat loses nothing. After a round is finished, its log pushed, and nothing is
+running:
+
+1. End your reply with one line: `Round N done and pushed (<hash>). Start a
+   fresh chat and send: Read docs/windows-agent.md and do what it says.`
+2. Then stop. Do not start the next round in the same chat.
+
+Do the same, mid-round, if the conversation has grown long (many large tool
+outputs, or you have been compacted): commit and push what is done so far
+with a note of the step you were on, say so in the same one line, and stop.
+Never restart while a batch or Freerouting run is still going; wait for it,
+write the log, push, then say it.
+
 ## Keeping the token use down
 
 - Run batches in the background, redirect their output to files, and read only
