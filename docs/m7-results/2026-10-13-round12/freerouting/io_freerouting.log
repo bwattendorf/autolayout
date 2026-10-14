@@ -1,0 +1,45 @@
+2026-10-14 06:28:21.496 INFO   Freerouting v2.3.0 (build-date: 2026-08-07)
+2026-10-14 06:28:22.540 WARN   Analytics tracking: first delivery failure in this window - /v1/analytics/identify - IOException: Server returned HTTP response code: 403 for URL: https://api.freerouting.app/v1/analytics/identify | Server response: <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=Edge"><meta name="robots" content="noindex,nofollow"><meta name="…. Further failures will be aggregated and reported every 60 minutes.
+2026-10-14 06:28:23.065 INFO   New version available: v2.5.0
+2026-10-14 06:28:23.130 INFO   [1F5DD0\8C1CB1] Loading board file 'b_stripped.dsn'...
+2026-10-14 06:28:23.306 INFO   Layer 'Ground Layer 1' has been automatically configured as a dedicated power plane because it contains a large conduction area covering >50% of the board.
+2026-10-14 06:28:23.307 INFO   Layer 'Power Layer 2' has been automatically configured as a dedicated power plane because it contains a large conduction area covering >50% of the board.
+2026-10-14 06:28:23.352 INFO   [1F5DD0\8C1CB1] Job '1F5DD0\8C1CB1' started at 2026-10-14T10:28:23.351336600Z.
+2026-10-14 06:28:26.994 INFO   [1F5DD0\8C1CB1] Fanout stage started on board 'f0eec0973ae9ac58ff0740a62de0ce6e' with 509 of 676 SMD pins needing fanout (150 already connected, 17 netless).
+2026-10-14 06:29:39.120 INFO   [1F5DD0\8C1CB1] Fanout pass #1 on board 'f5a2e0debbcd58b8b21496a6406eea0a' completed in 69.18 seconds with 505 SMD pins fanouted, 0 not routed, 0 insert errors, +367 extra vias (0 SMD pins still to check in pass, ripup costs=100).
+2026-10-14 06:30:10.857 INFO   [1F5DD0\8C1CB1] Fanout pass #2 on board 'e304b7b5ce19907159820dffad03a603' completed in 31.53 seconds with 21 SMD pins fanouted, 0 not routed, 0 insert errors, +7 extra vias (0 SMD pins still to check in pass, ripup costs=200).
+2026-10-14 06:30:34.363 INFO   [1F5DD0\8C1CB1] Fanout pass #3 on board '26d8770d7273e33f4265975efc03ac2a' completed in 23.40 seconds with 15 SMD pins fanouted, 1 not routed, 0 insert errors, +3 extra vias (0 SMD pins still to check in pass, ripup costs=300).
+2026-10-14 06:31:02.176 INFO   [1F5DD0\8C1CB1] Fanout pass #4 on board 'fcb9ccad8f45a14e290fe7db82a45d15' completed in 27.64 seconds with 11 SMD pins fanouted, 0 not routed, 0 insert errors, +0 extra vias (0 SMD pins still to check in pass, ripup costs=400).
+2026-10-14 06:31:24.459 INFO   [1F5DD0\8C1CB1] Fanout pass #5 on board 'fbd6d827fa7e5096f63a0e5dbe22bcd3' completed in 22.20 seconds with 9 SMD pins fanouted, 0 not routed, 0 insert errors, +3 extra vias (0 SMD pins still to check in pass, ripup costs=500).
+2026-10-14 06:31:37.627 INFO   [1F5DD0\8C1CB1] Fanout pass #6 on board '811b337d8496e99be04d8ca3d15609a0' completed in 13.09 seconds with 5 SMD pins fanouted, 0 not routed, 0 insert errors, +0 extra vias (0 SMD pins still to check in pass, ripup costs=600).
+2026-10-14 06:31:47.664 INFO   [1F5DD0\8C1CB1] Fanout pass #7 on board 'fd37f27b2862f3b8a77374145fec636f' completed in 9.99 seconds with 5 SMD pins fanouted, 0 not routed, 0 insert errors, +0 extra vias (0 SMD pins still to check in pass, ripup costs=700).
+2026-10-14 06:31:57.064 INFO   [1F5DD0\8C1CB1] Fanout pass #8 on board '665422c8c3b22bbec05a94892d8046e4' completed in 9.34 seconds with 5 SMD pins fanouted, 0 not routed, 0 insert errors, +0 extra vias (0 SMD pins still to check in pass, ripup costs=800).
+2026-10-14 06:32:06.674 INFO   [1F5DD0\8C1CB1] Fanout pass #9 on board 'e5db89d3b9965f8bd2fbb84872cf0868' completed in 9.54 seconds with 5 SMD pins fanouted, 0 not routed, 0 insert errors, +0 extra vias (0 SMD pins still to check in pass, ripup costs=900).
+2026-10-14 06:32:06.675 INFO   Fanout stopped after 9 passes: no progress for 3 consecutive passes.
+2026-10-14 06:32:08.540 INFO   [1F5DD0\8C1CB1] Fanout stage completed: started with 659 total SMD pins, completed in 218.86 seconds, escaped pins: 656/659 (99.5%), using 216.13 total CPU seconds, 162.77 GB total allocated, and 698.2 MB peak heap usage.
+2026-10-14 06:32:08.613 INFO   [1F5DD0\8C1CB1] Auto-routing stage started on board 'e5db89d3b9965f8bd2fbb84872cf0868' for 315 unrouted items.
+2026-10-14 07:07:31.060 INFO   [1F5DD0\8C1CB1] Auto-routing pass #1 on board 'e5db89d3b9965f8bd2fbb84872cf0868' was completed in 2118.48 seconds with the score of 795.39 (133 unrouted and 2 violations), using 2290.39 CPU seconds and the job allocated 2100.91 GB of memory so far.
+2026-10-14 09:17:38.962 INFO   [1F5DD0\8C1CB1] Auto-routing pass #2 on board '3d12310c49a1fd6059e33c481ff33e83' was completed in 7801.67 seconds with the score of 904.59 (62 unrouted and 1 violation), using 3329.05 CPU seconds and the job allocated 3387.86 GB of memory so far.
+2026-10-14 09:20:34.900 WARN   Analytics tracking: 5 event(s) failed to deliver in the last 60 minutes. Breakdown by error:
+  • /v1/analytics/track - IOException: Server returned HTTP response code: 403 for URL: https://api.freerouting.app/v1/analytics/track: 4×
+      Server response: <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=Edge"><meta name="robots" content="noindex,nofollow"><meta name="…
+  • /v1/analytics/identify - IOException: Server returned HTTP response code: 403 for URL: https://api.freerouting.app/v1/analytics/identify: 1×
+      Server response: <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=Edge"><meta name="robots" content="noindex,nofollow"><meta name="…
+
+2026-10-14 09:28:37.595 INFO   [1F5DD0\8C1CB1] Auto-routing pass #3 on board '75b203f630781c5f9e30d097e76fc393' was completed in 651.02 seconds with the score of 962.87 (24 unrouted and 1 violation), using 3966.73 CPU seconds and the job allocated 4193.31 GB of memory so far.
+2026-10-14 09:32:48.610 INFO   [1F5DD0\8C1CB1] Auto-routing pass #4 on board 'b23d7072ea84680b92748f176f3e1094' was completed in 245.44 seconds with the score of 984.34 (10 unrouted and 1 violation), using 4209.44 CPU seconds and the job allocated 4532.75 GB of memory so far.
+2026-10-14 09:35:02.078 INFO   [1F5DD0\8C1CB1] Auto-routing pass #5 on board '16926bd5a0988fe021d74e12e86d7fe6' was completed in 126.89 seconds with the score of 992.01 (5 unrouted and 1 violation), using 4339.25 CPU seconds and the job allocated 4719.35 GB of memory so far.
+2026-10-14 09:35:08.419 INFO   [1F5DD0\8C1CB1] Auto-routing stage completed: started with 476 unrouted nets, completed in 11201.75 seconds, final score: 992.01 (5 unrouted and 1 violation), using 4345.27 total CPU seconds, 4726.59 GB total allocated, and 3353.9 MB peak heap usage.
+2026-10-14 09:35:11.263 INFO   [1F5DD0\8C1CB1] Optimization stage started on board '47a4d20644cc427ab14d728a77f9efac' with score 992.01 (5 unrouted and 1 violation).
+2026-10-14 09:35:14.060 INFO   [1F5DD0\8C1CB1] Stopping optimizer because the current board score (992.01) is already close to the maximum score (1000). Remaining potential improvement is less than the threshold (1.00%).
+2026-10-14 09:35:16.952 INFO   [1F5DD0\8C1CB1] Optimization stage completed: started with score 992.01 (5 unrouted and 1 violation), completed in 2.81 seconds, final score: 992.01 (5 unrouted and 1 violation), using 2.81 total CPU seconds, 3.58 GB total allocated, and 2881.3 MB peak heap usage.
+2026-10-14 09:35:16.953 INFO   [1F5DD0\8C1CB1] Job '1F5DD0\8C1CB1' finished with state: COMPLETED (elapsed: 3 hours 6 minutes 53.60 seconds, finished at UTC: 2026-10-14T13:35:16.952962Z).
+
+????????????????????????????????????????????????????????????????????
+?           Thank you for using Freerouting!                       ?
+?                                                                  ?
+?  If you would like to support the project, please consider       ?
+?  sponsoring me at https://github.com/sponsors/andrasfuchs        ?
+?  Even a small monthly donation is greatly appreciated!           ?
+????????????????????????????????????????????????????????????????????
+2026-10-14 09:35:17.550 WARN   Analytics tracking: first delivery failure in this window - /v1/analytics/track - IOException: Server returned HTTP response code: 403 for URL: https://api.freerouting.app/v1/analytics/track | Server response: <!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=Edge"><meta name="robots" content="noindex,nofollow"><meta name="…. Further failures will be aggregated and reported every 60 minutes.
