@@ -1,0 +1,6 @@
+C:/autolayout/out/m7r13_nofill/quilter__returned__c4__3p5mil-candidate3__c4.kicad_pcb/b_routed_nofill.kicad_pcb: 1516 segments, 829 vias: unconnected 2, track_dangling 0, hole_to_hole 0, clearance 0, shorting 0, copper_edge 0, track_width 0, via_size 0
+  LIMIT: 272 pads/vias on plane nets were assumed connected to their plane because this file holds no zone fill for that layer and net (a stripped board); islands in a plane are NOT checked (unconnected 0 does not cover them)
+  plane pockets (EMULATED raster fill, not KiCad's; a cut-off tap is left out of its plane, so it shows in `unconnected` unless a track takes it elsewhere): 1 tap(s) cut off from the main plane
+  plane_island at (132.0772, 73.0328): net +3V3 via: tap cut off from the main In2.Cu fill (emulated)
+  unconnected at (132.1209, 73.0228): net +3V3 part 2 of 2 (main part has 85 pads): pads [U1.5], 0 tracks, 1 vias
+  unconnected at (130.9210, 73.0228): net N$41 part 2 of 2 (main part has 1 pads): pads [U1.2], 0 tracks, 0 vias
