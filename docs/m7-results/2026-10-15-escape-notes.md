@@ -58,3 +58,16 @@ After the hard re-route of dropped nets, each net that still has a failed pad ri
 
 ## Gate
 `bash ci.sh`: exit 0, "ci: all checks pass". The full batch has not been run, as agreed.
+
+---
+
+# Update 3: what surrounds U1, and rerouting (2026-10-15, m1/candidate4 after the rip-up retry; 10 KiCad unconnected)
+
+## What occupies the front layer around U1
+ASCII map of F.Cu (0.2 mm cells) from the routed board, plus a count. Within 2.5 mm of U1's pad box there are 32 nets, 133 F.Cu segments (120 mm) and 82 vias in the window; every F.Cu net there has a pad on U1 (no through traffic on the front layer), so U1's own fan-out fills the ring. The unreached pads (3, 7, 10, 14, 21, 24, 27, 36, 40, 52) are pads in the middle of an edge run whose neighbours' escape tracks run parallel and close to the pad ends (e.g. a long track at y = 102.5 mm under the bottom row, 0.35 mm from the pad ends, blocks pads 21/24/27 from going down). Nothing else (caps, other ICs) sits within the escape zone: the nearest parts are 3+ mm away, which also explains why flipping caps did not help.
+
+## Does rerouting help? No (measured)
+`--reroute 10` (route the whole board again with the nets that failed so far routed first, accumulating the set): all ten renditions were worse than the unrerouted result of 10: verifier unconnected 18, 23, 16, 19, 15, 14, 19, 19, 19, 19. It is the same finding as the earlier "off-grid nets first" experiment: giving the failing nets first pick takes cells from other nets that then fail. The code was reverted (not committed).
+
+## Order of fallbacks agreed with the user
+reroute (tried, no) -> flip small caps (built, no help on candidate4) -> placement adjustment -> more layers only when everything else has been used up (an explicit, reported option, since it changes the board design).
