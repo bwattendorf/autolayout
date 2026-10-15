@@ -56,6 +56,8 @@ own and ends with something measured.
 
 - **Portfolio attempts are logged (2026-10-15).** `autolayout route` now prints one `portfolio attempt N:` line per attempt (stub reach, sharing, nets, verifier unconnected, violations, clean or NOT clean), and one `island repair round N: kept/rejected` line per repair. Output unchanged on r, c4/3p5mil-candidate3, m1/tp18-candidate3 and t (every results.csv column identical to out/m7r22_all, measured). Answer it gave: c4/3p5mil-candidate3 runs all four attempts and none is clean (each leaves verifier unconnected 2; the repair gets it to 1); m1/tp18-candidate3 runs all four with 16/18/22/15 verifier unconnected in the batch pipeline (out/m7r23_targets), none clean.
 
+- **Many-pin IC escape, first measurement (2026-10-15, branch m7-escape).** On m1/candidate4 all 11 unreached U1 pads (QFN-60, 0.4 mm pitch) sit mid-way between grid lines (phase 0.36-0.74 of the 0.3098 mm pitch); shifting the grid origin swings unconnected 14-33 (measured). The cause is the grid/pad pitch mismatch. See docs/m7-results/2026-10-15-escape-notes.md. No router change yet.
+
 Later and deliberately not first: escape planning for many-pin parts (U1
 is the largest failure on every m1 route so far), length and impedance
 rules, differential pairs, and the RF checks of M8.
