@@ -32,8 +32,8 @@ So the pad is not unreachable on the bare board; its landing area is used up by 
 
 ## Experiment: route nets that touch an off-grid pad first
 Change (reverted): in `order_signal_nets`, sort nets with any pad that has no grid cell inside it ahead of the rest, then the usual short-first order. Run: `tools/m7_batch.py` on m1/candidate4 only (the board the change is aimed at).
-- Before (Round 22 batch): nets complete 87 of 99, KiCad unconnected 12, clearance 0 on the final board.
-- After: nets complete 84 of 99, KiCad unconnected **18**, KiCad clearance 15 (before 14... see summary), verifier clearance 1; portfolio attempts all NOT clean (29 / 23 / 18 / 24 verifier unconnected).
+- Before (Round 22 batch): nets complete 87 of 99, KiCad unconnected 12, KiCad clearance 15, verifier clearance 1.
+- After: nets complete 84 of 99, KiCad unconnected **18**, KiCad clearance 15, verifier clearance 1 (clearance unchanged); portfolio attempts all NOT clean (29 / 23 / 18 / 24 verifier unconnected).
 Result: **worse**, so routing fine-pitch nets first is not the fix, and it moves the cost onto other nets. The full batch was not run, as agreed (the targeted board failed).
 
 ## What the evidence supports next (not done)
