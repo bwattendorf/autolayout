@@ -54,6 +54,8 @@ own and ends with something measured.
   Cost: up to three attempts run that the sequential loop would have skipped, and peak memory is up to four routes' worth. 
   Closed (2026-10-15): `corpus_model.rs::dropped_nets_are_repaired_where_possible` was red since bf913dc (stub sharing on by default): on m1/candidate4 the first pass now completes 89 of 99 (2 dropped, 0 repaired, measured) so there is nothing left for the hard re-route, and the test's premise was stale. The router did not regress. The test now keeps the 89-net floor on the default settings and exercises the repair with sharing off (87 of 99, 5 dropped, 1 repaired, measured).
 
+- **Portfolio attempts are logged (2026-10-15).** `autolayout route` now prints one `portfolio attempt N:` line per attempt (stub reach, sharing, nets, verifier unconnected, violations, clean or NOT clean), and one `island repair round N: kept/rejected` line per repair. Output unchanged on r, c4/3p5mil-candidate3, m1/tp18-candidate3 and t (every results.csv column identical to out/m7r22_all, measured). Answer it gave: c4/3p5mil-candidate3 runs all four attempts and none is clean (each leaves verifier unconnected 2; the repair gets it to 1); m1/tp18-candidate3 runs all four with 21/21/19/24 unconnected, none clean.
+
 Later and deliberately not first: escape planning for many-pin parts (U1
 is the largest failure on every m1 route so far), length and impedance
 rules, differential pairs, and the RF checks of M8.

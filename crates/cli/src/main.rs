@@ -492,6 +492,25 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     (f64, bool),
   );
   let mut best: Attempt = attempt(&m, NEAR_REACH_NARROW, true)?;
+  // One line per attempt for the report: what it reached, and whether it ran.
+  let mut trail: Vec<String> = Vec::new();
+  let describe = |a: &Attempt| {
+    format!(
+      "stub reach {} pitches, shared corridors {}: nets complete {} of {}, verifier unconnected {}, clearance+shorting+hole-to-hole {}, {}",
+      a.5.0,
+      a.5.1,
+      a.0.nets_complete,
+      a.0.nets_total,
+      a.4.unconnected,
+      a.4.clearance + a.4.shorting + a.4.hole_to_hole,
+      if a.0.nets_complete == a.0.nets_total && a.4.clean() {
+        "clean"
+      } else {
+        "NOT clean"
+      }
+    )
+  };
+  trail.push(format!("  portfolio attempt 1: {}", describe(&best)));
   if !greedy && !(best.0.nets_complete == best.0.nets_total && best.4.clean()) {
     // The three further attempts are independent of one another (each reads
     // the same model and board), so they run in parallel threads. Their
@@ -521,16 +540,23 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
         })
         .collect()
     });
-    for next in results {
+    for (i, next) in results.into_iter().enumerate() {
       if best.0.nets_complete == best.0.nets_total && best.4.clean() {
-        break;
+        trail.push(format!(
+          "  portfolio attempt {}: not needed, an earlier attempt was clean (computed in parallel, result discarded)",
+          i + 2
+        ));
+        continue;
       }
       let next = next?;
+      trail.push(format!("  portfolio attempt {}: {}", i + 2, describe(&next)));
       let key = |a: &Attempt| (a.4.unconnected, a.4.clearance + a.4.shorting + a.4.hole_to_hole);
       if key(&next) < key(&best) {
         best = next;
       }
     }
+  } else if !greedy {
+    trail.push("  portfolio attempts 2-4: not run, attempt 1 was clean".to_string());
   }
   // Island repair: a plane tap the emulated pour leaves cut off from its
   // plane (`plane_island`) is moved by forbidding its via site and routing
@@ -564,9 +590,19 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
         )
       };
       if key(&next) < key(&best) {
+        trail.push(format!(
+          "  island repair round {}: kept, {}",
+          repair_rounds + 1,
+          describe(&next)
+        ));
         best = next;
         repair_rounds += 1;
       } else {
+        trail.push(format!(
+          "  island repair round {}: rejected, {}",
+          repair_rounds + 1,
+          describe(&next)
+        ));
         m.via = saved;
         break;
       }
@@ -598,6 +634,9 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     s.vias,
     t.elapsed().as_secs_f64()
   );
+  for line in &trail {
+    println!("{line}");
+  }
   if let Some(st) = &stats {
     println!(
       "  {} iteration(s); contested cells per iteration {:?}; nets dropped to make the result legal {} (completed by hard re-route: {})",
