@@ -47,6 +47,13 @@ own and ends with something measured.
   (131 unconnected with Freerouting at default rules), the service's m1
   stripped (65). Beat Freerouting on both, then go after the service.
 
+- **M7.5 route-portfolio speed (2026-10-15, branch m7-router-fix).** The three attempts after the first 
+  now run in parallel threads (`std::thread::scope`) and are folded in the same fixed order with the same early stop, so the chosen attempt is the same. 
+  Measured with `tools/m7_batch.py` on c4/3p5mil-candidate3: `route_s` 1029.9 -> 271.7 s; r/3p5mil-candidate2 5.6 -> 3.0 s; route and verifier lines identical 
+  (c4 189/190, 18201.0 mm, 829 vias, repair rounds 1, unconnected 1; r 88/88, 2948.9 mm, 457 vias, repair rounds 1, unconnected 0). 
+  Cost: up to three attempts run that the sequential loop would have skipped, and peak memory is up to four routes' worth. 
+  Open: `crates/route/tests/corpus_model.rs::dropped_nets_are_repaired_where_possible` fails (`repaired_nets >= 1`) on m7-router too, without this change; not touched here.
+
 Later and deliberately not first: escape planning for many-pin parts (U1
 is the largest failure on every m1 route so far), length and impedance
 rules, differential pairs, and the RF checks of M8.

@@ -492,16 +492,40 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     (f64, bool),
   );
   let mut best: Attempt = attempt(&m, NEAR_REACH_NARROW, true)?;
-  if !greedy {
-    for (reach, share) in [
+  if !greedy && !(best.0.nets_complete == best.0.nets_total && best.4.clean()) {
+    // The three further attempts are independent of one another (each reads
+    // the same model and board), so they run in parallel threads. Their
+    // results are folded in the fixed order below, with the same early stop
+    // as the one-after-another loop it replaces, so the chosen attempt does
+    // not depend on which thread finishes first. A later attempt that the
+    // sequential loop would have skipped is computed and then ignored.
+    let settings = [
       (NEAR_REACH_PITCHES, true),
       (NEAR_REACH_NARROW, false),
       (NEAR_REACH_PITCHES, false),
-    ] {
+    ];
+    let results: Vec<Result<Attempt, String>> = std::thread::scope(|scope| {
+      let handles: Vec<_> = settings
+        .iter()
+        .map(|&(reach, share)| {
+          let attempt = &attempt;
+          let m = &m;
+          scope.spawn(move || attempt(m, reach, share))
+        })
+        .collect();
+      handles
+        .into_iter()
+        .map(|h| {
+          h.join()
+            .unwrap_or_else(|_| Err("a routing attempt thread panicked".to_string()))
+        })
+        .collect()
+    });
+    for next in results {
       if best.0.nets_complete == best.0.nets_total && best.4.clean() {
         break;
       }
-      let next = attempt(&m, reach, share)?;
+      let next = next?;
       let key = |a: &Attempt| (a.4.unconnected, a.4.clearance + a.4.shorting + a.4.hole_to_hole);
       if key(&next) < key(&best) {
         best = next;
