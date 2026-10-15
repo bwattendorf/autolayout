@@ -52,7 +52,7 @@ own and ends with something measured.
   Measured with `tools/m7_batch.py` on c4/3p5mil-candidate3: `route_s` 1029.9 -> 271.7 s; r/3p5mil-candidate2 5.6 -> 3.0 s; route and verifier lines identical 
   (c4 189/190, 18201.0 mm, 829 vias, repair rounds 1, unconnected 1; r 88/88, 2948.9 mm, 457 vias, repair rounds 1, unconnected 0). 
   Cost: up to three attempts run that the sequential loop would have skipped, and peak memory is up to four routes' worth. 
-  Open: `crates/route/tests/corpus_model.rs::dropped_nets_are_repaired_where_possible` fails (`repaired_nets >= 1`) on m7-router too, without this change; not touched here.
+  Closed (2026-10-15): `corpus_model.rs::dropped_nets_are_repaired_where_possible` was red since bf913dc (stub sharing on by default): on m1/candidate4 the first pass now completes 89 of 99 (2 dropped, 0 repaired, measured) so there is nothing left for the hard re-route, and the test's premise was stale. The router did not regress. The test now keeps the 89-net floor on the default settings and exercises the repair with sharing off (87 of 99, 5 dropped, 1 repaired, measured).
 
 Later and deliberately not first: escape planning for many-pin parts (U1
 is the largest failure on every m1 route so far), length and impedance

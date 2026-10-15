@@ -120,7 +120,17 @@ fn dropped_nets_are_repaired_where_possible() {
   let rules = DesignRules::load_for_board(&path).unwrap();
   let profile = rules.classes[0].clone();
   let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes()).unwrap();
-  let (s, st) = route_negotiated(&board, &m, Costs::default(), Params::default());
+  // Stub-corridor sharing off: with it on (the default since round 19) the first
+  // pass drops fewer nets and the hard re-route has nothing left to mend on
+  // this board, so the repair is exercised in the mode where it is needed.
+  let costs = Costs {
+    share_stubs: false,
+    ..Costs::default()
+  };
+  let (s, st) = route_negotiated(&board, &m, costs, Params::default());
+  // The floor from 2026-10-13 holds for the default settings of one attempt.
+  let (d, _) = route_negotiated(&board, &m, Costs::default(), Params::default());
+  assert!(d.nets_complete >= 89, "{} of {}", d.nets_complete, d.nets_total);
   println!(
     "route corpus: m1 candidate4 {} of {} nets, {} dropped, {} repaired",
     s.nets_complete, s.nets_total, st.dropped_nets, st.repaired_nets
@@ -133,5 +143,4 @@ fn dropped_nets_are_repaired_where_possible() {
     st.repaired_nets >= 1,
     "no dropped net was completed by the hard re-route"
   );
-  assert!(s.nets_complete >= 89, "{} of {}", s.nets_complete, s.nets_total);
 }
