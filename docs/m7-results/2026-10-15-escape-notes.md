@@ -38,3 +38,23 @@ Result: **worse**, so routing fine-pitch nets first is not the fix, and it moves
 
 ## What the evidence supports next (not done)
 Reserve each fine-pitch pad's landing cell and stub corridor for its own net before any routing, as static ownership the other nets must route around (the stub corridor sharing of two adjacent 0.4 mm pads is the hard part: two nets own one cell, which the model's one-owner `track` array cannot express). That means a reservation pass in `RoutingModel` plus a change in how `Router` builds its occupancy, i.e. a change to the core of the negotiation, not a local edit. Test on candidate4 first (about 25 s for one attempt) and then doublesided-candidate4, emu/candidate2 and c4/candidate2.
+
+---
+
+# Update 2: rip-up retry, and the flip-caps rule (2026-10-15, branch m7-escape; all measured with tools/m7_batch.py, KiCad DRC)
+
+## Rip-up retry (crates/route/src/negotiate.rs, on by default, `--no-ripup` turns it off)
+After the hard re-route of dropped nets, each net that still has a failed pad rips up the kept nets whose copper lies within the stub reach of that pad (at most 8), routes the failed net first and the ripped nets after it, and keeps the trial only if fewer pads fail over those nets. Deterministic (fixed net order), at most 40 trials per board.
+- m1/candidate4: KiCad unconnected 12 -> **10**, nets complete 87 -> 89 of 99, KiCad clearance 15 -> 15, verifier clearance 1 -> 1.
+- m1/doublesided-candidate4, emu/candidate2, c4/candidate2, m1/tp18-candidate2: **no change** on any column (retry improved 0 nets on each; route_s within noise: 15.2 -> 15.3, 359.9 -> 370.2, 254.9 -> 277.0, 64.9 -> 64.2).
+- Why it helps little: a debug print on tp18-candidate2 (not committed) showed that in most trials the failed net does get routed first (its own pad connects) but the ripped nets then fail to re-route (e.g. before 4, after 11 failed pads). The board's front-side area around U1 is genuinely full, not merely mis-ordered.
+
+## The flip rule (user's rule, 2026-10-15: if the board cannot be fully routed after about 10 renditions, move the non-electrolytic caps to the back)
+- `autolayout flip <in> <out> --small-caps [--near "x,y;x,y" --count N]`: flips unlocked front-side capacitors (kind from the part value) whose pads span at most 3 mm to the back with the verified `edit::flip`; `--near` ranks them by distance to the failed pads, `--count` keeps the N nearest. Electrolytics are excluded by pad span, not by name. Prints the flipped references.
+- `tools/m7_batch.py ... --flip-retry N`: if a board ends with KiCad unconnected > 0, route up to N renditions that flip 3, 6, 9, ... of the caps nearest the failed pads; keep the best by (KiCad unconnected, violations) and never one that adds violations. The chosen flips are in the new `flipped` column.
+- Blanket flip of all 34 small caps on m1/candidate4: KiCad unconnected 19 (worse than 10).
+- `--flip-retry 10` on m1/candidate4 (base with rip-up: 10 unconnected): rendition 1..10 (3..30 caps): 12, 11, **10**, 13, 12, 13, 13, 17, 17, 19 unconnected. No rendition beat the unflipped board (best was a tie at 9 caps, not kept), so the board stays unflipped.
+- Result: **the rule runs, but flipping caps does not fix m1/candidate4**; the unconnected pads stay on U1. The caps are not what blocks U1's landing area. Not tried: the other U1-heavy boards with the rule (m1/doublesided-candidate4 15, emu/candidate2 23, c4/candidate2 12, m1/tp18-candidate2 12); flipping other part kinds (resistors).
+
+## Gate
+`bash ci.sh`: exit 0, "ci: all checks pass". The full batch has not been run, as agreed.

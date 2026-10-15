@@ -3,7 +3,7 @@
 Run under KiCad's bundled Python (needs pcbnew), after `cargo build --release`:
 
     "C:/Program Files/KiCad/9.0/bin/python.exe" tools/m7_batch.py OUT_DIR \
-        [--boards GLOB ...] [--skip SUBSTR[,SUBSTR...]] [--limit N] [--freerouting] [--fr-timeout SECONDS] [--fr-passes N]
+        [--boards GLOB ...] [--skip SUBSTR[,SUBSTR...]] [--limit N] [--flip-retry N] [--freerouting] [--fr-timeout SECONDS] [--fr-passes N]
 
 OUT_DIR must not exist yet (nothing is ever overwritten). Boards default to
 every `.kicad_pcb` under $AUTOLAYOUT_CORPUS/quilter/{fab,returned,finish,routed}
@@ -55,7 +55,7 @@ COLUMNS = [
     "kicad_clearance_before", "kicad_shorting_items_before", "kicad_hole_to_hole_before",
     "kicad_clearance", "kicad_shorting_items", "kicad_hole_to_hole", "kicad_track_dangling",
     "kicad_via_dangling", "kicad_track_width", "kicad_copper_edge_clearance", "kicad_hole_clearance",
-    "kicad_other_kinds",
+    "kicad_other_kinds", "flipped",
     "verifier_unconnected", "verifier_clearance", "verifier_shorting", "verifier_hole_to_hole",
     "verifier_track_dangling", "verifier_track_width",
     "freerouting_unconnected_after", "freerouting_s", "error",
@@ -246,6 +246,50 @@ def do_board(src, work, freerouting):
     return row
 
 
+def violations(row):
+    return sum(int(row.get(k) or 0) for k in ("kicad_clearance", "kicad_shorting_items", "kicad_hole_to_hole"))
+
+
+def flip_retry(src, work, rel, base, renditions, freerouting):
+    """If the board is not fully connected, try up to `renditions` renditions that
+    flip more of the small capacitors nearest the failed pads to the back
+    (3, 6, 9, ... of them; `autolayout flip --small-caps`), route each from
+    scratch, and keep the best by (KiCad unconnected, violations). A rendition
+    is only kept if it adds no clearance/shorting/hole-to-hole violation over the
+    unflipped board. The placement change is written to the row's `flipped`."""
+    try:
+        log = open(os.path.join(work, "b_route.log"), encoding="utf-8").read()
+    except OSError:
+        return base
+    pts = ";".join(f"{x},{y}" for x, y in re.findall(r"unconnected at \(([-\d.]+), ([-\d.]+)\)", log))
+    if not pts:
+        return base
+    src_pro = os.path.splitext(src)[0] + ".kicad_pro"
+    best, best_key, last_flipped = base, (int(base["kicad_unconnected_after"] or 0), violations(base)), None
+    for i in range(1, renditions + 1):
+        rdir = f"{work}_flip{i}"
+        os.makedirs(os.path.join(rdir, "src"))
+        fsrc = os.path.join(rdir, "src", os.path.basename(src))
+        code, out, _ = run([AUTOLAYOUT, "flip", src, fsrc, "--small-caps", "--near", pts, "--count", str(3 * i)])
+        flipped = next((l.split("	", 1)[1] for l in out.splitlines() if l.startswith("FLIPPED	")), "")
+        if code != 0 or not flipped or flipped == last_flipped:
+            break  # no more small capacitors to move
+        last_flipped = flipped
+        shutil.copyfile(src_pro, os.path.splitext(fsrc)[0] + ".kicad_pro")
+        row = do_board(fsrc, os.path.join(rdir, "run"), freerouting)
+        row["board"] = rel
+        if row["status"] != "ok":
+            continue
+        row["flipped"] = f"rendition {i}: {flipped}"
+        key = (int(row["kicad_unconnected_after"] or 0), violations(row))
+        print(f"    flip rendition {i} ({len(flipped.split())} caps): KiCad unconnected {key[0]}, violations {key[1]}", flush=True)
+        if key[1] <= violations(base) and key < best_key:
+            best, best_key = row, key
+        if best_key[0] == 0:
+            break
+    return best
+
+
 def write_all(out_dir, rows):
     with open(os.path.join(out_dir, "results.csv"), "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=COLUMNS)
@@ -273,7 +317,7 @@ def main(argv):
         sys.exit("AUTOLAYOUT_CORPUS is not set")
     if os.path.exists(out_dir):
         sys.exit(f"{out_dir} already exists; refusing to overwrite (use a fresh directory)")
-    globs, skip, limit, fr = [], [], None, False
+    globs, skip, limit, fr, flip_n = [], [], None, False, 0
     i = 0
     while i < len(args):
         if args[i] == "--boards":
@@ -298,6 +342,10 @@ def main(argv):
             FR_PASSES = int(args[i + 1])
             i += 2
             continue
+        if args[i] == "--flip-retry":
+            flip_n = int(args[i + 1])
+            i += 2
+            continue
         if args[i] == "--freerouting":
             fr = True
             i += 1
@@ -319,6 +367,8 @@ def main(argv):
         work = os.path.join(out_dir, re.sub(r"[^A-Za-z0-9_.-]+", "__", rel))
         try:
             row = do_board(b, work, fr)
+            if flip_n and row["status"] == "ok" and int(row["kicad_unconnected_after"] or 0) > 0:
+                row = flip_retry(b, work, rel, row, flip_n, fr)
         except Exception as e:  # never let one board stop the batch
             row = {c: "" for c in COLUMNS}
             row["board"], row["status"], row["error"] = rel, "FAIL:unexpected", str(e)[:300]
