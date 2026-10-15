@@ -19,3 +19,22 @@ Result: a swing of 14 to 33 from a sub-pitch shift of the whole grid. Shifting t
 2. A first small step that can be tested on this one 24 s board: for a part whose pad pitch is below the grid pitch times 1.5, put the stub landing at the pad's own exit line at a fixed distance outward (a straight escape), and register it as an isolated stub, instead of searching for the nearest free grid cell.
 3. Test on the targeted boards only (m1/candidate4, m1/doublesided-candidate4, emu/candidate2, c4/candidate2: 12, 15, 23, 12 unconnected, all U1-dominated) before any full batch.
 Not measured: how many of the other boards' failures show the same phase pattern; whether a 2-layer QFN-60 can be escaped at all with these rules (that depends on via size 0.6096 against the 0.4 mm pitch and needs a dog-bone layout).
+
+---
+
+# Update: why the pads fail, and one ordering experiment (2026-10-15, measured on returned/m1/candidate4; temporary debug code and the ordering change are reverted, not committed)
+
+## Why the unreached pads fail
+A temporary counter in `Router::terminal` printed, each time a pad got no landing cell at all (`near_cells` empty), how many grid cells lie in reach and which filter removed them. Reading the 17 pads that ever came up empty (all on U1, QFN-60):
+- reach 1.5 pitches: about 25 cells in reach; 20-24 of them fail `cell_free` (already held by another net's track, via halo or stub corridor, or a neighbouring pad's halo), 0-6 fail `stub_clear` (the straight stub would come too near a neighbouring pad), 0-2 fail the stub corridor test.
+- reach 4.5 pitches: about 105 cells in reach; 73-95 are taken, 6-26 fail `stub_clear`, 2-8 fail the corridor.
+So the pad is not unreachable on the bare board; its landing area is used up by other nets' copper by the time it is routed (the empties happen in the later passes). The block is `cell_free`, not the stub geometry.
+
+## Experiment: route nets that touch an off-grid pad first
+Change (reverted): in `order_signal_nets`, sort nets with any pad that has no grid cell inside it ahead of the rest, then the usual short-first order. Run: `tools/m7_batch.py` on m1/candidate4 only (the board the change is aimed at).
+- Before (Round 22 batch): nets complete 87 of 99, KiCad unconnected 12, clearance 0 on the final board.
+- After: nets complete 84 of 99, KiCad unconnected **18**, KiCad clearance 15 (before 14... see summary), verifier clearance 1; portfolio attempts all NOT clean (29 / 23 / 18 / 24 verifier unconnected).
+Result: **worse**, so routing fine-pitch nets first is not the fix, and it moves the cost onto other nets. The full batch was not run, as agreed (the targeted board failed).
+
+## What the evidence supports next (not done)
+Reserve each fine-pitch pad's landing cell and stub corridor for its own net before any routing, as static ownership the other nets must route around (the stub corridor sharing of two adjacent 0.4 mm pads is the hard part: two nets own one cell, which the model's one-owner `track` array cannot express). That means a reservation pass in `RoutingModel` plus a change in how `Router` builds its occupancy, i.e. a change to the core of the negotiation, not a local edit. Test on candidate4 first (about 25 s for one attempt) and then doublesided-candidate4, emu/candidate2 and c4/candidate2.
