@@ -71,3 +71,16 @@ ASCII map of F.Cu (0.2 mm cells) from the routed board, plus a count. Within 2.5
 
 ## Order of fallbacks agreed with the user
 reroute (tried, no) -> flip small caps (built, no help on candidate4) -> placement adjustment -> more layers only when everything else has been used up (an explicit, reported option, since it changes the board design).
+
+---
+
+# Update 4: moving or rotating U1 (2026-10-15, m1/candidate4, scratch copies; U1 is a locked part, moved only in the copies; KiCad DRC, `out\m7e7_u1`)
+
+28 variants of the board with `autolayout move` on U1: shifts of -0.2 to +0.2 mm in 0.1 mm steps in x and y (25, including 0,0), and rotations 90, 180, 270 degrees at the original position. Each was stripped, poured and routed through `tools/m7_batch.py` (rip-up retry on) and graded by KiCad.
+- Unmoved (0,0): **10** KiCad unconnected, 89 of 99 nets.
+- Best moved: +0.1/+0.2 mm: 11. Others: 12 to 22 for the shifts; rotations 90/180/270: **23 / 33 / 38**.
+- No variant beat the unmoved board; none added a clearance, shorting or hole-to-hole violation (KiCad clearance 14-16 on all, shorting 0, hole-to-hole 0; the unmoved board has 15).
+- Result: **moving or rotating U1 does not help m1/candidate4**, and the outcome swings by +/-10 for a 0.1 mm move (same sensitivity seen with the grid shift), so a local search on U1's pose would mostly pick noise. A search over the pose of other parts was not tried.
+
+## Where this leaves the fallbacks
+reroute: no. flip small caps: no (on this board). U1 shift/rotate: no. All three measured on m1/candidate4 only. The remaining unconnected pads are U1's own fan-out congestion on a 2-signal-layer stack; what is left is routing the fan-out better (the dog-bone/staggered-via escape idea in Update 1) or, last, more layers (agreed order: only when everything else is used up).
