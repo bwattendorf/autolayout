@@ -22,10 +22,11 @@ use std::fs;
 use std::path::Path;
 use std::process::ExitCode;
 
-use autolayout_board::{Board, Netlist, Point, Side, set_pose};
+use autolayout_board::{Board, Netlist, Point, Side, flip, set_pose};
 use autolayout_sexpr::{Document, parse};
 
-const USAGE: &str = "usage:\n  autolayout roundtrip <file.kicad_pcb>...\n  autolayout info <file.kicad_pcb> [<file.net>]\n  autolayout move <in.kicad_pcb> <out.kicad_pcb> (<REF> <x> <y> <deg>)...\n  autolayout pads <file.kicad_pcb>\n  autolayout grade <file.kicad_pcb>...\n  autolayout groups <file.kicad_pcb> <file.net>\n  autolayout parity <file.kicad_pcb> <file.net>\n  autolayout place <in.kicad_pcb> <file.net> <out.kicad_pcb> [--no-halo]\n  autolayout strip <in.kicad_pcb> <out.kicad_pcb>";
+const USAGE: &str = "usage:\n  autolayout roundtrip <file.kicad_pcb>...\n  autolayout info <file.kicad_pcb> [<file.net>]\n  autolayout move <in.kicad_pcb> <out.kicad_pcb> (<REF> <x> <y> <deg>)...\n  autolayout pads <file.kicad_pcb>\n  autolayout grade <file.kicad_pcb>...\n  autolayout groups <file.kicad_pcb> <file.net>\n  autolayout parity <file.kicad_pcb> <file.net>\n  autolayout place <in.kicad_pcb> <file.net> <out.kicad_pcb> [--no-halo]\n  autolayout strip <in.kicad_pcb> <out.kicad_pcb>
+  autolayout flip <in.kicad_pcb> <out.kicad_pcb> --small-caps [--near \"x,y;x,y\" --count N]";
 
 /// Set the pose of each named footprint and write the result to `output`,
 /// which must not exist yet (CLAUDE.md rule 1: inputs are never overwritten).
@@ -47,6 +48,96 @@ fn move_parts(input: &str, output: &str, moves: &[String]) -> Result<bool, Strin
   fs::write(output, doc.to_string()).map_err(|e| format!("{output}: {e}"))?;
   println!("wrote {output} ({} footprint(s) set)", moves.len() / 4);
   Ok(true)
+}
+
+/// Pad extent (mm) up to which a capacitor counts as small. Electrolytic and
+/// other bulk parts have pads spanning more than this; decided from the
+/// footprint's own pad geometry, not from a name.
+const SMALL_PART_MM: f64 = 3.0;
+
+/// Flip every unlocked front-side capacitor (part kind from its value) whose
+/// pads span at most `SMALL_PART_MM` to the back, and write the board to
+/// `output`, which must not exist yet.
+fn flip_small_caps(input: &str, output: &str, near: &[Point], count: Option<usize>) -> Result<bool, String> {
+  if Path::new(output).exists() {
+    return Err(format!("{output}: already exists; refusing to overwrite"));
+  }
+  let (_, mut doc) = load(input)?;
+  let board = Board::read(&doc).map_err(|e| format!("{input}: {e}"))?;
+  let mut picked: Vec<(usize, String, f64)> = Vec::new();
+  for fp in &board.footprints {
+    if fp.locked
+      || fp.side != Side::Front
+      || autolayout_place::kind::kind_of(fp) != autolayout_place::kind::Kind::Capacitor
+    {
+      continue;
+    }
+    let (mut x0, mut x1, mut y0, mut y1) = (f64::MAX, f64::MIN, f64::MAX, f64::MIN);
+    for p in &fp.pads {
+      x0 = x0.min(p.at.x - p.size.x / 2.0);
+      x1 = x1.max(p.at.x + p.size.x / 2.0);
+      y0 = y0.min(p.at.y - p.size.y / 2.0);
+      y1 = y1.max(p.at.y + p.size.y / 2.0);
+    }
+    if x1 >= x0 && y1 >= y0 && (x1 - x0).max(y1 - y0) <= SMALL_PART_MM {
+      let d = near
+        .iter()
+        .map(|q| (fp.at - *q).length())
+        .fold(f64::MAX, f64::min);
+      picked.push((fp.node_index, fp.reference.clone(), d));
+    }
+  }
+  // Nearest to the given points first (ties by reference), then the first N.
+  picked.sort_by(|a, b| a.2.total_cmp(&b.2).then(a.1.cmp(&b.1)));
+  if let Some(n) = count {
+    picked.truncate(n);
+  }
+  for (idx, reference, _) in &picked {
+    flip(&mut doc, *idx).map_err(|e| format!("{reference}: {e}"))?;
+  }
+  fs::write(output, doc.to_string()).map_err(|e| format!("{output}: {e}"))?;
+  let refs: Vec<&str> = picked.iter().map(|p| p.1.as_str()).collect();
+  println!(
+    "wrote {output} ({} small capacitor(s) flipped to the back)
+FLIPPED	{}",
+    picked.len(),
+    refs.join(" ")
+  );
+  Ok(true)
+}
+
+/// Options of `autolayout flip ... --small-caps`: `--near "x,y;x,y"` ranks the
+/// capacitors by distance to those points and `--count N` keeps the first N.
+fn flip_command(input: &str, output: &str, opts: &[String]) -> Result<bool, String> {
+  let (mut near, mut count) = (Vec::new(), None);
+  let mut it = opts.iter();
+  while let Some(o) = it.next() {
+    match o.as_str() {
+      "--near" => {
+        for pair in it
+          .next()
+          .map_or("", String::as_str)
+          .split(';')
+          .filter(|s| !s.is_empty())
+        {
+          let mut xy = pair.split(',').map(|v| v.trim().parse::<f64>());
+          match (xy.next(), xy.next()) {
+            (Some(Ok(x)), Some(Ok(y))) if x.is_finite() && y.is_finite() => near.push(Point::new(x, y)),
+            _ => return Err(format!("--near: not x,y: {pair}")),
+          }
+        }
+      }
+      "--count" => {
+        count = Some(
+          it.next()
+            .and_then(|v| v.parse::<usize>().ok())
+            .ok_or("--count needs a number")?,
+        );
+      }
+      other => return Err(format!("flip: unknown option {other}")),
+    }
+  }
+  flip_small_caps(input, output, &near, count)
 }
 
 /// Supplies, MCUs and converters found from pintypes, part kinds and
@@ -423,6 +514,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   while let Some(a) = it.next() {
     match a.as_str() {
       "--greedy" => greedy = true,
+      "--no-ripup" => params.ripup_retry = false,
       "--out" => out_path = Some(it.next().ok_or("--out needs a path")?.clone()),
       "--iters" => {
         params.max_iterations = it
@@ -639,8 +731,8 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   }
   if let Some(st) = &stats {
     println!(
-      "  {} iteration(s); contested cells per iteration {:?}; nets dropped to make the result legal {} (completed by hard re-route: {})",
-      st.iterations, st.conflicts, st.dropped_nets, st.repaired_nets
+      "  {} iteration(s); contested cells per iteration {:?}; nets dropped to make the result legal {} (completed by hard re-route: {}; improved by rip-up retry: {})",
+      st.iterations, st.conflicts, st.dropped_nets, st.repaired_nets, st.ripup_improved
     );
   }
   for r in s.routes.iter().filter(|r| !r.failed.is_empty()).take(12) {
@@ -860,6 +952,9 @@ fn main() -> ExitCode {
       [pcb, net] => info(pcb, Some(net)),
       _ => Err(USAGE.to_owned()),
     },
+    Some((cmd, [input, output, flag, opts @ ..])) if cmd == "flip" && flag == "--small-caps" => {
+      flip_command(input, output, opts)
+    }
     Some((cmd, rest)) if cmd == "move" => match rest {
       [input, output, moves @ ..] if !moves.is_empty() && moves.len() % 4 == 0 => {
         move_parts(input, output, moves)

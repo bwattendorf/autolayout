@@ -370,6 +370,7 @@ mod negotiation_tests {
       present_first: u32::MAX,
       present_growth: (3, 1),
       history_step: u32::MAX,
+      ripup_retry: true,
     };
     let (n, st) = route_negotiated(&b, &m, Costs::default(), p);
     assert!(judge(BOARD, &b, &m, &n.routes).clean());

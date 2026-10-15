@@ -30,6 +30,10 @@ pub struct Params {
   pub present_growth: (u32, u32),
   /// History added to a contested cell each iteration.
   pub history_step: u32,
+  /// After the hard re-route of dropped nets, rip up the kept nets that sit in
+  /// the landing area of a pad that still failed, route the failed net first
+  /// and the ripped ones after it; kept only if fewer pads fail.
+  pub ripup_retry: bool,
 }
 
 impl Default for Params {
@@ -39,6 +43,7 @@ impl Default for Params {
       present_first: 30,
       present_growth: (3, 2),
       history_step: 20,
+      ripup_retry: true,
     }
   }
 }
@@ -52,6 +57,8 @@ pub struct NegotiationStats {
   /// Of the dropped nets, how many came out complete when re-routed in hard
   /// mode around the nets that were kept.
   pub repaired_nets: usize,
+  /// Failed nets that the rip-up retry completed or improved (fewer failed pads).
+  pub ripup_improved: usize,
 }
 
 pub fn route_negotiated(
@@ -163,6 +170,9 @@ pub fn route_negotiated(
       *slot = Some(r);
     }
   }
+  if params.ripup_retry {
+    stats.ripup_improved = ripup_retry(board, model, costs, &by_net, &nets, &mut kept);
+  }
   for ((_, _, pads), r) in nets.iter().zip(kept) {
     let Some(kept) = r else { continue };
     s.nets_total += 1;
@@ -176,4 +186,110 @@ pub fn route_negotiated(
     s.routes.push(kept);
   }
   (s, stats)
+}
+
+/// Most nets ripped up for one retry, and most retries per board.
+const RIPUP_MAX_NETS: usize = 8;
+const RIPUP_MAX_TRIES: usize = 40;
+
+fn failed_pads(r: &Option<NetRoute>) -> usize {
+  r.as_ref().map_or(0, |r| r.failed.len())
+}
+
+/// A hard-mode router holding the plane taps and every kept route except `skip`.
+fn rebuilt_router<'a>(
+  board: &Board,
+  model: &'a RoutingModel,
+  costs: Costs,
+  by_net: &std::collections::HashMap<u32, Vec<(usize, usize)>>,
+  kept: &[Option<NetRoute>],
+  skip: &[usize],
+) -> Router<'a> {
+  let mut router = Router::new(model, costs);
+  let mut scratch = Summary::default();
+  tap_planes(board, model, &mut router, by_net, &mut scratch);
+  for (j, r) in kept.iter().enumerate() {
+    if let (Some(r), false) = (r, skip.contains(&j)) {
+      router.commit_hard(r);
+    }
+  }
+  router
+}
+
+/// Rip-up and retry for nets still incomplete after the hard re-route. A failed
+/// pad usually lost its landing cells to the copper of nets routed before it,
+/// so for each failed net the kept nets whose copper lies within the stub reach
+/// of a failed pad are ripped up, the failed net is routed first, and the
+/// ripped nets after it. The trial is kept only when it leaves fewer failed
+/// pads over those nets; otherwise nothing changes. Net order is fixed, so the
+/// result is deterministic. Returns how many failed nets improved.
+fn ripup_retry(
+  board: &Board,
+  model: &RoutingModel,
+  costs: Costs,
+  by_net: &std::collections::HashMap<u32, Vec<(usize, usize)>>,
+  nets: &[crate::driver::Ordered],
+  kept: &mut [Option<NetRoute>],
+) -> usize {
+  let mut improved = 0usize;
+  let mut tries = 0usize;
+  for k in 0..nets.len() {
+    if tries >= RIPUP_MAX_TRIES {
+      break;
+    }
+    let Some(failed) = kept.get(k).and_then(|r| r.as_ref()).map(|r| r.failed.clone()) else {
+      continue;
+    };
+    if failed.is_empty() {
+      continue;
+    }
+    // Kept nets with copper near a failed pad, on the pad's own layers.
+    let mut rip: Vec<usize> = Vec::new();
+    for &(fi, pi) in &failed {
+      let Some(pad) = board.footprints.get(fi).and_then(|f| f.pads.get(pi)) else {
+        continue;
+      };
+      let reach = model.pitch * costs.reach + pad.size.x.max(pad.size.y) / 2.0;
+      let layers = model.pad_layer_indices(&pad.layers);
+      for (j, r) in kept.iter().enumerate() {
+        let Some(r) = r else { continue };
+        if j == k || rip.contains(&j) {
+          continue;
+        }
+        let near = r
+          .cells
+          .iter()
+          .chain(r.stub_cells.iter())
+          .any(|&(l, x, y)| layers.contains(&l) && (model.centre(x, y) - pad.at).length() <= reach);
+        if near {
+          rip.push(j);
+        }
+      }
+    }
+    rip.sort_unstable();
+    if rip.is_empty() || rip.len() > RIPUP_MAX_NETS {
+      continue;
+    }
+    tries += 1;
+    let mut skip = rip.clone();
+    skip.push(k);
+    let before: usize = skip.iter().map(|&j| failed_pads(&kept[j])).sum();
+    let mut router = rebuilt_router(board, model, costs, by_net, kept, &skip);
+    let mut trial: Vec<(usize, NetRoute)> = Vec::new();
+    for &j in std::iter::once(&k).chain(rip.iter()) {
+      if let Some((_, net, pads)) = nets.get(j) {
+        trial.push((j, router.route_net(board, *net, pads)));
+      }
+    }
+    let after: usize = trial.iter().map(|(_, r)| r.failed.len()).sum();
+    if after < before {
+      for (j, r) in trial {
+        if let Some(slot) = kept.get_mut(j) {
+          *slot = Some(r);
+        }
+      }
+      improved += 1;
+    }
+  }
+  improved
 }
