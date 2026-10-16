@@ -84,3 +84,21 @@ reroute (tried, no) -> flip small caps (built, no help on candidate4) -> placeme
 
 ## Where this leaves the fallbacks
 reroute: no. flip small caps: no (on this board). U1 shift/rotate: no. All three measured on m1/candidate4 only. The remaining unconnected pads are U1's own fan-out congestion on a 2-signal-layer stack; what is left is routing the fan-out better (the dog-bone/staggered-via escape idea in Update 1) or, last, more layers (agreed order: only when everything else is used up).
+
+---
+
+# Update 5: staggered-via fan-out and reserved landing cells (2026-10-15, m1/candidate4, QFN-60 at 0.4 mm pitch; rules 0.1524 track / 0.1524 clearance / 0.6096 via; `tools/fanout_proto.py`)
+
+## A dog-bone fan-out of a whole edge is not possible under these rules (prototype, continuous geometry, no grid)
+`tools/fanout_proto.py` searches, for U1's left edge (15 pads), a stub per pad (straight out, then one 45-degree jog) ending in a via, checking every clearance in continuous geometry (capsule/segment gaps against all pads, stubs and vias, with the router's 0.02 mm margin). Depth-first search, three pad orders, 120 s cap each:
+- contiguous runs of **3, 4, 5** pads: a legal fan-out exists; **6**: none found in 40 s; **15**: none found.
+Reasoning that matches it: a via needs about 0.53 mm of centre distance from a neighbouring track, adjacent lanes are 0.4 mm apart, and parallel 45-degree stubs at 0.4 mm pitch are only 0.28 mm apart (less than the 0.33 mm they need). So most pads cannot have their own via near the part. (With the 0.3 mm microvia in the project's defaults a fan-out would be possible, but that is a fab capability the rules do not allow.) Search is not exhaustive, so "none found" is not a proof for 6 to 15.
+
+## Reserved landing cells (built, measured, reverted)
+Idea: before routing, match the off-grid pads of each row monotonically to grid cells just outside the pad ends (dynamic programme, minimum sideways distance, strictly increasing cells), own those cells for their nets in `usage` so no other net takes them, and make `terminal()` use the reserved cell. Implemented in `Router::reserve_landings`, switched by `--reserve`.
+- Rows found on U1: 4 (11, 7, 12 and 12 pads; the pads that already have a grid cell inside them are not in the rows); 7 to 9 of each row assigned, 0 candidates for 3 or 4 pads per row (their landing cells fall in neighbours' clearance).
+- m1/candidate4 (rip-up retry on; unflagged result 10 unconnected, 89 of 99 nets), KiCad unconnected with `--reserve`: landing line 0.2 mm beyond the pad ends **26**; 0.35 mm **28**; 0.55 mm **15**; 0.8 mm **17**. Every setting is worse than not reserving.
+- Reverted; not committed.
+
+## State of the m1/candidate4 problem
+Measured and found not to help on this board: reroute with failed nets first, flipping small caps, moving or rotating U1, reserving landing cells. Helps: the rip-up retry (12 to 10). Not tried: a router that works off-grid for the fan-out region (a local finer lattice), more layers (agreed as the last resort), moving other parts than U1 and the caps.
