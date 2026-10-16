@@ -499,6 +499,13 @@ fn model_args(pcb: &str, args: &[String]) -> Result<ModelArgs, String> {
 /// Greedy sequential route of every net on the model; reports, writes nothing
 /// (writing is M7.4). Copper already on the board is kept as obstacles, so
 /// route a stripped board (`autolayout strip`).
+/// Tap repair looks at plane-tap vias this many pitches from a pad left open.
+const TAP_REPAIR_PITCHES: f64 = 6.0;
+/// Tap repair runs only when at most this many pads are left open.
+const TAP_REPAIR_MAX_OPEN: usize = 12;
+/// Most tap repair rounds.
+const TAP_REPAIR_ROUNDS: usize = 4;
+
 fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   use autolayout_route::{
     driver::route_all,
@@ -700,6 +707,82 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
       }
     }
   }
+  // Tap repair: plane taps are placed first and never move, so a tap via can
+  // sit in the only exit lane of a fine-pitch pad and leave its net
+  // unreachable (fab/emu: U1.79 boxed in by the GND and +3V3 taps of the cap
+  // under it, R4.1 left open; see docs/m7-results/2026-10-16-tap-repair.md).
+  // For every pad of a net the result left incomplete, each plane-tap via
+  // within `TAP_REPAIR_PITCHES` pitches of the pad is forbidden for every net
+  // and the board is routed again with the same settings; the replacement
+  // taps are then looked at the same way, up to `TAP_REPAIR_ROUNDS` rounds
+  // (a moved tap can land in the next lane over). The result replaces the
+  // earlier one only if it leaves fewer unconnected (then fewer violations);
+  // otherwise every forbidden site is unblocked. Runs only when few pads are open.
+  let mut tap_rounds = 0usize;
+  if !greedy {
+    let plane_nets: Vec<u32> = m.planes.iter().map(|p| p.net).collect();
+    let by_net = board.pads_by_net();
+    let tap_sites = |a: &Attempt, m: &RoutingModel| -> Vec<autolayout_board::Point> {
+      let mut open: Vec<(usize, usize)> = Vec::new();
+      let mut open_pads = 0usize;
+      for r in a.0.routes.iter().filter(|r| !r.failed.is_empty()) {
+        open_pads += r.failed.len();
+        open.extend(by_net.get(&r.net).into_iter().flatten().copied());
+      }
+      if open.is_empty() || open_pads > TAP_REPAIR_MAX_OPEN {
+        return Vec::new();
+      }
+      let reach = m.pitch * TAP_REPAIR_PITCHES;
+      let mut sites = Vec::new();
+      for r in a.0.routes.iter().filter(|r| plane_nets.contains(&r.net)) {
+        for &(ix, iy) in &r.vias {
+          let c = m.centre(ix, iy);
+          let near = open.iter().any(|&(f, p)| {
+            board
+              .footprints
+              .get(f)
+              .and_then(|fp| fp.pads.get(p))
+              .is_some_and(|pad| (pad.at - c).length() <= reach)
+          });
+          if near {
+            sites.push(c);
+          }
+        }
+      }
+      sites
+    };
+    let key = |a: &Attempt| (a.4.unconnected, a.4.clearance + a.4.shorting + a.4.hole_to_hole);
+    let saved = m.via.clone();
+    let mut sites = tap_sites(&best, &m);
+    let mut blocked_total = 0usize;
+    let (reach_cfg, share) = best.5;
+    for round in 1..=TAP_REPAIR_ROUNDS {
+      let newly = sites.iter().filter(|&&c| m.block_via_near(c)).count();
+      if newly == 0 {
+        break;
+      }
+      blocked_total += newly;
+      let next = attempt(&m, reach_cfg, share)?;
+      let after = tap_sites(&next, &m);
+      if key(&next) < key(&best) {
+        trail.push(format!(
+          "  tap repair round {round}: kept ({blocked_total} tap via site(s) forbidden so far), {}",
+          describe(&next)
+        ));
+        best = next;
+        tap_rounds = round;
+        break;
+      }
+      trail.push(format!(
+        "  tap repair round {round}: not better ({newly} more site(s) forbidden), {}",
+        describe(&next)
+      ));
+      sites = after;
+    }
+    if tap_rounds == 0 {
+      m.via = saved;
+    }
+  }
   let (s, stats, judged, written, v, chosen) = best;
   println!(
     "rules from {}; pitch {:.4} mm; grid {} x {} x {}",
@@ -710,7 +793,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     m.layers.len()
   );
   println!(
-    "{} route (UNVERIFIED: not written, not checked by KiCad; stub reach {} pitches, shared stub corridors {}, island repair rounds {repair_rounds}): nets complete {} of {}; pads connected {} of {}; {:.1} mm of track, {} vias, {:.1} s",
+    "{} route (UNVERIFIED: not written, not checked by KiCad; stub reach {} pitches, shared stub corridors {}, island repair rounds {repair_rounds}, tap repair rounds {tap_rounds}): nets complete {} of {}; pads connected {} of {}; {:.1} mm of track, {} vias, {:.1} s",
     if greedy {
       "greedy sequential"
     } else {
