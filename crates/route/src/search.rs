@@ -52,6 +52,11 @@ pub const PENALTY_CAP: u32 = 1_000_000;
 pub const NEAR_REACH_NARROW: f64 = 1.5;
 pub const NEAR_REACH_PITCHES: f64 = 4.5;
 
+/// Bent stubs reach this many pitches beyond the pad end along its axis.
+const BENT_AXIAL_PITCHES: f64 = 4.0;
+/// ... and this many pitches to the side.
+const BENT_LATERAL_PITCHES: f64 = 2.0;
+
 /// Hard-mode owner of a cell two isolated stubs share: nobody may route there.
 const SHARED: u32 = u32::MAX - 2;
 
@@ -72,6 +77,8 @@ pub struct Costs {
   /// can all escape. Off: the older, stricter rule, which wins on some boards
   /// (local 37-board sweep: 163 off, 152 on, 141 best of the two per board).
   pub share_stubs: bool,
+  /// Pads with no straight-stub landing may use a bent stub (axis, then a 45 degree jog).
+  pub bent_stubs: bool,
 }
 
 impl Default for Costs {
@@ -82,6 +89,7 @@ impl Default for Costs {
       via: 60,
       reach: NEAR_REACH_NARROW,
       share_stubs: true,
+      bent_stubs: true,
     }
   }
 }
@@ -136,6 +144,8 @@ impl NetRoute {
 struct Terminal {
   pad: (usize, usize),
   cells: Vec<(usize, usize, usize)>,
+  /// Cells reached by a bent stub (axis, then a 45 degree jog): the corner point.
+  bends: HashMap<(usize, usize, usize), Point>,
   /// Cell box (min ix, max ix, min iy, max iy) for the heuristic.
   bbox: (usize, usize, usize, usize),
 }
@@ -559,11 +569,18 @@ impl<'a> Router<'a> {
   fn terminal(&self, board: &Board, fi: usize, pi: usize, net: u32) -> Option<Terminal> {
     board.footprints.get(fi)?.pads.get(pi)?;
     let inside = self.model.pad_access(board, fi, pi).cells;
-    let cells = if inside.is_empty() {
+    let mut bends = HashMap::new();
+    let mut cells = if inside.is_empty() {
       self.near_cells(board, fi, pi, net)
     } else {
       inside
     };
+    if cells.is_empty() && self.costs.bent_stubs {
+      for (l, x, y, corner) in self.bent_cells(board, fi, pi, net) {
+        cells.push((l, x, y));
+        bends.insert((l, x, y), corner);
+      }
+    }
     if cells.is_empty() {
       return None;
     }
@@ -574,8 +591,97 @@ impl<'a> Router<'a> {
     Some(Terminal {
       pad: (fi, pi),
       cells,
+      bends,
       bbox: (x0, x1, y0, y1),
     })
+  }
+
+  /// Landing cells for a pad with no straight-stub landing: out along the
+  /// pad's long axis, then a 45 degree jog onto a free grid cell. The corner
+  /// is returned with each cell. Both segments must clear every foreign pad
+  /// and claim only free corridor cells. At most four, shortest first.
+  fn bent_cells(&self, board: &Board, fi: usize, pi: usize, net: u32) -> Vec<(usize, usize, usize, Point)> {
+    let Some(fp) = board.footprints.get(fi) else {
+      return Vec::new();
+    };
+    let Some(pad) = fp.pads.get(pi) else {
+      return Vec::new();
+    };
+    let Some(bb) = crate::shape::pad_copper(pad).bbox() else {
+      return Vec::new();
+    };
+    let (w, h) = (bb.width(), bb.height());
+    let (axis, half) = if w >= 1.5 * h {
+      ((1.0, 0.0), w / 2.0)
+    } else if h >= 1.5 * w {
+      ((0.0, 1.0), h / 2.0)
+    } else {
+      return Vec::new();
+    };
+    // Outward is away from the middle of the part's pads; at the middle try both ways.
+    let count = fp.pads.len().max(1) as f64;
+    let (mx, my) = fp
+      .pads
+      .iter()
+      .fold((0.0, 0.0), |(a, b), q| (a + q.at.x, b + q.at.y));
+    let proj = (pad.at.x - mx / count) * axis.0 + (pad.at.y - my / count) * axis.1;
+    let signs: Vec<f64> = if proj.abs() > 0.05 {
+      vec![proj.signum()]
+    } else {
+      vec![1.0, -1.0]
+    };
+    let m = self.model;
+    let layers = m.pad_layer_indices(&pad.layers);
+    let radius = half + BENT_AXIAL_PITCHES * m.pitch;
+    let lo = |v: f64, o: f64| ((v - o) / m.pitch).floor().max(0.0) as usize;
+    let (x0, x1) = (
+      lo(pad.at.x - radius, m.origin.x),
+      lo(pad.at.x + radius, m.origin.x) + 1,
+    );
+    let (y0, y1) = (
+      lo(pad.at.y - radius, m.origin.y),
+      lo(pad.at.y + radius, m.origin.y) + 1,
+    );
+    let mut found: Vec<(u64, usize, usize, usize, Point)> = Vec::new();
+    for sgn in signs {
+      let u = (axis.0 * sgn, axis.1 * sgn);
+      let nrm = (-u.1, u.0);
+      for &l in &layers {
+        for iy in y0..=y1.min(m.ny.saturating_sub(1)) {
+          for ix in x0..=x1.min(m.nx.saturating_sub(1)) {
+            let c = m.centre(ix, iy);
+            let (dx, dy) = (c.x - pad.at.x, c.y - pad.at.y);
+            let (a, lat) = (dx * u.0 + dy * u.1, dx * nrm.0 + dy * nrm.1);
+            if lat.abs() > BENT_LATERAL_PITCHES * m.pitch || a - lat.abs() < half || a > radius {
+              continue;
+            }
+            if !self.cell_free(l, ix, iy, net) {
+              continue;
+            }
+            let k = a - lat.abs();
+            let corner = Point::new(pad.at.x + u.0 * k, pad.at.y + u.1 * k);
+            let end = self.stub_target(pad, corner);
+            if self.seg_clear(board, fi, pi, c, corner, l, net)
+              && self.seg_clear(board, fi, pi, corner, end, l, net)
+              && self.corridor_free(l, c, corner, net)
+              && self.corridor_free(l, corner, end, net)
+            {
+              let cost = (lat.abs() * std::f64::consts::SQRT_2 + k) * 1e6;
+              found.push((cost as u64, l, ix, iy, corner));
+            }
+          }
+        }
+      }
+    }
+    found.sort_by(|a, b| {
+      a.0
+        .cmp(&b.0)
+        .then(a.1.cmp(&b.1))
+        .then(a.2.cmp(&b.2))
+        .then(a.3.cmp(&b.3))
+    });
+    found.truncate(4);
+    found.into_iter().map(|(_, l, x, y, c)| (l, x, y, c)).collect()
   }
 
   /// Usable cells within `NEAR_REACH_PITCHES` of the pad's centre, nearest four, on the
@@ -717,11 +823,29 @@ impl<'a> Router<'a> {
     let Some(pad) = board.footprints.get(fi).and_then(|f| f.pads.get(pi)) else {
       return false;
     };
+    let end = self.stub_target(pad, from);
+    self.seg_clear(board, fi, pi, from, end, layer, net)
+  }
+
+  /// As [`Router::stub_clear`] for the segment `from..end` of a stub of pad (`fi`, `pi`).
+  #[allow(clippy::too_many_arguments)]
+  fn seg_clear(
+    &self,
+    board: &Board,
+    fi: usize,
+    pi: usize,
+    from: Point,
+    end: Point,
+    layer: usize,
+    net: u32,
+  ) -> bool {
+    let Some(pad) = board.footprints.get(fi).and_then(|f| f.pads.get(pi)) else {
+      return false;
+    };
     let Some(layer_name) = self.model.layers.get(layer) else {
       return false;
     };
     let half = self.model.profile.track_width / 2.0;
-    let end = self.stub_target(pad, from);
     let need = self.model.profile.clearance + self.model.margin;
     for (qf, fp) in board.footprints.iter().enumerate() {
       for (qp, q) in fp.pads.iter().enumerate() {
@@ -871,6 +995,26 @@ impl<'a> Router<'a> {
       .pad_access(board, t.pad.0, t.pad.1)
       .cells
       .contains(&cell);
+    if let Some(&corner) = t.bends.get(&cell) {
+      if !inside {
+        let first = Stub {
+          layer: l,
+          from: p,
+          to: corner,
+        };
+        let second = Stub {
+          layer: l,
+          from: corner,
+          to: self.stub_target(pad, corner),
+        };
+        for stub in [first, second] {
+          if !out.stubs.contains(&stub) {
+            self.adopt_stub(stub, out.net, out);
+          }
+        }
+      }
+      return;
+    }
     let stub = Stub {
       layer: l,
       from: p,
