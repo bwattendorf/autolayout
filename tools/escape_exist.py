@@ -131,15 +131,27 @@ def load_rules(pcb):
 
 # ---------- fine lattice ---------------------------------------------------
 class Lattice:
-    def __init__(self, pads, ref, rules, margin, step, planes, disc=0.03, slack=0.005):
+    def __init__(self, pads, ref, rules, margin, step, planes, disc=0.03, slack=0.005, grid=None, sub=6):
         self.h = step
         self.r = rules
         part = [p for p in pads if p.ref == ref]
         xs, ys = [p.x for p in part], [p.y for p in part]
-        self.x0 = math.floor((min(xs) - margin) / step) * step
-        self.y0 = math.floor((min(ys) - margin) / step) * step
-        self.W = int(math.ceil((max(xs) + margin - self.x0) / step)) + 1
-        self.H = int(math.ceil((max(ys) + margin - self.y0) / step)) + 1
+        self.grid = grid
+        if grid:
+            # Router-frame mode: lattice step = grid pitch / sub, anchored at the router's grid origin,
+            # so every sub-th lattice line is a router grid line and the crossings are its nodes.
+            (gx, gy), gp = grid
+            self.h = step = gp / sub
+            self.sub = sub
+            ax = math.floor((min(xs) - margin - gx) / step)
+            ay = math.floor((min(ys) - margin - gy) / step)
+            self.x0, self.y0 = gx + ax * step, gy + ay * step
+            self.ax0, self.ay0 = ax, ay
+        else:
+            self.x0 = math.floor((min(xs) - margin) / step) * step
+            self.y0 = math.floor((min(ys) - margin) / step) * step
+        self.W = int(math.ceil((max(xs) + margin - self.x0) / self.h)) + 1
+        self.H = int(math.ceil((max(ys) + margin - self.y0) / self.h)) + 1
         self.part = part
         self.planes = set(planes)
         self.netid = {}
@@ -156,6 +168,16 @@ class Lattice:
         X = self.x0 + np.arange(self.W) * step
         Y = self.y0 + np.arange(self.H) * step
         self.X, self.Y = np.meshgrid(X, Y)
+        self.goal = None
+        if grid:
+            ii = (np.arange(self.W) + self.ax0) % self.sub == 0
+            jj = (np.arange(self.H) + self.ay0) % self.sub == 0
+            node = np.outer(jj, ii)
+            ring = np.zeros((self.H, self.W), dtype=bool)
+            b = self.sub
+            ring[:b + 1, :] = True; ring[-b - 1:, :] = True; ring[:, :b + 1] = True; ring[:, -b - 1:] = True
+            self.goal = node & ring
+            self.goal_list = self.goal.ravel().tolist()
         self._build_obstacles(pads)
 
     def _build_obstacles(self, pads):
@@ -228,7 +250,9 @@ class Router:
         self.route = {}      # pad key -> dict(cells=[(l,j,i)], vias=[(j,i)])
         self.nz = {}         # net -> ([tz per layer], [vz per layer]): that net's own stamps, ignored by its own routes
         self.kern = {}
-        for name, rad in (('tt', L.tt), ('vt', L.vt), ('vv', L.vv)):
+        self.hz = np.zeros((H, W), dtype=np.int16)   # hole-to-hole zones: apply to vias of any net, own net included
+        vh = L.r['drill'] + L.r['h2h'] + L.r['margin'] + 0.01
+        for name, rad in (('tt', L.tt), ('vt', L.vt), ('vv', L.vv), ('vh', vh)):
             R = int(math.ceil(rad / L.h))
             yy, xx = np.mgrid[-R:R + 1, -R:R + 1]
             self.kern[name] = ((np.hypot(yy, xx) * L.h) < rad).astype(np.int16), R
@@ -254,6 +278,7 @@ class Router:
             for a in (self.vz[l], ovz[l]):
                 self._stamp(a, j, i, 'vt', sign)
         for (j, i) in rt['vias']:
+            self._stamp(self.hz, j, i, 'vh', sign)
             for l in range(2):
                 for a in (self.tz[l], otz[l]):
                     self._stamp(a, j, i, 'vt', sign)
@@ -274,7 +299,7 @@ class Router:
         H, W = L.H, L.W
         f = L.foreign(pad.net)
         ok = [(f[l] >= L.need_track).ravel().tolist() for l in range(2)]
-        viaok = ((f[0] >= L.need_via) & (f[1] >= L.need_via)).ravel().tolist()
+        viaok = ((f[0] >= L.need_via) & (f[1] >= L.need_via) & (self.hz == 0)).ravel().tolist()
         otz, ovz = self.own(pad.net)
         mult = [(1.0 + pres * (self.tz[l] - otz[l]) + self.hist[l]).ravel().tolist() for l in range(2)]
         vmult = (pres * ((self.vz[0] - ovz[0]) + (self.vz[1] - ovz[1]))).ravel().tolist()
@@ -287,8 +312,11 @@ class Router:
         heap = []
         SQ = math.sqrt(2.0)
 
+        band = L.sub if L.goal is not None else 0
+        goal_list = L.goal_list if L.goal is not None else None
+
         def hfun(j, i):
-            return 0.0 if plane else float(min(i, W - 1 - i, j, H - 1 - j))
+            return 0.0 if plane else float(max(0, min(i, W - 1 - i, j, H - 1 - j) - band))
 
         for (l, j, i) in starts:
             dist[l][j * W + i] = 0.0
@@ -304,7 +332,7 @@ class Router:
                 if viaok[idx]:
                     goal = (l, idx)
                     break
-            elif j == 0 or i == 0 or j == H - 1 or i == W - 1:
+            elif (goal_list[idx] if goal_list is not None else (j == 0 or i == 0 or j == H - 1 or i == W - 1)):
                 goal = (l, idx)
                 break
             ml = mult[l]
@@ -485,7 +513,7 @@ def main():
     if len(args) < 2:
         sys.exit(__doc__)
     pcb, ref = args[0], args[1]
-    margin, step, planes, outp, iters, disc, hinc, drop, slack = 3.5, 0.05, [], None, 60, 0.03, 0.4, [], 0.005
+    margin, step, planes, outp, iters, disc, hinc, drop, slack, gorigin, sub = 3.5, 0.05, [], None, 60, 0.03, 0.4, [], 0.005, None, 6
     i = 2
     while i < len(args):
         if args[i] == '--margin':
@@ -496,6 +524,10 @@ def main():
             planes.append(args[i + 1]); i += 2
         elif args[i] == '--out':
             outp = args[i + 1]; i += 2
+        elif args[i] == '--grid':
+            gorigin = (float(args[i + 1]), float(args[i + 2])); i += 3
+        elif args[i] == '--sub':
+            sub = int(args[i + 1]); i += 2
         elif args[i] == '--slack':
             slack = float(args[i + 1]); i += 2
         elif args[i] == '--drop':
@@ -514,7 +546,11 @@ def main():
         pads = [p for p in pads if p.ref not in drop]
     rules = load_rules(pcb)
     print('rules', rules)
-    L = Lattice(pads, ref, rules, margin, step, planes, disc, slack)
+    grid = None
+    if gorigin:
+        grid = (gorigin, rules['track'] + rules['clr'] + rules['margin'])
+        print('router-frame lattice: origin', gorigin, 'grid pitch', round(grid[1], 4), 'sub', sub)
+    L = Lattice(pads, ref, rules, margin, step, planes, disc, slack, grid, sub)
     todo = [p for p in L.part if p.net]
     print(f'{ref}: {len(todo)} pads with a net ({sum(1 for p in todo if p.net in L.planes)} on plane nets), window {L.W}x{L.H} cells of {step} mm')
     R, ok = solve(L, todo, L.planes, iters, hist_inc=hinc)
