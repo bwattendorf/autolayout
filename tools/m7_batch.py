@@ -82,11 +82,29 @@ def run(cmd, timeout=None, cwd=None, env=None):
 
 
 def drc(pcb, report):
+    """Run kicad-cli DRC; return (unconnected count, {violation kind: count}).
+
+    Each violation is counted once per distinct set of items it names. KiCad 10
+    repeats a violation between two through-hole pads once per copper layer they
+    span (measured 2026-10-16: 122 clearance and 5 shorting violations on the
+    37 boards read as 485 and 11 raw); KiCad 9 repeats none of those two kinds,
+    so for clearance and shorting this equals its raw count. Some non-routing
+    kinds (silk_overlap: 199 raw, 191 once per item set on m1/candidate4) do
+    repeat in KiCad 9 too, and are reduced the same way.
+    """
     run([KICAD_CLI, "pcb", "drc", "-o", report, pcb], timeout=900)
     text = open(report, encoding="utf-8", errors="replace").read()
     m = re.search(r"Found (\d+) unconnected", text)
+    seen = set()
     kinds = {}
-    for k in re.finditer(r"^\[([a-z_]+)\]", text, re.M):
+    for block in re.split(r"\n(?=\[[a-z_]+\])", text):
+        k = re.match(r"\[([a-z_]+)\]", block)
+        if not k:
+            continue
+        key = (k.group(1), frozenset(re.findall(r"@\(([^)]*)\): (.*)", block)))
+        if key in seen and key[1]:
+            continue
+        seen.add(key)
         kinds[k.group(1)] = kinds.get(k.group(1), 0) + 1
     return (int(m.group(1)) if m else None), kinds
 

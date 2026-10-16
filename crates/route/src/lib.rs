@@ -8,5 +8,6 @@ pub mod pocket;
 pub mod rules;
 pub mod search;
 pub mod shape;
+pub mod survey;
 pub mod verify;
 pub mod write;

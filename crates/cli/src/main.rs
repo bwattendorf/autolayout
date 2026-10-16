@@ -947,6 +947,39 @@ fn planes(pcb: &str) -> Result<bool, String> {
 
 /// Build the routing model for one net class and report what it blocks and
 /// which netted pads it can reach (M7.1). Nothing is written.
+/// `autolayout escape-survey PCB [rule flags]`: for every SMD pad with a net,
+/// the longest straight track along its axis that keeps the clearance to every
+/// foreign pad (continuous geometry, `route::survey`). One line per pad:
+/// `REF.PAD net=NAME best=MM dir=X,Y`.
+fn escape_survey(pcb: &str, args: &[String]) -> Result<bool, String> {
+  use autolayout_route::survey::axis_room;
+  let (rules, profile, _) = model_args(pcb, args)?;
+  let (_, doc) = load(pcb)?;
+  let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
+  let margin = rules.min.max_error;
+  let clearance = rules
+    .classes
+    .iter()
+    .map(|c| c.clearance)
+    .fold(profile.clearance.max(rules.min.clearance), f64::max);
+  for (fi, f) in board.footprints.iter().enumerate() {
+    for (pi, p) in f.pads.iter().enumerate() {
+      if let Some(r) = axis_room(&board, profile.track_width, clearance, margin, fi, pi, 3.0) {
+        println!(
+          "{}.{} net={} best={:.2} dir={:.0},{:.0}",
+          f.reference,
+          p.number,
+          p.net.and_then(|n| board.nets.get(&n)).map_or("?", String::as_str),
+          r.best,
+          r.dir.0,
+          r.dir.1
+        );
+      }
+    }
+  }
+  Ok(true)
+}
+
 fn model(pcb: &str, args: &[String]) -> Result<bool, String> {
   use autolayout_route::model::RoutingModel;
   let (rules, profile, planes) = model_args(pcb, args)?;
@@ -1057,6 +1090,7 @@ fn main() -> ExitCode {
     }
     Some((cmd, [pcb, flags @ ..])) if cmd == "rules" => rules(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "model" => model(pcb, flags),
+    Some((cmd, [pcb, flags @ ..])) if cmd == "escape-survey" => escape_survey(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "route" => route(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "verify" => verify(pcb, flags),
     Some((cmd, [pcb])) if cmd == "planes" => planes(pcb),
