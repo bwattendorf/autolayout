@@ -160,3 +160,9 @@ shell. KiCad 9.0 at `C:/Program Files/KiCad/9.0/`.
 - Don't commit corpus boards, generated boards, or anything over 1 MB.
 - Don't invent a KiCad token, layer name or footprint field. If it is not in the
   file-format docs or a real file, it is not known yet — say so.
+
+## Commit authorship
+
+Commit as Bruce Wattendorf <bwattendorf@gmail.com> (the repo's git config), never as Claude. Credit Claude with a trailer at the end of the message:
+
+    Co-Authored-By: Claude <noreply@anthropic.com>
