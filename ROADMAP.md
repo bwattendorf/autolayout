@@ -680,3 +680,4 @@
   Python string replace that read the files as cp1252, matched nothing and
   reported nothing. Rewritten with the editor. Lesson: an edit that can miss
   silently must be checked by reading the result back.
+- 2026-10-16 — **M7.5 many-pin escape, m1/candidate4: four more things measured, none helps** (KiCad 9.0.1, one run each, baseline 10 unconnected): a third signal layer by not pouring an inner plane (13 / 17), wider dog-bone offsets (no whole-edge fan-out found, time-capped), a whole-board 0.4 mm grid lined up with U1 (44; U1 itself then leaves 1 unreached pad), and pre-routing U1's nets on that grid before the normal-grid pass (five variants, verifier 18-132). The pre-route code was reverted. Open: keep only each net's escape and continue from it, which needs a net to start from existing copper. Details: `docs/m7-results/2026-10-15-escape-notes.md` Updates 6-7.

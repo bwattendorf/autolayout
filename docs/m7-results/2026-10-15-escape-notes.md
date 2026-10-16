@@ -120,3 +120,28 @@ Measured and found not to help on this board: reroute with failed nets first, fl
 
 ## Update 6b: wider dog-bone offsets (same board, `tools/fanout_proto.py`, run 2026-10-15)
 Straight-out length extended from 0.15-1.5 mm to 0.15-3.5 mm (212-215 options per pad, was fewer). Whole left edge (15 pads), three pad orders, 120 s cap each: **no legal fan-out found** (outside-in 384610 nodes, middle-out 610488, left-to-right 220606). Same conclusion as Update 5 and the same caveat: the search is capped by time, so "not found" is not a proof of impossibility.
+
+---
+
+# Update 7: a grid at the pad pitch, lined up with the part (2026-10-16, m1/candidate4, KiCad 9.0.1; code written, measured, reverted)
+
+Hypothesis from the grid-origin measurements: the 0.3098 mm grid cannot hold a 0.4 mm pad pitch, so give the part a grid of its own.
+
+## Whole board on a 0.4 mm grid lined up with U1 (temporary env switch in `RoutingModel::build`)
+Grid lines through U1's centre (98.7, 98.3), pitch 0.4: KiCad unconnected **44**, 81 of 99 nets. Our route log lists 12 incomplete nets, only **one** with a U1 pad (U1.49), against 10 of 11 unreached U1 pads before. So the hypothesis is right about U1 and wrong about the board: the coarser grid starves every other part. Control, same alignment at the default pitch: **18**, 89 of 99 nets (alignment alone, no pitch change, is worse than the unshifted 10; origin phase swings the result, as before).
+
+## Pre-route U1 on its own grid, then the rest on the normal grid (built, reverted)
+`fine::find` found the part from pad geometry only (SMD pads with a same-row neighbour 1.03-2 pitches away, all agreeing on the grid phase). Phase A: `RoutingModel::build_grid` with that pitch and alignment, routing only the nets with a pad on the part, plane taps only at that part's pads. Phase B: the kept copper written into the board, a normal-grid model built from it, kept nets skipped. Run as a fifth portfolio attempt when the first four left anything unconnected, kept only if the verifier counted fewer unconnected. U1 itself did well in phase A (32 of 39 signal nets complete on the 0.4 grid). Result, verifier unconnected for the whole file after phase B, against **10** for the portfolio's best:
+
+| What phase A keeps | Verifier unconnected |
+|---|---|
+| every complete U1 net (32 of 39 nets) | 38 |
+| the same plus plane taps at U1 (26 of 41) | 132 (plane nets wrongly skipped in phase B, a bug) |
+| the same, plane taps fixed (25 of 41) | 36 |
+| nets up to 6 mm of track (2 kept) | 18 |
+| nets up to 12 mm (6 kept) | 18 |
+| nets up to 25 mm (15 kept) | 37 |
+
+Every variant lost, so the portfolio rejected it each time and the written board stayed at 10 (KiCad confirmed 10 on all four of those runs). Cause, from the unreached lists: the nets phase A completes run across the board on a 0.4 mm grid, and the other parts' nets (R41, R43, R46, U5, U9, SW1, C15...) then fail around that copper. U1's own pins were not the remaining problem in phase A; congestion elsewhere was. Even 2 nets kept (6 mm cap) cost 8 unconnected, one more sign that the result swings on any change in the copper near U1.
+- Not tried: keep only the escape part of each net (a fan-out stub or via within about 3 mm of the part) and let the normal grid continue from it. That needs the router to treat existing same-net copper as a starting point, which it does not do (existing copper is an obstacle, not part of the net's tree). That is the real missing piece, and it is a router change of its own.
+- Reverted: `GridSpec`/`build_grid`, `fine.rs`, the driver filters and the CLI phase. Nothing of it is committed.
