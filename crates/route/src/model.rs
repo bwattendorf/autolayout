@@ -429,7 +429,7 @@ impl RoutingModel {
           let Some(li) = m.layers.iter().position(|l| *l == layer) else {
             continue;
           };
-          let net = item.child("net").and_then(|n| n.number(1)).map(|n| n as u32);
+          let net = board.net_table.code_of(item);
           let pts: Vec<Point> = if item.is("arc") {
             match (
               xy(item.child("start")),
@@ -462,7 +462,7 @@ impl RoutingModel {
           else {
             continue;
           };
-          let net = item.child("net").and_then(|n| n.number(1)).map(|n| n as u32);
+          let net = board.net_table.code_of(item);
           m.stats.existing_vias += 1;
           let shape = Shape::Capsule(at, at, size / 2.0);
           let (owner, cl) = (owner_of(net), cl_for(net));
@@ -483,12 +483,7 @@ impl RoutingModel {
             continue;
           };
           let Some(ko) = ko else {
-            if item.child("fill").is_some()
-              && item
-                .child("net")
-                .and_then(|n| n.number(1))
-                .is_some_and(|n| n != 0.0)
-            {
+            if item.child("fill").is_some() && board.net_table.code_of(item).is_some_and(|n| n != 0) {
               m.stats.ignored_fills += 1;
             }
             continue;

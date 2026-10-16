@@ -46,11 +46,52 @@ pub enum Side {
   Back,
 }
 
+/// How a board file refers to nets.
+///
+/// KiCad 9 and earlier: a top-level table `(net 1 "GND")` and references by
+/// code, `(net 1 "GND")` on pads and `(net 1)` on tracks, vias and zones.
+/// KiCad 10 (measured on a file it saved, version 20260206, 2026-10-16): no
+/// table, no code 0 entry, and every reference is by name, `(net "GND")`, on
+/// pads, tracks, vias and zones. Format reference for the older style:
+/// <https://dev-docs.kicad.org/en/file-formats/sexpr-pcb/>; the newer style is
+/// known from a real file only (the format documents have not been checked).
+///
+/// Code 0 means "no net" in both. For a name-style file the codes below are
+/// made up: the distinct names sorted, numbered from 1. They exist only inside
+/// this tool and are never written; a file we write refers to nets by name.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct NetTable {
+  /// References are by name (KiCad 10 style).
+  pub by_name_style: bool,
+  /// Name → made-up code; empty for a code-style file.
+  pub codes: BTreeMap<String, u32>,
+}
+
+impl NetTable {
+  /// The net code of an item with a `(net …)` child: a pad, track, via, arc or zone.
+  pub fn code_of(&self, item: &List) -> Option<u32> {
+    let n = item.child("net")?;
+    if self.by_name_style {
+      let name = n.atom(1)?;
+      if name.is_empty() {
+        return Some(0);
+      }
+      self.codes.get(name.as_ref()).copied()
+    } else {
+      n.number(1).map(|c| c as u32)
+    }
+  }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Board {
   pub footprints: Vec<Footprint>,
-  /// Net code → name, from the board's top-level `(net …)` table (KiCad 9).
+  /// Net code → name. KiCad 9 writes a top-level `(net …)` table; KiCad 10
+  /// (file version 20260206 and later) has none and refers to nets by name, so
+  /// the codes are then made up, see [`NetTable`].
   pub nets: BTreeMap<u32, String>,
+  /// How nets are written in this file and how to read a reference.
+  pub net_table: NetTable,
   /// Bounding box of every Edge.Cuts item; `None` if the board has no outline.
   pub outline: Option<BBox>,
 }
@@ -143,17 +184,37 @@ impl Board {
       .root()
       .filter(|r| r.is("kicad_pcb"))
       .ok_or(BoardError::NotABoard)?;
+    // A file with no top-level net table that refers to nets by name is
+    // KiCad 10 style: collect the names (sorted, so the codes are the same on
+    // every read of the same file).
+    let has_table = root
+      .children("net")
+      .any(|n| n.number(1).is_some() && n.atom(2).is_some());
+    let mut net_table = NetTable::default();
+    if !has_table {
+      let mut names = std::collections::BTreeSet::new();
+      collect_net_names(root, &mut names);
+      if !names.is_empty() {
+        net_table.by_name_style = true;
+        net_table.codes = names
+          .into_iter()
+          .enumerate()
+          .map(|(i, n)| (n, i as u32 + 1))
+          .collect();
+      }
+    }
     let mut board = Board {
       footprints: Vec::new(),
-      nets: BTreeMap::new(),
+      nets: net_table.codes.iter().map(|(n, &c)| (c, n.clone())).collect(),
+      net_table: net_table.clone(),
       outline: None,
     };
     for (i, item) in root.items.iter().enumerate() {
       let Some(list) = item.as_list() else { continue };
       let Some(head) = list.head() else { continue };
       match head.as_ref() {
-        "footprint" => board.footprints.push(Footprint::read(i, list)),
-        "net" => {
+        "footprint" => board.footprints.push(Footprint::read(i, list, &net_table)),
+        "net" if !net_table.by_name_style => {
           if let (Some(code), Some(name)) = (list.number(1), list.atom(2)) {
             board.nets.insert(code as u32, name.into_owned());
           }
@@ -186,7 +247,7 @@ impl Board {
 }
 
 impl Footprint {
-  fn read(node_index: usize, list: &List) -> Footprint {
+  fn read(node_index: usize, list: &List, nets: &NetTable) -> Footprint {
     let (at, rotation) = read_at(list.child("at"));
     let side = match list.child("layer").and_then(|l| l.atom(1)).as_deref() {
       Some("B.Cu") => Side::Back,
@@ -235,7 +296,7 @@ impl Footprint {
     let mut edges = Vec::new();
     for child in list.items.iter().filter_map(|n| n.as_list()) {
       if child.is("pad") {
-        let pad = fp.read_pad(child);
+        let pad = fp.read_pad(child, nets);
         fp.pads.push(pad);
       } else if child.head().is_some_and(|h| h.starts_with("fp_")) && on_layer(child, courtyard) {
         edges.extend(graphic_edges(child));
@@ -246,7 +307,7 @@ impl Footprint {
     fp
   }
 
-  fn read_pad(&self, list: &List) -> Pad {
+  fn read_pad(&self, list: &List, nets: &NetTable) -> Pad {
     let (local, angle) = read_at(list.child("at"));
     let size = list
       .child("size")
@@ -290,7 +351,7 @@ impl Footprint {
           },
         }
       }),
-      net: list.child("net").and_then(|n| n.number(1)).map(|c| c as u32),
+      net: nets.code_of(list),
       layers: list
         .child("layers")
         .map(|l| {
@@ -344,6 +405,24 @@ fn custom_polys(pad: &List) -> Vec<PolyPrim> {
     })
     .filter(|p| p.pts.len() >= 2)
     .collect()
+}
+
+/// Every distinct net name referred to as `(net "name")` anywhere under `list`.
+fn collect_net_names(list: &List, out: &mut std::collections::BTreeSet<String>) {
+  if list.is("net") {
+    if let (Some(a), None) = (list.items.get(1).and_then(|n| n.as_atom()), list.items.get(2))
+      && a.is_quoted()
+      && !a.value().is_empty()
+    {
+      out.insert(a.value().into_owned());
+    }
+    return;
+  }
+  for item in &list.items {
+    if let Some(l) = item.as_list() {
+      collect_net_names(l, out);
+    }
+  }
 }
 
 fn read_at(at: Option<&List>) -> (Point, f64) {
@@ -439,4 +518,55 @@ fn closed(pts: &[Point]) -> Vec<Seg> {
     edges.push((last, first));
   }
   edges
+}
+
+#[cfg(test)]
+mod net_style_tests {
+  use super::*;
+  use autolayout_sexpr::parse;
+
+  const V9: &str = r#"(kicad_pcb (version 20241229)
+  (net 0 "") (net 1 "GND") (net 2 "A")
+  (footprint "X" (layer "F.Cu") (at 0 0) (property "Reference" "R1")
+    (pad "1" smd rect (at 0 0) (size 1 1) (layers "F.Cu") (net 2 "A"))
+    (pad "2" smd rect (at 2 0) (size 1 1) (layers "F.Cu") (net 1 "GND")))
+  (segment (start 0 0) (end 1 0) (width 0.2) (layer "F.Cu") (net 2))
+)"#;
+
+  const V10: &str = r#"(kicad_pcb (version 20260206)
+  (footprint "X" (layer "F.Cu") (at 0 0) (property "Reference" "R1")
+    (pad "1" smd rect (at 0 0) (size 1 1) (layers "F.Cu") (net "A"))
+    (pad "2" smd rect (at 2 0) (size 1 1) (layers "F.Cu") (net "GND"))
+    (pad "3" smd rect (at 4 0) (size 1 1) (layers "F.Cu")))
+  (segment (start 0 0) (end 1 0) (width 0.2) (layer "F.Cu") (net "A"))
+  (zone (net "GND") (layer "In1.Cu"))
+)"#;
+
+  #[test]
+  fn code_style_file_keeps_its_codes() {
+    let doc = parse(V9).unwrap();
+    let b = Board::read(&doc).unwrap();
+    assert!(!b.net_table.by_name_style);
+    assert_eq!(b.nets.get(&2).map(String::as_str), Some("A"));
+    assert_eq!(b.footprints[0].pads[0].net, Some(2));
+    let seg = doc.root().unwrap().child("segment").unwrap();
+    assert_eq!(b.net_table.code_of(seg), Some(2));
+  }
+
+  #[test]
+  fn name_style_file_gets_sorted_made_up_codes() {
+    let doc = parse(V10).unwrap();
+    let b = Board::read(&doc).unwrap();
+    assert!(b.net_table.by_name_style);
+    // Sorted names, from 1: "A" is 1, "GND" is 2.
+    assert_eq!(b.nets.get(&1).map(String::as_str), Some("A"));
+    assert_eq!(b.nets.get(&2).map(String::as_str), Some("GND"));
+    let pads = &b.footprints[0].pads;
+    assert_eq!((pads[0].net, pads[1].net, pads[2].net), (Some(1), Some(2), None));
+    let root = doc.root().unwrap();
+    assert_eq!(b.net_table.code_of(root.child("segment").unwrap()), Some(1));
+    assert_eq!(b.net_table.code_of(root.child("zone").unwrap()), Some(2));
+    // Reading twice gives the same codes.
+    assert_eq!(Board::read(&doc).unwrap(), b);
+  }
 }

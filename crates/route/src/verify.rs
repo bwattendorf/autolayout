@@ -369,7 +369,7 @@ fn verify_core(
         ) else {
           continue;
         };
-        let net = it.child("net").and_then(|n| n.number(1)).map_or(0, |n| n as u32);
+        let net = board.net_table.code_of(it).unwrap_or(0);
         let li = resolve_layers(&[layer.into_owned()], &cu);
         let pts: Vec<Point> = if it.is("arc") {
           match (xy(it.child("start")), xy(it.child("mid")), xy(it.child("end"))) {
@@ -405,7 +405,7 @@ fn verify_core(
           continue;
         };
         let drill = it.child("drill").and_then(|d| d.number(1)).unwrap_or(0.0);
-        let net = it.child("net").and_then(|n| n.number(1)).map_or(0, |n| n as u32);
+        let net = board.net_table.code_of(it).unwrap_or(0);
         rep.vias += 1;
         items.push(Item {
           kind: Kind::Via,
@@ -465,7 +465,7 @@ fn verify_core(
     if z.child("keepout").is_some() {
       continue;
     }
-    let net = z.child("net").and_then(|n| n.number(1)).map_or(0, |n| n as u32);
+    let net = board.net_table.code_of(z).unwrap_or(0);
     if net == 0 {
       continue;
     }
