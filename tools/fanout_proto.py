@@ -40,7 +40,7 @@ def seg_rect(a, b, cx, cy, w, h):
 def options(k):
     x, y = PADS[k]
     xe = x - PW / 2  # outer end of the pad
-    for xb_off in [0.15, 0.25, 0.35, 0.5, 0.65, 0.8, 1.0, 1.25, 1.5]:
+    for xb_off in [0.15, 0.25, 0.35, 0.5, 0.65, 0.8, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 3.5]:
         xb = xe - xb_off
         for sgn in (1, -1, 0):
             for dd in ([0.0] if sgn == 0 else [0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.2]):

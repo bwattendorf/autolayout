@@ -102,3 +102,21 @@ Idea: before routing, match the off-grid pads of each row monotonically to grid 
 
 ## State of the m1/candidate4 problem
 Measured and found not to help on this board: reroute with failed nets first, flipping small caps, moving or rotating U1, reserving landing cells. Helps: the rip-up retry (12 to 10). Not tried: a router that works off-grid for the fan-out region (a local finer lattice), more layers (agreed as the last resort), moving other parts than U1 and the caps.
+
+---
+
+# Update 6: routing an inner plane layer as a signal layer (2026-10-15, m1/candidate4, KiCad 9.0.1, one run each; `out/drop_In1.Cu`, `out/drop_In2.Cu`)
+
+`tools/m7_batch.py` with `M7_DROP_PLANES=<layer>`: that layer is not poured and the plane net is routed as an ordinary net, giving three signal layers. Baseline (both inner layers poured): 10 KiCad unconnected, 89 of 99 nets.
+
+| Layer dropped | Plane still poured | Nets complete | KiCad unconnected | KiCad clearance | Route time |
+|---|---|---|---|---|---|
+| In1.Cu (GND routed) | In2.Cu = +3V3 | 86 of 99 | 13 | 14 | 50 s |
+| In2.Cu (+3V3 routed) | In1.Cu = GND | 87 of 99 | 17 | 14 | 128 s |
+
+- Both are worse than the two-signal-layer baseline, so a third signal layer does not fix the U1 escape on this board. Why is not tested: a guess is that the escape vias still have to leave the pad ring on F.Cu/B.Cu first.
+- Clearance 14 equals the pre-existing count on the returned board (the unmoved baseline run shows 15), so no new violations were added.
+- Single runs; the earlier U1 shift experiment swung by +/-10 for a 0.1 mm move, so differences of 3 to 7 here are within that noise. What the result supports is "no clear gain", not a ranking of the two layers.
+
+## Update 6b: wider dog-bone offsets (same board, `tools/fanout_proto.py`, run 2026-10-15)
+Straight-out length extended from 0.15-1.5 mm to 0.15-3.5 mm (212-215 options per pad, was fewer). Whole left edge (15 pads), three pad orders, 120 s cap each: **no legal fan-out found** (outside-in 384610 nodes, middle-out 610488, left-to-right 220606). Same conclusion as Update 5 and the same caveat: the search is capped by time, so "not found" is not a proof of impossibility.

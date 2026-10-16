@@ -160,6 +160,12 @@ def do_board(src, work, freerouting):
         m = re.match(r"\s+plane (\S+) = (.*) \(\d+ pads\)$", line)
         if m:
             pairs.append((m.group(1), m.group(2)))
+    # Experiment: M7_DROP_PLANES="In2.Cu,..." routes those layers as signal layers
+    # (the plane net is then routed as an ordinary net) instead of pouring them.
+    drop = {d for d in os.environ.get("M7_DROP_PLANES", "").split(",") if d}
+    if drop:
+        pairs = [(l, n) for l, n in pairs if l not in drop]
+        flags = [x for l, n in pairs for x in ("--plane", f"{l}={n}")]
     row["planes"] = " ".join(f"{l}={n}" for l, n in pairs)
 
     prepared = stem + "_prepared.kicad_pcb"
