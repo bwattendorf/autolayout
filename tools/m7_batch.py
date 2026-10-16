@@ -184,7 +184,7 @@ def do_board(src, work, freerouting):
             row["kicad_" + k + "_before"] = before[1].get(k, 0)
 
     raw = stem + "_routed_raw.kicad_pcb"
-    code, out, secs = run([AUTOLAYOUT, "route", prepared, *flags, "--out", raw], timeout=3600)
+    code, out, secs = run([AUTOLAYOUT, "route", prepared, *flags, *os.environ.get("M7_ROUTE_EXTRA", "").split(), "--out", raw], timeout=3600)
     open(stem + "_route.log", "w", encoding="utf-8").write(out)
     row["route_s"] = round(secs, 1)
     m = re.search(r"nets complete (\d+) of (\d+); pads connected (\d+) of (\d+); ([\d.]+) mm of track, (\d+) vias", out)
