@@ -980,6 +980,100 @@ fn escape_survey(pcb: &str, args: &[String]) -> Result<bool, String> {
   Ok(true)
 }
 
+/// `autolayout capacity PCB [--part REF] [--min-pads N] [--all] [--plane L=N ...] [rule flags]`:
+/// for each part with at least N netted pads (default 8), nets that must cross a ring around
+/// it against the tracks the ring can pass, at several distances (`route::capacity`).
+/// Parts with a tight or over-capacity ring are listed; `--all` lists every part.
+fn capacity(pcb: &str, args: &[String]) -> Result<bool, String> {
+  use autolayout_route::capacity::{CapacityRules, ring_reports};
+  use autolayout_route::model::RoutingModel;
+  let (mut part, mut min_pads, mut all) = (None::<String>, 8usize, false);
+  let mut rest = Vec::new();
+  let mut it = args.iter();
+  while let Some(a) = it.next() {
+    match a.as_str() {
+      "--part" => part = Some(it.next().ok_or("--part needs a reference")?.clone()),
+      "--min-pads" => {
+        min_pads = it
+          .next()
+          .and_then(|v| v.parse().ok())
+          .ok_or("--min-pads needs a number")?;
+      }
+      "--all" => all = true,
+      _ => rest.push(a.clone()),
+    }
+  }
+  let (rules, profile, planes) = model_args(pcb, &rest)?;
+  let (_, doc) = load(pcb)?;
+  let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
+  let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
+  let plane_nets: Vec<u32> = m.planes.iter().map(|p| p.net).collect();
+  let clearance = rules
+    .classes
+    .iter()
+    .map(|c| c.clearance)
+    .fold(profile.clearance.max(rules.min.clearance), f64::max);
+  let cr = CapacityRules {
+    track: profile.track_width,
+    clearance,
+    margin: rules.min.max_error,
+    board_edge: rules.min.copper_edge_clearance,
+  };
+  println!(
+    "track {:.4} clearance {:.4}: a track needs {:.4} mm from any copper edge, two tracks {:.4} mm centre to centre; signal layers {}",
+    cr.track,
+    cr.clearance,
+    cr.edge(),
+    cr.pitch(),
+    m.layers.join(", ")
+  );
+  let offsets = [0.6, 1.0, 1.5, 2.0, 3.0, 4.5, 6.0];
+  let mut worst = 0usize;
+  for (fi, f) in board.footprints.iter().enumerate() {
+    let netted = f.pads.iter().filter(|p| p.net.is_some_and(|n| n != 0)).count();
+    let wanted = match &part {
+      Some(r) => &f.reference == r,
+      None => netted >= min_pads,
+    };
+    if !wanted {
+      continue;
+    }
+    let reps = ring_reports(&board, fi, &offsets, &cr, &m.layers, &plane_nets, board.outline);
+    let flag = |r: &autolayout_route::capacity::RingReport| {
+      if r.demand() > r.capacity_loose() {
+        "IMPOSSIBLE"
+      } else if r.demand() > r.capacity_strict() {
+        "OVER"
+      } else if r.demand() * 10 > r.capacity_strict() * 8 {
+        "tight"
+      } else {
+        ""
+      }
+    };
+    let bad = reps.iter().any(|r| !flag(r).is_empty());
+    if !(all || part.is_some() || bad) {
+      continue;
+    }
+    worst += reps
+      .iter()
+      .filter(|r| matches!(flag(r), "IMPOSSIBLE" | "OVER"))
+      .count();
+    println!("{} ({} netted pads):", f.reference, netted);
+    for r in &reps {
+      println!(
+        "  ring +{:.1} mm: {:3} nets must cross, room for {:3} (strict) / {:3} (loose), per layer {:?}  {}",
+        r.offset,
+        r.demand(),
+        r.capacity_strict(),
+        r.capacity_loose(),
+        r.strict,
+        flag(r)
+      );
+    }
+  }
+  Ok(worst == 0)
+}
+
 fn model(pcb: &str, args: &[String]) -> Result<bool, String> {
   use autolayout_route::model::RoutingModel;
   let (rules, profile, planes) = model_args(pcb, args)?;
@@ -1090,6 +1184,7 @@ fn main() -> ExitCode {
     }
     Some((cmd, [pcb, flags @ ..])) if cmd == "rules" => rules(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "model" => model(pcb, flags),
+    Some((cmd, [pcb, flags @ ..])) if cmd == "capacity" => capacity(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "escape-survey" => escape_survey(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "route" => route(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "verify" => verify(pcb, flags),

@@ -1,5 +1,6 @@
 //! Routing. M7.0: design rules; later steps add the grid model and search.
 
+pub mod capacity;
 pub mod driver;
 pub mod model;
 pub mod negotiate;
