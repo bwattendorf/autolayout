@@ -271,6 +271,7 @@ class Lattice:
         op = self.open_nodes(net)
         H, W = self.H, self.W
         res = []
+        sels = []
         for l in range(2):
             g = np.zeros((H, W), dtype=bool)
             jj, ii = np.nonzero(self.goal)
@@ -279,6 +280,17 @@ class Lattice:
             ok = (ni >= 0) & (nj >= 0) & (ni < op[l].shape[1]) & (nj < op[l].shape[0])
             sel = np.zeros(len(ii), dtype=bool)
             sel[ok] = op[l][nj[ok], ni[ok]]
+            sels.append((g, jj, ii, sel))
+        dest = getattr(self, 'dest', {}).get(net)
+        slack = getattr(self, 'toward', None)
+        if dest is not None and slack is not None:
+            # Aim the escape at the side of the window facing the net's other pads: keep only the exit
+            # nodes within `slack` mm of the nearest one to that point.
+            dist = lambda jj, ii: np.hypot(self.X[jj, ii] - dest[0], self.Y[jj, ii] - dest[1])
+            dmin = min((dist(jj[sel], ii[sel]).min() for (g, jj, ii, sel) in sels if sel.any()), default=None)
+            if dmin is not None:
+                sels = [(g, jj, ii, sel & (dist(jj, ii) <= dmin + slack)) for (g, jj, ii, sel) in sels]
+        for (g, jj, ii, sel) in sels:
             g[jj[sel], ii[sel]] = True
             res.append(g.ravel().tolist())
         self._open_cache[key] = res
@@ -631,6 +643,7 @@ def main():
         sys.exit(__doc__)
     pcb, ref = args[0], args[1]
     margin, step, planes, outp, iters, disc, hinc, drop, slack, gorigin, sub = 3.5, 0.05, [], None, 60, 0.03, 0.4, [], 0.005, None, 6
+    toward = None
     i = 2
     while i < len(args):
         if args[i] == '--margin':
@@ -655,6 +668,8 @@ def main():
             hinc = float(args[i + 1]); i += 2
         elif args[i] == '--iters':
             iters = int(args[i + 1]); i += 2
+        elif args[i] == '--toward':
+            toward = float(args[i + 1]); i += 2
         else:
             sys.exit('unknown ' + args[i])
     root, nets, pads = load_pads(pcb)
@@ -668,6 +683,16 @@ def main():
         grid = (gorigin, rules['track'] + rules['clr'] + rules['margin'])
         print('router-frame lattice: origin', gorigin, 'grid pitch', round(grid[1], 4), 'sub', sub)
     L = Lattice(pads, ref, rules, margin, step, planes, disc, slack, grid, sub)
+    if toward is not None:
+        L.toward = toward
+        L.dest = {}
+        by = {}
+        for q in pads:
+            if q.net and q.ref != ref:
+                by.setdefault(q.net, []).append(q)
+        for n, ps in by.items():
+            L.dest[n] = (sum(q.x for q in ps) / len(ps), sum(q.y for q in ps) / len(ps))
+        print("escapes aimed at the side facing each net's other pads, slack", toward, 'mm')
     todo = [p for p in L.part if p.net]
     print(f'{ref}: {len(todo)} pads with a net ({sum(1 for p in todo if p.net in L.planes)} on plane nets), window {L.W}x{L.H} cells of {step} mm')
     R, ok = solve(L, todo, L.planes, iters, hist_inc=hinc)

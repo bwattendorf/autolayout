@@ -83,3 +83,19 @@ Baseline (committed router, no flags): 12.
   track-vs-track between neighbouring U1 pins' escapes (e.g. U1.65/U1.66, U1.72/U1.73 on the left edge).
 - Service copper near U1 (candidate2, same 6/6 mil rules): within 4 mm 44 F.Cu + 24 B.Cu segments, 11 vias;
   ours 31 + 23, 13 vias. Not informative about how it escapes (its segments are short, ours merged).
+
+## Escape planner ported to Rust (`autolayout escape-plan`, `fine::plan_escapes`) and tried on c4/candidate2
+
+- `escape-plan PCB --part U1 --out NEW [--margin 1.8 --sub 12 --iters 250 --slack -0.003 --toward MM]`: windowed
+  fine lattice around one part, every signal pad to the window's outer line (grid nodes), plane pads to a legal
+  via, written as copper. Reuses `fine.rs` (a `run` with an optional escape scope).
+- Speed, c4/U1, nearest-edge exits: **1.6 s, 65 of 66 nets** (U1.69, a +3V3 plane pad, finds no via), vs ~60 s
+  for `tools/escape_exist.py`. KiCad 10 DRC (rules file beside the plan): only the 53 signal-via-vs-unfilled-
+  zone findings seen before, nothing on the tracks.
+- Routing from the plan (`route --quick --iters 40`, router's verifier count; unplanned baseline 9-11 open):
+  nearest-edge exits 25; `--toward 3`: plan 39/66 nets in 594 s, route 28; `--toward 5`: 42/66, route 26;
+  `--toward 8`: 62/66 in 148 s, route 34; `--toward 12`: 65/66 in 5 s, route 19.
+- Conclusion: seeding a pre-planned escape makes c4 worse at every setting tried; directional exits are hard
+  to solve (tight ones do not solve). The planner is a working tool; it is not wired into `route`.
+- Not tried: planning with the other nets' destinations known (a windowed fine router with real goals),
+  or fine-lattice repair of just the pads the grid router leaves open (needs existing copper in `fine.rs`).

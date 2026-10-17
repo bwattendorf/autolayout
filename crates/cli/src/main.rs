@@ -1484,6 +1484,122 @@ fn grades_cmd(pcb: &str, args: &[String]) -> Result<bool, String> {
   Ok(true)
 }
 
+/// `autolayout escape-plan PCB --part REF --out NEW.kicad_pcb [--margin MM] [--sub N] [--iters N]
+/// [--toward MM] [--slack MM] [--hist X] [--plane L=N ...] [rule flags]`: plan the way out of one
+/// part (`fine::plan_escapes`): every pad on a signal net to the edge of a window around the part,
+/// every plane-net pad to a legal via, as copper in a new file, so `route` can start from it.
+fn escape_plan(pcb: &str, args: &[String]) -> Result<bool, String> {
+  use autolayout_route::fine::{EscapeParams, FineParams, plan_escapes};
+  use autolayout_route::model::RoutingModel;
+  let (mut part, mut out_path) = (None::<String>, None::<String>);
+  let mut esc = EscapeParams {
+    part: 0,
+    margin: 1.8,
+    toward: None,
+  };
+  let mut fp = FineParams {
+    sub: 12,
+    iters: 250,
+    slack: -0.003,
+    hist_inc: 1.0,
+    ..FineParams::default()
+  };
+  let mut rest = Vec::new();
+  let mut it = args.iter();
+  while let Some(a) = it.next() {
+    let mut val = |what: &str| -> Result<String, String> {
+      it.next().cloned().ok_or_else(|| format!("{what} needs a value"))
+    };
+    match a.as_str() {
+      "--part" => part = Some(val(a)?),
+      "--out" => out_path = Some(val(a)?),
+      "--margin" => esc.margin = val(a)?.parse().map_err(|_| "--margin needs a number")?,
+      "--toward" => esc.toward = Some(val(a)?.parse().map_err(|_| "--toward needs a number")?),
+      "--sub" => fp.sub = val(a)?.parse().map_err(|_| "--sub needs a number")?,
+      "--iters" => fp.iters = val(a)?.parse().map_err(|_| "--iters needs a number")?,
+      "--slack" => fp.slack = val(a)?.parse().map_err(|_| "--slack needs a number")?,
+      "--hist" => fp.hist_inc = val(a)?.parse().map_err(|_| "--hist needs a number")?,
+      _ => rest.push(a.clone()),
+    }
+  }
+  let part = part.ok_or("escape-plan needs --part REF")?;
+  let out_path = out_path.ok_or("escape-plan needs --out NEW.kicad_pcb")?;
+  let same = fs::canonicalize(&out_path)
+    .ok()
+    .zip(fs::canonicalize(pcb).ok())
+    .is_some_and(|(a, b)| a == b);
+  if same || Path::new(&out_path).exists() {
+    return Err(format!(
+      "{out_path}: already exists or is the input; refusing to overwrite"
+    ));
+  }
+  let (rules, profile, planes) = model_args(pcb, &rest)?;
+  let (_, doc) = load(pcb)?;
+  let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
+  esc.part = board
+    .footprints
+    .iter()
+    .position(|f| f.reference == part)
+    .ok_or_else(|| format!("no part `{part}` on the board"))?;
+  let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
+  let st = &m.stats;
+  if st.existing_segments + st.existing_vias + st.keepout_zones > 0 {
+    return Err(format!(
+      "{pcb}: escape-plan does not read existing copper or keepout zones ({} tracks, {} vias, {} keepouts); plan on a stripped board",
+      st.existing_segments, st.existing_vias, st.keepout_zones
+    ));
+  }
+  let t = std::time::Instant::now();
+  let res = plan_escapes(&board, &m, &rules, fp, esc);
+  let mut judged = doc.clone();
+  let written = autolayout_route::write::add_routes_fine(&mut judged, &m, &board, &res.routes)?;
+  let mm: f64 = res
+    .routes
+    .iter()
+    .flat_map(|r| &r.segs)
+    .map(|(_, a, b)| (*b - *a).length())
+    .sum();
+  println!(
+    "escape plan for {part}: window lattice {} x {} cells of {:.4} mm, sub {}, {} iteration(s), {:.1} s",
+    res.lattice.0,
+    res.lattice.1,
+    res.step,
+    fp.sub,
+    res.iterations,
+    t.elapsed().as_secs_f64()
+  );
+  println!(
+    "nets complete {} of {} ({} dropped for overlap); {:.1} mm of track, {} vias (UNVERIFIED: not checked by KiCad)",
+    res.nets_complete, res.nets_total, res.dropped, mm, written.vias
+  );
+  for r in res.routes.iter().filter(|r| !r.failed.is_empty()).take(20) {
+    let pads: Vec<String> = r
+      .failed
+      .iter()
+      .filter_map(|&(f, p)| {
+        Some(format!(
+          "{}.{}",
+          board.footprints.get(f)?.reference,
+          board.footprints.get(f)?.pads.get(p)?.number
+        ))
+      })
+      .collect();
+    println!(
+      "  no escape: net {} \u{2014} {}",
+      board.nets.get(&r.net).map_or("?", String::as_str),
+      pads.join(" ")
+    );
+  }
+  fs::write(&out_path, judged.to_string()).map_err(|e| format!("{out_path}: {e}"))?;
+  let back = fs::read_to_string(&out_path).map_err(|e| format!("{out_path}: {e}"))?;
+  let parsed = parse(&back).map_err(|e| format!("{out_path}: written file does not parse: {e}"))?;
+  if parsed.to_string() != back {
+    return Err(format!("{out_path}: written file does not round-trip byte-exact"));
+  }
+  println!("wrote {out_path}");
+  Ok(res.nets_complete == res.nets_total)
+}
+
 fn model(pcb: &str, args: &[String]) -> Result<bool, String> {
   use autolayout_route::model::RoutingModel;
   let (rules, profile, planes) = model_args(pcb, args)?;
@@ -1590,6 +1706,7 @@ fn main() -> ExitCode {
     Some((cmd, [pcb, flags @ ..])) if cmd == "rules" => rules(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "model" => model(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "congestion" => congestion(pcb, flags),
+    Some((cmd, [pcb, flags @ ..])) if cmd == "escape-plan" => escape_plan(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "capacity" => capacity(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "escape-survey" => escape_survey(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "route" => route(pcb, flags),

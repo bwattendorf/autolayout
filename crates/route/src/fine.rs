@@ -279,6 +279,20 @@ struct Search {
   epoch: u32,
 }
 
+/// Escape planning for one part: a window around its pads, each pad on a signal
+/// net routed to the window's outer line (a plane net's pad to a legal via),
+/// so the grid router can start from copper that is known to fit.
+#[derive(Debug, Clone, Copy)]
+pub struct EscapeParams {
+  /// Footprint index of the part.
+  pub part: usize,
+  /// Window = the part's pad box grown by this, mm, snapped out to grid lines.
+  pub margin: f64,
+  /// Aim each escape at the side of the window facing the net's other pads:
+  /// only exit nodes within this many mm of the nearest one to them.
+  pub toward: Option<f64>,
+}
+
 /// Route every net of `board` with the fine lattice. `model` supplies the grid
 /// (origin, pitch, extent), the signal layers, the plane layers and the net
 /// class; `rules` the hole and edge rules.
@@ -288,10 +302,45 @@ pub fn route_fine(
   rules: &DesignRules,
   params: FineParams,
 ) -> FineResult {
+  run(board, model, rules, params, None)
+}
+
+/// Plan the escapes of one part (see [`EscapeParams`]); the routes returned are
+/// each pad's way out, in the same form as [`route_fine`]'s.
+pub fn plan_escapes(
+  board: &Board,
+  model: &RoutingModel,
+  rules: &DesignRules,
+  params: FineParams,
+  esc: EscapeParams,
+) -> FineResult {
+  run(board, model, rules, params, Some(esc))
+}
+
+fn run(
+  board: &Board,
+  model: &RoutingModel,
+  rules: &DesignRules,
+  params: FineParams,
+  esc: Option<EscapeParams>,
+) -> FineResult {
   let sub = params.sub.max(1);
   let step = model.pitch / sub as f64;
-  let w = model.nx.saturating_sub(1) * sub + 1;
-  let h = model.ny.saturating_sub(1) * sub + 1;
+  // The lattice: the whole grid, or for an escape the window, whose corner is a grid node.
+  let (ox, oy, w, h) = match esc.and_then(|e| escape_window(board, model, e)) {
+    Some((gx0, gy0, gx1, gy1)) => (
+      model.origin.x + gx0 as f64 * model.pitch,
+      model.origin.y + gy0 as f64 * model.pitch,
+      (gx1 - gx0) * sub + 1,
+      (gy1 - gy0) * sub + 1,
+    ),
+    None => (
+      model.origin.x,
+      model.origin.y,
+      model.nx.saturating_sub(1) * sub + 1,
+      model.ny.saturating_sub(1) * sub + 1,
+    ),
+  };
   let nl = model.layers.len();
   let cells = w * h;
   let r = &model.profile;
@@ -310,8 +359,8 @@ pub fn route_fine(
     h,
     nl,
     step,
-    ox: model.origin.x,
-    oy: model.origin.y,
+    ox,
+    oy,
     need_track: r.track_width / 2.0 + clr + m,
     need_via: r.via_diameter / 2.0 + clr + m,
     track: r.track_width,
@@ -358,13 +407,31 @@ pub fn route_fine(
     }
   }
   let plane_nets: Vec<u32> = model.planes.iter().map(|p| p.net).collect();
-  let by_net = board.pads_by_net();
+  let mut by_net = board.pads_by_net();
+  let min_pads = if esc.is_some() { 1 } else { 2 };
+  if let Some(e) = esc {
+    // Only this part's pads are routed, each to the edge of the window.
+    by_net = by_net
+      .into_iter()
+      .filter_map(|(n, pads)| {
+        let mine: Vec<(usize, usize)> = pads.into_iter().filter(|&(f, _)| f == e.part).collect();
+        (!mine.is_empty()).then_some((n, mine))
+      })
+      .collect();
+  }
   let mut nets: Vec<u32> = by_net
     .iter()
-    .filter(|&(&n, pads)| n != 0 && pads.len() >= 2 && id_of.contains_key(&n))
+    .filter(|&(&n, pads)| n != 0 && pads.len() >= min_pads && id_of.contains_key(&n))
     .map(|(&n, _)| n)
     .collect();
   nets.sort_unstable();
+  let exits: HashMap<u32, HashSet<usize>> = match esc {
+    Some(e) => nets
+      .iter()
+      .map(|&n| (n, exit_states(&lat, board, model, &id_of, n, e)))
+      .collect(),
+    None => HashMap::new(),
+  };
   let mut search = Search {
     dist: vec![INF; nl * cells],
     prev: vec![u32::MAX; nl * cells],
@@ -407,6 +474,7 @@ pub fn route_fine(
         plane_nets.contains(&net),
         pres,
         params.via_cost,
+        exits.get(&net),
       );
       lat.stamp_laid(&new, 1);
       if let Some(slot) = laid.get_mut(k) {
@@ -524,6 +592,83 @@ pub fn route_fine(
     lattice: (w, h),
     step,
   }
+}
+
+/// Grid-line window (x0, y0, x1, y1 as grid indices) around the part's pads grown by the margin.
+fn escape_window(
+  board: &Board,
+  model: &RoutingModel,
+  e: EscapeParams,
+) -> Option<(usize, usize, usize, usize)> {
+  let fp = board.footprints.get(e.part)?;
+  let (mut x0, mut y0, mut x1, mut y1) = (f64::MAX, f64::MAX, f64::MIN, f64::MIN);
+  for p in &fp.pads {
+    let bb = pad_copper(p).bbox()?;
+    x0 = x0.min(bb.min.x);
+    y0 = y0.min(bb.min.y);
+    x1 = x1.max(bb.max.x);
+    y1 = y1.max(bb.max.y);
+  }
+  if !(x0.is_finite() && y0.is_finite() && x1.is_finite() && y1.is_finite()) {
+    return None;
+  }
+  let lo = |v: f64, o: f64| ((v - e.margin - o) / model.pitch).floor().max(0.0) as usize;
+  let hi = |v: f64, o: f64, n: usize| {
+    ((((v + e.margin - o) / model.pitch).ceil().max(0.0)) as usize).min(n.saturating_sub(1))
+  };
+  let (gx0, gy0) = (lo(x0, model.origin.x), lo(y0, model.origin.y));
+  let (gx1, gy1) = (hi(x1, model.origin.x, model.nx), hi(y1, model.origin.y, model.ny));
+  (gx1 > gx0 && gy1 > gy0).then_some((gx0, gy0, gx1, gy1))
+}
+
+/// The states (layer * cells + cell) an escape of net `n` may end on: grid nodes on the window's
+/// outer line where a track may stand, narrowed with `toward` to those nearest the net's other pads.
+fn exit_states(
+  lat: &Lattice,
+  board: &Board,
+  model: &RoutingModel,
+  id_of: &HashMap<u32, u16>,
+  n: u32,
+  e: EscapeParams,
+) -> HashSet<usize> {
+  let q = id_of.get(&n).copied().unwrap_or(0);
+  let sub = (model.pitch / lat.step).round().max(1.0) as usize;
+  let cells = lat.cells();
+  let mut nodes: Vec<(usize, usize)> = Vec::new();
+  for iy in 0..lat.h {
+    for ix in 0..lat.w {
+      let ring = ix == 0 || iy == 0 || ix + 1 == lat.w || iy + 1 == lat.h;
+      if ring && ix % sub == 0 && iy % sub == 0 {
+        for l in 0..lat.nl {
+          if lat.track_ok(l, iy * lat.w + ix, q) {
+            nodes.push((l, iy * lat.w + ix));
+          }
+        }
+      }
+    }
+  }
+  if let Some(slack) = e.toward {
+    let others: Vec<Point> = board
+      .footprints
+      .iter()
+      .enumerate()
+      .filter(|&(f, _)| f != e.part)
+      .flat_map(|(_, fp)| fp.pads.iter())
+      .filter(|p| p.net == Some(n))
+      .map(|p| p.at)
+      .collect();
+    if !others.is_empty() {
+      let k = others.len() as f64;
+      let dest = Point::new(
+        others.iter().map(|p| p.x).sum::<f64>() / k,
+        others.iter().map(|p| p.y).sum::<f64>() / k,
+      );
+      let near = |&(_, idx): &(usize, usize)| (lat.point(idx) - dest).length();
+      let best = nodes.iter().map(near).fold(f64::INFINITY, f64::min);
+      nodes.retain(|c| near(c) <= best + slack);
+    }
+  }
+  nodes.into_iter().map(|(l, idx)| l * cells + idx).collect()
 }
 
 /// Nearest-pad distance maps (nearest net, and nearest of any other net) from
@@ -661,6 +806,8 @@ enum Goal {
   Cells(Vec<(usize, usize)>, Point),
   /// Reach any cell where a via may stand (plane taps); the via is placed there.
   ViaSite,
+  /// Reach any of these states (layer * cells + cell): an escape's exit nodes.
+  Exit(HashSet<usize>),
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -674,6 +821,7 @@ fn route_one(
   plane: bool,
   pres: f32,
   via_cost: f32,
+  exit: Option<&HashSet<usize>>,
 ) -> Laid {
   let mut laid = Laid::default();
   let mut starts: Vec<PadStart> = Vec::new();
@@ -696,6 +844,24 @@ fn route_one(
     for (cells, pad_id, _) in &starts {
       let own: Vec<usize> = laid.paths.iter().flat_map(|p| p.vias.iter().copied()).collect();
       match find_path(lat, search, q, cells, &Goal::ViaSite, &own, pres, via_cost) {
+        Some((path, via_at)) => add_path(&mut laid, *pad_id, path, via_at, &own),
+        None => laid.failed.push(*pad_id),
+      }
+    }
+  } else if let Some(exit) = exit {
+    // Escape: each pad on its own to the window's edge.
+    for (cells, pad_id, _) in &starts {
+      let own: Vec<usize> = laid.paths.iter().flat_map(|p| p.vias.iter().copied()).collect();
+      match find_path(
+        lat,
+        search,
+        q,
+        cells,
+        &Goal::Exit(exit.clone()),
+        &own,
+        pres,
+        via_cost,
+      ) {
         Some((path, via_at)) => add_path(&mut laid, *pad_id, path, via_at, &own),
         None => laid.failed.push(*pad_id),
       }
@@ -808,6 +974,7 @@ fn find_path(
   let goal_set: HashSet<usize> = match goal {
     Goal::Cells(c, _) => c.iter().map(|&(l, i)| l * cells + i).collect(),
     Goal::ViaSite => HashSet::new(),
+    Goal::Exit(e) => e.clone(),
   };
   // A source that is already a goal: the pad is touched by the tree.
   if let Goal::Cells(c, _) = goal
@@ -817,8 +984,9 @@ fn find_path(
   }
   let (gx, gy) = match goal {
     Goal::Cells(_, p) => ((p.x - lat.ox) / lat.step, (p.y - lat.oy) / lat.step),
-    Goal::ViaSite => (0.0, 0.0),
+    Goal::ViaSite | Goal::Exit(_) => (0.0, 0.0),
   };
+  let exit_goal = matches!(goal, Goal::Exit(_));
   let via_goal = matches!(goal, Goal::ViaSite);
   // A via may stand at `idx` if the rules allow it and it keeps hole spacing from this net's own vias.
   let via_here = |idx: usize| -> bool {
@@ -836,6 +1004,10 @@ fn find_path(
       return 0.0;
     }
     let (x, y) = ((idx % w) as f64, (idx / w) as f64);
+    if exit_goal {
+      // Distance in steps to the window's edge (admissible for any subset of it).
+      return x.min(y).min((w - 1) as f64 - x).min((h - 1) as f64 - y).max(0.0) as f32;
+    }
     let (dx, dy) = ((x - gx).abs(), (y - gy).abs());
     let oct = dx.max(dy) + (std::f64::consts::SQRT_2 - 1.0) * dx.min(dy);
     (oct - 4.0).max(0.0) as f32

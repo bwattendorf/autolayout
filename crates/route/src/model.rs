@@ -478,7 +478,7 @@ impl RoutingModel {
             }
           };
           m.stats.existing_segments += 1;
-          let (owner, cl) = (owner_of(net), cl_for(net));
+          let (owner, cl) = (owner_of(net), cl_for(net) - margin + 1e-6);
           for pair in pts.windows(2) {
             if let [a, b] = pair {
               let shape = Shape::Capsule(*a, *b, w / 2.0);
@@ -497,7 +497,7 @@ impl RoutingModel {
           let net = board.net_table.code_of(item);
           m.stats.existing_vias += 1;
           let shape = Shape::Capsule(at, at, size / 2.0);
-          let (owner, cl) = (owner_of(net), cl_for(net));
+          let (owner, cl) = (owner_of(net), cl_for(net) - margin + 1e-6);
           for map in &mut track_maps {
             m.paint(map, &shape, tr + cl, owner);
           }
