@@ -93,7 +93,16 @@ pub fn order_signal_nets(
       (pads.len() >= 2).then(|| (hpwl(board, &pads), n, pads))
     })
     .collect();
-  signal.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+  // Nets with a planned escape (copper of the net already attached to a pad,
+  // with grid nodes to start from) go first, so they claim the way out of
+  // their escape before shorter nets close it; then shortest first.
+  let planned = |pads: &[(usize, usize)]| pads.iter().any(|p| model.preconnected.contains_key(p));
+  signal.sort_by(|a, b| {
+    planned(&b.2)
+      .cmp(&planned(&a.2))
+      .then(a.0.total_cmp(&b.0))
+      .then(a.1.cmp(&b.1))
+  });
   signal
 }
 
@@ -427,5 +436,52 @@ mod negotiation_tests {
     }
     let v = judge(src, &b, &m, &s.routes);
     assert_eq!(v.hole_to_hole, 0, "{v:?}");
+  }
+
+  /// Net A already has a track from pad 1, ending on grid nodes (pitch 0.405,
+  /// origin at the outline corner). The router must start from those nodes: no
+  /// stub is drawn for pad 1, the net completes, and the file verifies.
+  #[test]
+  fn starts_a_net_from_existing_copper_of_the_same_net() {
+    let src = r#"(kicad_pcb
+  (layers (0 "F.Cu" signal) (2 "B.Cu" signal) (25 "Edge.Cuts" user))
+  (net 0 "") (net 1 "A")
+  (gr_line (start 0 0) (end 30 0) (layer "Edge.Cuts"))
+  (gr_line (start 30 0) (end 30 12) (layer "Edge.Cuts"))
+  (gr_line (start 30 12) (end 0 12) (layer "Edge.Cuts"))
+  (gr_line (start 0 12) (end 0 0) (layer "Edge.Cuts"))
+  (footprint "X" (layer "F.Cu") (at 0 0) (property "Reference" "U1")
+    (pad "1" smd rect (at 5 6) (size 1 1) (layers "F.Cu") (net 1 "A"))
+    (pad "2" smd rect (at 25 6) (size 1 1) (layers "F.Cu") (net 1 "A")))
+  (segment (start 4.86 6.075) (end 8.1 6.075) (width 0.2) (layer "F.Cu") (net 1))
+)"#;
+    let doc = parse(src).unwrap();
+    let b = Board::read(&doc).unwrap();
+    let mut r = DesignRules::explicit(0.2, 0.2, 0.6, 0.3).unwrap();
+    r.min.copper_edge_clearance = 0.5;
+    let p = r.classes[0].clone();
+    let m = RoutingModel::build(&doc, &b, &r, &p, &[]).unwrap();
+    // Nodes at x = 12 * 0.405 .. 20 * 0.405 along y = 15 * 0.405 lie on the track.
+    let seeds = m.preconnected.get(&(0, 0)).expect("pad 1 has attached copper");
+    assert!(
+      seeds.contains(&(0, 12, 15)) && seeds.contains(&(0, 20, 15)),
+      "{seeds:?}"
+    );
+    assert!(
+      !m.preconnected.contains_key(&(0, 1)),
+      "pad 2 has no copper attached"
+    );
+    let s = route_all(&b, &m, Costs::default());
+    let a = s.routes.iter().find(|r| r.net == 1).unwrap();
+    assert!(a.failed.is_empty(), "failed: {:?}", a.failed);
+    assert_eq!(a.connected.len(), 2);
+    assert!(
+      a.stubs.is_empty(),
+      "no stub for a pad whose copper already reaches a node: {:?}",
+      a.stubs
+    );
+    let c = judge(src, &b, &m, &s.routes);
+    assert!(c.clean(), "{c:?}");
+    assert_eq!(c.unconnected, 0, "{c:?}");
   }
 }

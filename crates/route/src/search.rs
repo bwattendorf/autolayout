@@ -57,6 +57,9 @@ const BENT_AXIAL_PITCHES: f64 = 4.0;
 /// ... and this many pitches to the side.
 const BENT_LATERAL_PITCHES: f64 = 2.0;
 
+/// Plane tap vias keep this far (mm) from the exit of another net's planned escape.
+const TAP_SEED_CLEAR: f64 = 1.2;
+
 /// Hard-mode owner of a cell two isolated stubs share: nobody may route there.
 const SHARED: u32 = u32::MAX - 2;
 
@@ -79,6 +82,8 @@ pub struct Costs {
   pub share_stubs: bool,
   /// Pads with no straight-stub landing may use a bent stub (axis, then a 45 degree jog).
   pub bent_stubs: bool,
+  /// Record, for every pad a net could not reach, why (`NetRoute::why`). Changes nothing else.
+  pub explain: bool,
 }
 
 impl Default for Costs {
@@ -90,6 +95,7 @@ impl Default for Costs {
       reach: NEAR_REACH_NARROW,
       share_stubs: true,
       bent_stubs: true,
+      explain: false,
     }
   }
 }
@@ -110,6 +116,25 @@ pub struct Stub {
   pub to: Point,
 }
 
+/// Why a pad stayed unreached, recorded only with `Costs::explain`. The search
+/// grows from the pads already joined; when it fails, the end that reached
+/// fewer grid states is the boxed-in one, which is not always the pad the
+/// report names.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct Why {
+  /// The pad that stayed unreached.
+  pub pad: (usize, usize),
+  /// Pads already joined to the net when the search failed.
+  pub tree_pads: Vec<(usize, usize)>,
+  /// Grid states reached growing from the joined pads, and from this pad.
+  pub tree_reach: usize,
+  pub pad_reach: usize,
+  /// What blocks the edge of each reached region, as (fixed obstacles,
+  /// plane-net claims, other nets' claims) in neighbouring cells.
+  pub tree_block: (usize, usize, usize),
+  pub pad_block: (usize, usize, usize),
+}
+
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct NetRoute {
   pub net: u32,
@@ -128,6 +153,8 @@ pub struct NetRoute {
   pub connected: Vec<(usize, usize)>,
   /// Pads that could not be reached.
   pub failed: Vec<(usize, usize)>,
+  /// Why each unreached pad was unreached (only with `Costs::explain`).
+  pub why: Vec<Why>,
 }
 
 impl NetRoute {
@@ -141,6 +168,7 @@ impl NetRoute {
 }
 
 /// Terminal of one pad: the states a path may end on.
+#[derive(Clone)]
 struct Terminal {
   pad: (usize, usize),
   cells: Vec<(usize, usize, usize)>,
@@ -148,6 +176,9 @@ struct Terminal {
   bends: HashMap<(usize, usize, usize), Point>,
   /// Cell box (min ix, max ix, min iy, max iy) for the heuristic.
   bbox: (usize, usize, usize, usize),
+  /// The pad already has copper of its own net attached in the file and the
+  /// cells are grid nodes that copper passes through: no stub is drawn.
+  preconnected: bool,
 }
 
 /// State of negotiated congestion (M7.3): how many nets hold each cell now,
@@ -243,6 +274,51 @@ impl<'a> Router<'a> {
   fn unstate(&self, s: usize) -> (usize, usize, usize) {
     let (nx, ny) = (self.model.nx, self.model.ny);
     (s / (nx * ny), s % nx, (s / nx) % ny)
+  }
+
+  /// Grid states the last search reached.
+  fn reached_count(&self) -> usize {
+    self.stamp.iter().filter(|&&s| s == self.epoch).count()
+  }
+
+  /// What blocks the edge of the region the last search reached: neighbouring
+  /// cells that are fixed obstacles, claimed by a plane net, or claimed by
+  /// another net.
+  fn frontier_tally(&self, net: u32) -> (usize, usize, usize) {
+    let m = self.model;
+    let plane_nets: Vec<u32> = m.planes.iter().map(|p| p.net).collect();
+    let (mut fixed, mut plane, mut signal) = (0, 0, 0);
+    let mut seen = std::collections::HashSet::new();
+    for s in 0..self.stamp.len() {
+      if self.stamp[s] != self.epoch {
+        continue;
+      }
+      let (l, x, y) = self.unstate(s);
+      for (dx, dy) in [(1i64, 0i64), (-1, 0), (0, 1), (0, -1)] {
+        let (xx, yy) = (x as i64 + dx, y as i64 + dy);
+        if xx < 0 || yy < 0 || xx >= m.nx as i64 || yy >= m.ny as i64 {
+          continue;
+        }
+        let (xx, yy) = (xx as usize, yy as usize);
+        let ns = self.state(l, xx, yy);
+        if self.stamp[ns] == self.epoch || !seen.insert(ns) {
+          continue;
+        }
+        if !m.track_ok(l, xx, yy, net) {
+          fixed += 1;
+        } else if let Some(&o) = self.usage.get(l).and_then(|u| u.get(yy * m.nx + xx))
+          && o != FREE
+          && o != net + 1
+        {
+          if o != u32::MAX && plane_nets.contains(&(o - 1)) {
+            plane += 1;
+          } else {
+            signal += 1;
+          }
+        }
+      }
+    }
+    (fixed, plane, signal)
   }
 
   fn cell_free(&self, layer: usize, ix: usize, iy: usize, net: u32) -> bool {
@@ -568,6 +644,19 @@ impl<'a> Router<'a> {
   /// Cells a path to this pad may end on.
   fn terminal(&self, board: &Board, fi: usize, pi: usize, net: u32) -> Option<Terminal> {
     board.footprints.get(fi)?.pads.get(pi)?;
+    if let Some(seeds) = self.model.preconnected.get(&(fi, pi)) {
+      let (mut x0, mut x1, mut y0, mut y1) = (usize::MAX, 0, usize::MAX, 0);
+      for &(_, x, y) in seeds {
+        (x0, x1, y0, y1) = (x0.min(x), x1.max(x), y0.min(y), y1.max(y));
+      }
+      return Some(Terminal {
+        pad: (fi, pi),
+        cells: seeds.clone(),
+        bends: HashMap::new(),
+        bbox: (x0, x1, y0, y1),
+        preconnected: true,
+      });
+    }
     let inside = self.model.pad_access(board, fi, pi).cells;
     let mut bends = HashMap::new();
     let mut cells = if inside.is_empty() {
@@ -593,6 +682,7 @@ impl<'a> Router<'a> {
       cells,
       bends,
       bbox: (x0, x1, y0, y1),
+      preconnected: false,
     })
   }
 
@@ -935,6 +1025,25 @@ impl<'a> Router<'a> {
           joined.push(term);
         }
         None => {
+          if self.costs.explain {
+            let tree_reach = self.reached_count();
+            let tree_block = self.frontier_tally(net);
+            let tree_pads: Vec<(usize, usize)> = joined.iter().map(|j| j.pad).collect();
+            let rest: Vec<Terminal> = terms.clone();
+            for t in &rest {
+              // Grow from the unreached pad toward the joined ones to see its side.
+              let from: Vec<usize> = t.cells.iter().map(|&(l, x, y)| self.state(l, x, y)).collect();
+              let _ = self.search(net, &from, &joined);
+              out.why.push(Why {
+                pad: t.pad,
+                tree_pads: tree_pads.clone(),
+                tree_reach,
+                pad_reach: self.reached_count(),
+                tree_block,
+                pad_block: self.frontier_tally(net),
+              });
+            }
+          }
           self.banned.clear();
           for t in terms.drain(..) {
             out.failed.push(t.pad);
@@ -984,6 +1093,9 @@ impl<'a> Router<'a> {
     cell: (usize, usize, usize),
     out: &mut NetRoute,
   ) {
+    if t.preconnected {
+      return;
+    }
     let (l, x, y) = cell;
     let Some(pad) = board.footprints.get(t.pad.0).and_then(|f| f.pads.get(t.pad.1)) else {
       return;
@@ -1171,6 +1283,16 @@ impl<'a> Router<'a> {
     None
   }
 
+  /// Is `p` within `TAP_SEED_CLEAR` of a planned escape's exit of another net?
+  /// A plane tap via there would claim the cells that exit needs.
+  fn near_foreign_seed(&self, p: Point, net: u32) -> bool {
+    self
+      .model
+      .seed_points
+      .iter()
+      .any(|&(q, n)| n != net && (q - p).length() < TAP_SEED_CLEAR)
+  }
+
   /// Connect a plane-net pad to its plane by a via at the nearest usable cell.
   /// Through-hole pads that reach the plane layer already are, and need none.
   pub fn tap_plane(&mut self, board: &Board, fi: usize, pi: usize, net: u32) -> Option<NetRoute> {
@@ -1184,7 +1306,9 @@ impl<'a> Router<'a> {
       .planes
       .iter()
       .any(|p| p.net == net && pad.layers.iter().any(|l| l == "*.Cu" || l == &p.layer));
-    if on_plane {
+    // Copper of this net already attached to the pad includes a via: a through
+    // via reaches the plane, so the pad is tapped.
+    if on_plane || self.model.preconnected_via.contains(&(fi, pi)) {
       out.connected.push((fi, pi));
       return Some(out);
     }
@@ -1211,6 +1335,7 @@ impl<'a> Router<'a> {
             && best.is_none_or(|b| key < b.0)
             && self.cell_free(l, ix, iy, net)
             && self.via_free(ix, iy, net)
+            && !self.near_foreign_seed(m.centre(ix, iy), net)
             && (on_pad.contains(&(l, ix, iy))
               || (self.stub_clear(board, fi, pi, m.centre(ix, iy), l, net)
                 && self.corridor_free(l, m.centre(ix, iy), self.stub_target(pad, m.centre(ix, iy)), net)))

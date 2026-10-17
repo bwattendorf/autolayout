@@ -13,7 +13,7 @@
 //!   autolayout flip <in> <out> (<REF>... | ALL)      move footprints to the other side (NEW file)
 //!   autolayout rules <file.kicad_pcb> [--track W --clearance C --via D/DRILL]   design rules from the project beside the board (or explicit)
 //!   autolayout model <file.kicad_pcb> [--class NAME] [--plane LAYER=NET]... [explicit rules]   build the routing grid, report obstacles and pad access
-//!   autolayout route <file.kicad_pcb> [--out NEW.kicad_pcb] [--greedy] [--iters N] [model flags]   route every net (PathFinder, or greedy baseline); with --out, write tracks and vias to a NEW file
+//!   autolayout route <file.kicad_pcb> [--out NEW.kicad_pcb] [--greedy] [--explain] [--iters N] [model flags]   route every net (PathFinder, or greedy baseline); with --out, write tracks and vias to a NEW file
 //!   autolayout verify <file.kicad_pcb> [--plane LAYER=NET]... [--probe X,Y]...   judge existing copper from the file alone (unconnected, dangling, hole-to-hole, clearance); not KiCad
 //!   autolayout planes <file.kicad_pcb>   which nets would take the inner layers as planes (by pad count, not by name); prints tab-separated FLAGS
 //!   autolayout unlock <in> <out> <REF>...            unlock footprints for an experiment (NEW file)
@@ -523,6 +523,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     search::Costs,
   };
   let mut greedy = false;
+  let mut explain = false;
   let mut fine: Option<autolayout_route::fine::FineParams> = None;
   let mut out_path: Option<String> = None;
   let mut params = Params::default();
@@ -531,6 +532,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   while let Some(a) = it.next() {
     match a.as_str() {
       "--greedy" => greedy = true,
+      "--explain" => explain = true,
       "--fine" => fine = Some(autolayout_route::fine::FineParams::default()),
       "--sub" | "--fine-iters" | "--via-cost" | "--fine-slack" | "--fine-seed" => {
         let v = it.next().ok_or_else(|| format!("{a} needs a value"))?;
@@ -585,6 +587,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     let costs = Costs {
       reach,
       share_stubs,
+      explain,
       ..Costs::default()
     };
     let (s, stats) = if greedy {
@@ -862,6 +865,9 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
       pads.join(" ")
     );
   }
+  if explain {
+    print_why(&board, &s);
+  }
   if let Some(o) = &out_path {
     fs::write(o, judged.to_string()).map_err(|e| format!("{o}: {e}"))?;
     // Read it back off disk: it must parse, round-trip byte-exact, and hold
@@ -891,6 +897,54 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     println!("  {} at ({:.4}, {:.4}): {}", i.kind, i.at.x, i.at.y, i.detail);
   }
   Ok(s.nets_complete == s.nets_total && v.clean())
+}
+
+/// `route --explain`: for each pad the kept attempt left unreached, which end of its net is boxed in
+/// and what blocks it (see `search::Why`).
+fn print_why(board: &Board, s: &autolayout_route::driver::Summary) {
+  let name = |(f, p): (usize, usize)| {
+    board
+      .footprints
+      .get(f)
+      .and_then(|fp| Some(format!("{}.{}", fp.reference, fp.pads.get(p)?.number)))
+      .unwrap_or_else(|| "?".into())
+  };
+  println!("why unreached (the end that reaches fewer grid cells is the boxed-in one):");
+  for r in &s.routes {
+    for w in &r.why {
+      let (side, reach, other, block) = if w.tree_reach <= w.pad_reach {
+        (
+          format!(
+            "joined end [{}]",
+            w.tree_pads.iter().map(|&p| name(p)).collect::<Vec<_>>().join(" ")
+          ),
+          w.tree_reach,
+          w.pad_reach,
+          w.tree_block,
+        )
+      } else {
+        (
+          format!("pad {} itself", name(w.pad)),
+          w.pad_reach,
+          w.tree_reach,
+          w.pad_block,
+        )
+      };
+      let verdict = if reach.max(other) > 2000 && reach > 300 {
+        "neither end boxed in: the regions do not meet"
+      } else {
+        "boxed in"
+      };
+      println!(
+        "  net {} pad {}: {verdict}; {side} reaches {reach} cells (other end {other}); blocked by fixed obstacles {}, plane claims {}, other nets {}",
+        board.nets.get(&r.net).map_or("?", String::as_str),
+        name(w.pad),
+        block.0,
+        block.1,
+        block.2
+      );
+    }
+  }
 }
 
 /// `autolayout route PCB --fine [--sub N] [--fine-iters N] [--via-cost F] [--fine-slack MM] [--fine-seed S]`:

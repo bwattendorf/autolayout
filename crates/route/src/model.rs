@@ -22,7 +22,7 @@
 //! keepouts are not read. Format reference for the tokens read:
 //! <https://dev-docs.kicad.org/en/file-formats/sexpr-intro/>.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 
 use autolayout_board::{BBox, Board, Point, arc_points};
@@ -91,6 +91,9 @@ pub struct ModelStats {
   pub custom_pads: usize,
 }
 
+/// Grid cells (layer, ix, iy) a search for a net may start from.
+pub type SeedCells = Vec<(usize, usize, usize)>;
+
 pub struct RoutingModel {
   pub origin: Point,
   pub pitch: f64,
@@ -114,6 +117,18 @@ pub struct RoutingModel {
   /// Extra clearance kept on top of every rule: the project's `max_error`.
   pub margin: f64,
   pub stats: ModelStats,
+  /// Pads (footprint index, pad index) that already have copper of their own
+  /// net attached in the file (a track end or a via inside the pad), with the
+  /// grid cells (layer, ix, iy) where that copper passes exactly through a
+  /// grid node: a search for the net may start from those cells. Only pads
+  /// with at least one such cell are listed. See [`RoutingModel::find_preconnected`].
+  pub preconnected: HashMap<(usize, usize), SeedCells>,
+  /// Pads whose attached same-net copper includes a via (a through via reaches
+  /// every plane): a plane-net pad listed here needs no tap.
+  pub preconnected_via: HashSet<(usize, usize)>,
+  /// Centres of the `preconnected` seed cells with their net: the ways out of
+  /// planned escapes. A plane tap via placed near one would close it.
+  pub seed_points: Vec<(Point, u32)>,
 }
 
 /// Result of asking whether a pad can be reached on the grid.
@@ -358,6 +373,9 @@ impl RoutingModel {
       via_spacing: profile.via_drill + rules.min.hole_to_hole,
       margin: rules.min.max_error,
       stats: ModelStats::default(),
+      preconnected: HashMap::new(),
+      preconnected_via: HashSet::new(),
+      seed_points: Vec::new(),
     };
 
     let name = |code: Option<u32>| {
@@ -553,7 +571,173 @@ impl RoutingModel {
 
     m.track = track_maps;
     m.via = via_map;
+    m.find_preconnected(board, root);
     Ok(m)
+  }
+
+  /// Find the pads that already have copper of their own net attached in the
+  /// file, and where that copper can be joined on the grid.
+  ///
+  /// A pad has copper attached when a track end lies inside its copper on one
+  /// of its layers, or a via sits inside it. The copper is followed through
+  /// tracks that share an end (same layer, within 1 um) and vias at a track
+  /// end (within 10 um). Grid nodes that lie on that copper (within 20 um of a
+  /// track's centre-line, or of a via's centre on every layer) and that the
+  /// net may use become `preconnected` cells: the router starts from them
+  /// without drawing any stub, because the copper already runs through them.
+  fn find_preconnected(&mut self, board: &Board, root: &List) {
+    struct Seg {
+      net: u32,
+      layer: usize,
+      a: Point,
+      b: Point,
+    }
+    let mut segs: Vec<Seg> = Vec::new();
+    let mut vias: Vec<(u32, Point)> = Vec::new();
+    for item in root.items.iter().filter_map(|n| n.as_list()) {
+      let Some(net) = board.net_table.code_of(item).filter(|&n| n != 0) else {
+        continue;
+      };
+      match item.head().as_deref() {
+        Some("segment") => {
+          let layer = item
+            .child("layer")
+            .and_then(|l| l.atom(1))
+            .and_then(|l| self.layers.iter().position(|x| *x == *l));
+          if let (Some(layer), Some(a), Some(b)) = (layer, xy(item.child("start")), xy(item.child("end"))) {
+            segs.push(Seg { net, layer, a, b });
+          }
+        }
+        Some("via") => {
+          if let Some(at) = xy(item.child("at")) {
+            vias.push((net, at));
+          }
+        }
+        _ => {}
+      }
+    }
+    if segs.is_empty() && vias.is_empty() {
+      return;
+    }
+    let near = |p: Point, q: Point, tol: f64| (p - q).length() <= tol;
+    // Connected components over tracks (0..segs.len()) and vias (after them).
+    let n_s = segs.len();
+    let mut parent: Vec<usize> = (0..n_s + vias.len()).collect();
+    fn find(parent: &mut [usize], mut i: usize) -> usize {
+      loop {
+        let p = parent.get(i).copied().unwrap_or(i);
+        if p == i {
+          return i;
+        }
+        let gp = parent.get(p).copied().unwrap_or(p);
+        if let Some(slot) = parent.get_mut(i) {
+          *slot = gp;
+        }
+        i = gp;
+      }
+    }
+    let union = |parent: &mut Vec<usize>, a: usize, b: usize| {
+      let (ra, rb) = (find(parent, a), find(parent, b));
+      if ra != rb
+        && let Some(slot) = parent.get_mut(ra)
+      {
+        *slot = rb;
+      }
+    };
+    for i in 0..n_s {
+      for j in (i + 1)..n_s {
+        let (Some(a), Some(b)) = (segs.get(i), segs.get(j)) else {
+          continue;
+        };
+        if a.net == b.net
+          && a.layer == b.layer
+          && [a.a, a.b]
+            .iter()
+            .any(|&p| [b.a, b.b].iter().any(|&q| near(p, q, 0.001)))
+        {
+          union(&mut parent, i, j);
+        }
+      }
+      for (k, &(vnet, at)) in vias.iter().enumerate() {
+        let Some(a) = segs.get(i) else { continue };
+        if a.net == vnet && (near(a.a, at, 0.01) || near(a.b, at, 0.01)) {
+          union(&mut parent, i, n_s + k);
+        }
+      }
+    }
+    // Pads with attached copper: the components they touch.
+    for (fi, f) in board.footprints.iter().enumerate() {
+      for (pi, pad) in f.pads.iter().enumerate() {
+        let Some(net) = pad.net.filter(|&n| n != 0) else {
+          continue;
+        };
+        let shape = pad_copper(pad);
+        let layers = self.pad_layer_indices(&pad.layers);
+        let mut roots: Vec<usize> = Vec::new();
+        for (i, s) in segs.iter().enumerate() {
+          if s.net == net && layers.contains(&s.layer) && [s.a, s.b].iter().any(|&p| shape.sdf(p) <= 0.001) {
+            roots.push(find(&mut parent, i));
+          }
+        }
+        for (k, &(vnet, at)) in vias.iter().enumerate() {
+          if vnet == net && shape.sdf(at) <= 0.001 {
+            roots.push(find(&mut parent, n_s + k));
+          }
+        }
+        if roots.is_empty() {
+          continue;
+        }
+        roots.sort_unstable();
+        roots.dedup();
+        let mut seeds: Vec<(usize, usize, usize)> = Vec::new();
+        for i in 0..n_s + vias.len() {
+          if !roots.contains(&find(&mut parent, i)) {
+            continue;
+          }
+          if let Some(s) = segs.get(i) {
+            if let Some(bb) = BBox::from_points([s.a, s.b]) {
+              let (x0, x1, y0, y1) = self.cell_range(bb, 0.02);
+              for iy in y0..=y1 {
+                for ix in x0..=x1 {
+                  if crate::shape::seg_dist(self.centre(ix, iy), s.a, s.b) <= 0.02
+                    && self.track_ok(s.layer, ix, iy, net)
+                  {
+                    seeds.push((s.layer, ix, iy));
+                  }
+                }
+              }
+            }
+          } else if let Some(&(_, at)) = vias.get(i - n_s) {
+            self.preconnected_via.insert((fi, pi));
+            if let Some(bb) = BBox::from_points([at, at]) {
+              let (x0, x1, y0, y1) = self.cell_range(bb, 0.02);
+              for iy in y0..=y1 {
+                for ix in x0..=x1 {
+                  if (self.centre(ix, iy) - at).length() <= 0.02 {
+                    for l in 0..self.layers.len() {
+                      if self.track_ok(l, ix, iy, net) {
+                        seeds.push((l, ix, iy));
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        seeds.sort_unstable();
+        seeds.dedup();
+        if !seeds.is_empty() {
+          for &(_, ix, iy) in &seeds {
+            let pt = (self.centre(ix, iy), net);
+            if !self.seed_points.contains(&pt) {
+              self.seed_points.push(pt);
+            }
+          }
+          self.preconnected.insert((fi, pi), seeds);
+        }
+      }
+    }
   }
 
   /// Fraction of cells of each routable layer a given net cannot use.

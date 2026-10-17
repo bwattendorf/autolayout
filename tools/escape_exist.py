@@ -143,15 +143,23 @@ class Lattice:
             (gx, gy), gp = grid
             self.h = step = gp / sub
             self.sub = sub
-            ax = math.floor((min(xs) - margin - gx) / step)
-            ay = math.floor((min(ys) - margin - gy) / step)
+            # Window edges lie exactly on router grid lines, so the outermost lattice line is a line of
+            # router nodes with only free field beyond it: a plan that ends there leaves the router room.
+            ax = math.floor((min(xs) - margin - gx) / gp) * sub
+            ay = math.floor((min(ys) - margin - gy) / gp) * sub
+            bx = math.ceil((max(xs) + margin - gx) / gp) * sub
+            by = math.ceil((max(ys) + margin - gy) / gp) * sub
             self.x0, self.y0 = gx + ax * step, gy + ay * step
             self.ax0, self.ay0 = ax, ay
+            self.W_fixed, self.H_fixed = bx - ax + 1, by - ay + 1
         else:
             self.x0 = math.floor((min(xs) - margin) / step) * step
             self.y0 = math.floor((min(ys) - margin) / step) * step
-        self.W = int(math.ceil((max(xs) + margin - self.x0) / self.h)) + 1
-        self.H = int(math.ceil((max(ys) + margin - self.y0) / self.h)) + 1
+        if grid:
+            self.W, self.H = self.W_fixed, self.H_fixed
+        else:
+            self.W = int(math.ceil((max(xs) + margin - self.x0) / self.h)) + 1
+            self.H = int(math.ceil((max(ys) + margin - self.y0) / self.h)) + 1
         self.part = part
         self.planes = set(planes)
         self.netid = {}
@@ -174,39 +182,38 @@ class Lattice:
             jj = (np.arange(self.H) + self.ay0) % self.sub == 0
             node = np.outer(jj, ii)
             ring = np.zeros((self.H, self.W), dtype=bool)
-            b = self.sub
-            ring[:b + 1, :] = True; ring[-b - 1:, :] = True; ring[:, :b + 1] = True; ring[:, -b - 1:] = True
+            ring[0, :] = True; ring[-1, :] = True; ring[:, 0] = True; ring[:, -1] = True   # the outermost line only
             self.goal = node & ring
             self.goal_list = self.goal.ravel().tolist()
         self._build_obstacles(pads)
 
-    def _build_obstacles(self, pads):
-        H, W, h = self.H, self.W, self.h
+    def _top2(self, pads, X, Y, reach):
+        """Per layer: nearest pad distance with its net (d1, n1) and nearest of a different net (d2)."""
+        H, W = X.shape
+        step_x = X[0, 1] - X[0, 0] if W > 1 else 1.0
+        step_y = Y[1, 0] - Y[0, 0] if H > 1 else 1.0
+        x0, y0 = X[0, 0], Y[0, 0]
         INF = 1e9
         d1 = [np.full((H, W), INF) for _ in range(2)]
         n1 = [np.zeros((H, W), dtype=np.int32) for _ in range(2)]
         d2 = [np.full((H, W), INF) for _ in range(2)]
         n2 = [np.zeros((H, W), dtype=np.int32) for _ in range(2)]
-        reach = self.need_via + 0.5
         for p in pads:
             q = self.netid.get(p.net, -1) if p.net else -1
             ext = max(p.w, p.h) / 2 * 1.5 + reach
-            if p.x < self.x0 - ext or p.x > self.x0 + W * h + ext or p.y < self.y0 - ext or p.y > self.y0 + H * h + ext:
+            if p.x < x0 - ext or p.x > x0 + W * step_x + ext or p.y < y0 - ext or p.y > y0 + H * step_y + ext:
                 continue
-            i0 = max(0, int((p.x - ext - self.x0) / h)); i1 = min(W, int((p.x + ext - self.x0) / h) + 2)
-            j0 = max(0, int((p.y - ext - self.y0) / h)); j1 = min(H, int((p.y + ext - self.y0) / h) + 2)
+            i0 = max(0, int((p.x - ext - x0) / step_x)); i1 = min(W, int((p.x + ext - x0) / step_x) + 2)
+            j0 = max(0, int((p.y - ext - y0) / step_y)); j1 = min(H, int((p.y + ext - y0) / step_y) + 2)
             if i0 >= i1 or j0 >= j1:
                 continue
-            dp = np.maximum(pad_dist(p, self.X[j0:j1, i0:i1], self.Y[j0:j1, i0:i1]), 0.0)
+            dp = np.maximum(pad_dist(p, X[j0:j1, i0:i1], Y[j0:j1, i0:i1]), 0.0)
             for l in p.layers:
                 a1, b1, a2, b2 = d1[l][j0:j1, i0:i1], n1[l][j0:j1, i0:i1], d2[l][j0:j1, i0:i1], n2[l][j0:j1, i0:i1]
                 same1 = b1 == q
                 same2 = b2 == q
-                # q == n1: improve d1
                 m_a = same1 & (dp < a1)
-                # q == n2: improve d2, maybe swap
                 m_b = (~same1) & same2 & (dp < a2)
-                # other: new nearest or second
                 m_c = (~same1) & (~same2) & (dp < a1)
                 m_d = (~same1) & (~same2) & (~(dp < a1)) & (dp < a2)
                 old_d1, old_n1 = a1.copy(), b1.copy()
@@ -218,7 +225,64 @@ class Lattice:
                 sw = m_b & (a2 < a1)
                 t = a1[sw].copy(); tb = b1[sw].copy()
                 a1[sw] = a2[sw]; b1[sw] = b2[sw]; a2[sw] = t; b2[sw] = tb
-        self.d1, self.n1, self.d2 = d1, n1, d2
+        return d1, n1, d2
+
+    def _build_obstacles(self, pads):
+        self.d1, self.n1, self.d2 = self._top2(pads, self.X, self.Y, self.need_via + 0.5)
+        self.all_pads = pads
+        if self.grid:
+            # Board-wide node maps (one entry per router grid node), to tell which nodes the router can leave from.
+            (gx, gy), gp = self.grid
+            xs = [p.x for p in pads]; ys = [p.y for p in pads]
+            nx_ = int((max(xs) + 3 - gx) / gp) + 1
+            ny_ = int((max(ys) + 3 - gy) / gp) + 1
+            NX, NY = np.meshgrid(gx + np.arange(nx_) * gp, gy + np.arange(ny_) * gp)
+            self.gnode = (NX, NY)
+            self.gd1, self.gn1, self.gd2 = self._top2(pads, NX, NY, self.need_via + 0.5)
+            self._open_cache = {}
+
+    def open_nodes(self, net, min_size=200):
+        """Per layer, boolean map over all router nodes: free for `net` (clear of foreign pads) and part of a
+        4-connected free region of at least `min_size` nodes, i.e. nodes the router can really leave from."""
+        if net in self._open_cache:
+            return self._open_cache[net]
+        from scipy import ndimage
+        q = self.netid.get(net, 0)
+        out = []
+        for l in range(2):
+            f = np.where(self.gn1[l] == q, self.gd2[l], self.gd1[l])
+            free = f >= self.need_track
+            lab, n = ndimage.label(free)
+            sizes = np.bincount(lab.ravel())
+            big = sizes >= min_size
+            big[0] = False
+            out.append(big[lab])
+        self._open_cache[net] = out
+        return out
+
+    def goal_cells(self, net):
+        """Per layer, flat list: lattice cells on the window's outermost line that are router nodes the router
+        can leave from. None when not in router-frame mode."""
+        if self.goal is None:
+            return None
+        key = ('goal', net)
+        if key in self._open_cache:
+            return self._open_cache[key]
+        op = self.open_nodes(net)
+        H, W = self.H, self.W
+        res = []
+        for l in range(2):
+            g = np.zeros((H, W), dtype=bool)
+            jj, ii = np.nonzero(self.goal)
+            ni = (ii + self.ax0) // self.sub
+            nj = (jj + self.ay0) // self.sub
+            ok = (ni >= 0) & (nj >= 0) & (ni < op[l].shape[1]) & (nj < op[l].shape[0])
+            sel = np.zeros(len(ii), dtype=bool)
+            sel[ok] = op[l][nj[ok], ni[ok]]
+            g[jj[sel], ii[sel]] = True
+            res.append(g.ravel().tolist())
+        self._open_cache[key] = res
+        return res
 
     def foreign(self, net):
         q = self.netid.get(net, 0)
@@ -312,8 +376,10 @@ class Router:
         heap = []
         SQ = math.sqrt(2.0)
 
-        band = L.sub if L.goal is not None else 0
-        goal_list = L.goal_list if L.goal is not None else None
+        band = 0
+        if L.goal is not None and not any(any(g) for g in L.goal_cells(pad.net)):
+            return None
+        goals = L.goal_cells(pad.net)
 
         def hfun(j, i):
             return 0.0 if plane else float(max(0, min(i, W - 1 - i, j, H - 1 - j) - band))
@@ -332,7 +398,7 @@ class Router:
                 if viaok[idx]:
                     goal = (l, idx)
                     break
-            elif (goal_list[idx] if goal_list is not None else (j == 0 or i == 0 or j == H - 1 or i == W - 1)):
+            elif (goals[l][idx] if goals is not None else (j == 0 or i == 0 or j == H - 1 or i == W - 1)):
                 goal = (l, idx)
                 break
             ml = mult[l]
@@ -375,6 +441,50 @@ class Router:
         return dict(cells=cells, vias=vias)
 
 
+def exit_sizes(L, R, todo, planes, min_size=60):
+    """For each non-plane pad: how many router nodes can be reached on the end layer from the end of its escape,
+    walking the router's node grid with foreign pads and the other nets' escapes as obstacles. Router-frame only."""
+    from scipy import ndimage
+    if not L.grid:
+        return {}
+    sub = L.sub
+    ii = np.arange(L.W); jj = np.arange(L.H)
+    ci = ii[(ii + L.ax0) % sub == 0]; cj = jj[(jj + L.ay0) % sub == 0]
+    ni = (ci + L.ax0) // sub; nj = (cj + L.ay0) // sub
+    key = lambda p: (p.ref, p.num)
+    out = {}
+    cache = {}
+    for p in todo:
+        if p.net in planes:
+            continue
+        rt = R.route.get(key(p))
+        if not rt:
+            continue
+        l, j, i = rt['cells'][-1]
+        if p.net not in cache:
+            q = L.netid.get(p.net, 0)
+            maps = []
+            otz, ovz = R.own(p.net)
+            for ll in range(2):
+                f = np.where(L.gn1[ll] == q, L.gd2[ll], L.gd1[ll])
+                free = f >= L.need_track
+                tzf = (R.tz[ll] - otz[ll]) == 0
+                lat = tzf[np.ix_(cj, ci)]
+                sub_free = free[np.ix_(nj, ni)] & lat
+                free = free.copy()
+                free[np.ix_(nj, ni)] = sub_free
+                lab, n = ndimage.label(free)
+                maps.append((lab, np.bincount(lab.ravel())))
+            cache[p.net] = maps
+        lab, sizes = cache[p.net][l]
+        a, b = (i + L.ax0) // sub, (j + L.ay0) // sub
+        if b < 0 or a < 0 or b >= lab.shape[0] or a >= lab.shape[1] or lab[b, a] == 0:
+            out[key(p)] = (0, l, j, i)
+        else:
+            out[key(p)] = (int(sizes[lab[b, a]]), l, j, i)
+    return out
+
+
 def solve(L, pads_to_route, planes, iters=60, log=print, hist_inc=0.4, seed=1):
     import random
     rnd = random.Random(seed)
@@ -413,7 +523,14 @@ def solve(L, pads_to_route, planes, iters=60, log=print, hist_inc=0.4, seed=1):
         log(f'  iteration {it + 1}: routed {len(R.route)}/{len(order)}, failed searches {len(failed)}, nets in conflict {bad}, conflicting cells {conf}, pres {pres:.2f} [{badnames}]')
         sys.stdout.flush()
         if not failed and conf == 0:
-            return R, True
+            ex = exit_sizes(L, R, pads_to_route, planes)
+            weak = {k: v for k, v in ex.items() if v[0] < 60}
+            if not weak:
+                return R, True
+            log(f'    no conflicts, but {len(weak)} escape(s) end where the router cannot leave: ' + ' '.join(f'{k[1]}:{v[0]}' for k, v in sorted(weak.items())))
+            for k, (sz, l, j, i) in weak.items():
+                for ll in range(2):
+                    R.hist[ll][max(0, j - 8):j + 9, max(0, i - 8):i + 9] += 3.0 * hist_inc
         pres = min(pres * 1.35, 50.0)
     return R, False
 

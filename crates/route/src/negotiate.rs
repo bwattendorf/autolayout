@@ -96,7 +96,12 @@ pub fn route_negotiated(
       router.grow_present(params.present_growth.0, params.present_growth.1);
     }
     for (k, (_, net, pads)) in nets.iter().enumerate() {
+      // A net that found no path (failed pads) shares no cell with anyone, so
+      // it is never contested; it is retried every iteration because the
+      // nets around it move (found 2026-10-16: a net that failed in the first
+      // pass, before its neighbours settled, stayed failed to the end).
       let again = it == 0
+        || routes.get(k).is_some_and(|r| !r.failed.is_empty())
         || router.is_contested(
           fps.get(k).map_or(&[][..], Vec::as_slice),
           fpss.get(k).map_or(&[][..], Vec::as_slice),
