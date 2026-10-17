@@ -35,3 +35,17 @@ frame, and emits them as seeded copper before the grid search. Next: make escape
 - Not done / next: dump the blocked neighbours of one joined end (U1.11) to see whether it is clearance
   rounding at the lattice/grid mismatch or genuine crowding; then plan escapes toward each net's
   destination side instead of the nearest edge.
+
+## Follow-up: painting existing copper at the true clearance (tried, reverted)
+
+- Cause checked by arithmetic, not by cells: plan tracks sit ~0.3068 mm apart (rules + 0.002) while the model
+  blocks every cell within 0.3098 mm (pitch, includes max_error) of existing copper, so a cell between two
+  planned escapes is claimed by both = BLOCKED for both, including each escape's own end node.
+- Re-planning at the router's spacing (`--slack 0.0055`, sub 12) did not solve in 160 iterations (4 cells
+  in conflict; the run was cut at 590 s).
+- Router change (existing segments/vias painted with clearance minus margin) on out/c4x/plan12: best
+  attempts 17-18 unconnected, 2 clearance findings, vs 22 before the change and 12 with no plan at all.
+  Several joined ends (U1.11, U1.54, U1.2, U1.36) still reach only 4-11 cells. Reverted: it did not beat
+  the unseeded router and it touches every board with existing copper.
+- Conclusion so far: a radial escape plan does not beat the grid router on c4/candidate2. Not known: what
+  actually pens the ends that reach 4-11 cells (needs a cell dump/picture of one pocket, e.g. U1.54).
