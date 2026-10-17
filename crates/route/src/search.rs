@@ -87,6 +87,8 @@ pub struct Costs {
   /// Land each pad of a row of long pads on the grid line planned for it
   /// jointly with its neighbours (`RoutingModel::lanes`).
   pub lanes: bool,
+  /// Net-order variation (0 = plain shortest-first); see `driver::order_signal_nets`.
+  pub seed: u64,
 }
 
 impl Default for Costs {
@@ -100,6 +102,7 @@ impl Default for Costs {
       bent_stubs: true,
       explain: false,
       lanes: false,
+      seed: 0,
     }
   }
 }
@@ -721,28 +724,36 @@ impl<'a> Router<'a> {
         preconnected: true,
       });
     }
-    let lane = if self.costs.lanes {
+    let planned = if self.costs.lanes {
       self.model.lanes.get(&(fi, pi)).copied()
     } else {
       None
     };
-    let on_lane =
-      |x: usize, y: usize| lane.is_none_or(|l| if l.column { x == l.index } else { y == l.index });
-    let mut inside = self.model.pad_access(board, fi, pi).cells;
-    if lane.is_some() && inside.iter().any(|&(_, x, y)| on_lane(x, y)) {
+    // Landing cells for this pad, restricted to `lane` when there is one.
+    let gather = |lane: Option<Lane>| {
+      let on_lane =
+        |x: usize, y: usize| lane.is_none_or(|l| if l.column { x == l.index } else { y == l.index });
+      let mut inside = self.model.pad_access(board, fi, pi).cells;
       inside.retain(|&(_, x, y)| on_lane(x, y));
-    }
-    let mut bends = HashMap::new();
-    let mut cells = if inside.is_empty() {
-      self.near_cells(board, fi, pi, net, lane)
-    } else {
-      inside
-    };
-    if cells.is_empty() && self.costs.bent_stubs {
-      for (l, x, y, corner) in self.bent_cells(board, fi, pi, net, lane) {
-        cells.push((l, x, y));
-        bends.insert((l, x, y), corner);
+      let mut bends = HashMap::new();
+      let mut cells = if inside.is_empty() {
+        self.near_cells(board, fi, pi, net, lane)
+      } else {
+        inside
+      };
+      if cells.is_empty() && self.costs.bent_stubs {
+        for (l, x, y, corner) in self.bent_cells(board, fi, pi, net, lane) {
+          cells.push((l, x, y));
+          bends.insert((l, x, y), corner);
+        }
       }
+      (cells, bends)
+    };
+    // The planned lane first (a neighbour may be counting on this pad leaving it
+    // free); a pad with no way onto its lane falls back to any landing.
+    let (mut cells, mut bends) = gather(planned);
+    if cells.is_empty() && planned.is_some() {
+      (cells, bends) = gather(None);
     }
     if cells.is_empty() {
       return None;

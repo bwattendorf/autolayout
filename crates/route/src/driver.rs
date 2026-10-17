@@ -72,11 +72,26 @@ pub fn tap_planes(
   }
 }
 
+/// Factor in [1, 1.5) on a net's length for ordering: 1 when `seed` is 0, else a
+/// fixed pseudo-random value of (net, seed) (splitmix64), so a seed names one
+/// reproducible variation of the shortest-first order.
+fn jitter(net: u32, seed: u64) -> f64 {
+  if seed == 0 {
+    return 1.0;
+  }
+  let mut z = (u64::from(net) ^ seed.wrapping_mul(0x9E37_79B9_7F4A_7C15)).wrapping_add(0x9E37_79B9_7F4A_7C15);
+  z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+  z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+  z ^= z >> 31;
+  1.0 + (z >> 11) as f64 / (1u64 << 53) as f64 * 0.5
+}
+
 /// Signal nets with two or more pads, shortest half-perimeter first (ties by net code).
 pub fn order_signal_nets(
   board: &Board,
   model: &RoutingModel,
   by_net: &std::collections::HashMap<u32, Vec<(usize, usize)>>,
+  seed: u64,
 ) -> Vec<Ordered> {
   let plane_nets: Vec<u32> = model.planes.iter().map(|p| p.net).collect();
   let mut codes: Vec<u32> = by_net
@@ -90,7 +105,7 @@ pub fn order_signal_nets(
     .filter_map(|&n| {
       let mut pads = by_net.get(&n)?.clone();
       pads.sort_unstable();
-      (pads.len() >= 2).then(|| (hpwl(board, &pads), n, pads))
+      (pads.len() >= 2).then(|| (hpwl(board, &pads) * jitter(n, seed), n, pads))
     })
     .collect();
   // Nets with a planned escape (copper of the net already attached to a pad,
@@ -111,7 +126,7 @@ pub fn route_all(board: &Board, model: &RoutingModel, costs: Costs) -> Summary {
   let by_net = board.pads_by_net();
   let mut s = Summary::default();
   tap_planes(board, model, &mut router, &by_net, &mut s);
-  for (_, net, pads) in order_signal_nets(board, model, &by_net) {
+  for (_, net, pads) in order_signal_nets(board, model, &by_net, costs.seed) {
     let r = router.route_net(board, net, &pads);
     s.nets_total += 1;
     s.pads_total += pads.len();

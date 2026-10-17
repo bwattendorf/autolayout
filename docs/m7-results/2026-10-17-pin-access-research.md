@@ -68,3 +68,18 @@ Baseline (committed router, no flags): 12.
   (`AUTOLAYOUT_MAPS=1 ... --explain` prints the cell maps).
 - Open: why PathFinder leaves ~14-20 contested cells forever with 5x capacity. Next: per-net view of one
   pocket (U1.65) across iterations, and whether the pockets exist at iteration 1.
+
+## Fast loop and sweeps on c4/candidate2 (router's own verifier count, one attempt, `route ... --quick`)
+
+`--quick`: one attempt (stub reach 4.5, shared corridors), no island/tap repair: **41 s** instead of 6-10 min.
+- `--iters`: 10 -> 15 open, 25 -> 11, 30/35 -> 11, 40 -> 9, 45/50 -> 9, 60/80 -> 12 (non-monotonic: the
+  result depends on which iteration is "best" at legalisation).
+- `--lanes` at 25 iters: 14. `--hist 60`: 11. `--present 15`: 11. Finer grid (max_error 0.001, pitch 0.3058): 15.
+- Legalisation that drops the fewest nets (conflict-graph, most-conflicted first) instead of first-come:
+  13 / 9 / 12 at 25 / 40 / 60 iters, no better; reverted.
+- `--seed N` (jitters shortest-first order by up to +50%, splitmix64 of net and seed; 0 = off), 40 iters:
+  seeds 1-8 -> 13, 15, 14, 10, 14, 11, 10, 14 open. Restarts alone spread 9-15; none reaches 0.
+- Dump filter: stub-vs-stub overlaps are not conflicts in the model; the real residual conflicts are
+  track-vs-track between neighbouring U1 pins' escapes (e.g. U1.65/U1.66, U1.72/U1.73 on the left edge).
+- Service copper near U1 (candidate2, same 6/6 mil rules): within 4 mm 44 F.Cu + 24 B.Cu segments, 11 vias;
+  ours 31 + 23, 13 vias. Not informative about how it escapes (its segments are short, ours merged).

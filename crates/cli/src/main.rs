@@ -13,7 +13,7 @@
 //!   autolayout flip <in> <out> (<REF>... | ALL)      move footprints to the other side (NEW file)
 //!   autolayout rules <file.kicad_pcb> [--track W --clearance C --via D/DRILL]   design rules from the project beside the board (or explicit)
 //!   autolayout model <file.kicad_pcb> [--class NAME] [--plane LAYER=NET]... [explicit rules]   build the routing grid, report obstacles and pad access
-//!   autolayout route <file.kicad_pcb> [--out NEW.kicad_pcb] [--greedy] [--explain] [--iters N] [model flags]   route every net (PathFinder, or greedy baseline); with --out, write tracks and vias to a NEW file
+//!   autolayout route <file.kicad_pcb> [--out NEW.kicad_pcb] [--greedy] [--quick] [--explain] [--iters N] [model flags]   route every net (PathFinder, or greedy baseline); with --out, write tracks and vias to a NEW file
 //!   autolayout verify <file.kicad_pcb> [--plane LAYER=NET]... [--probe X,Y]...   judge existing copper from the file alone (unconnected, dangling, hole-to-hole, clearance); not KiCad
 //!   autolayout planes <file.kicad_pcb>   which nets would take the inner layers as planes (by pad count, not by name); prints tab-separated FLAGS
 //!   autolayout unlock <in> <out> <REF>...            unlock footprints for an experiment (NEW file)
@@ -523,6 +523,8 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     search::Costs,
   };
   let mut greedy = false;
+  let mut quick = false;
+  let mut seed = 0u64;
   let mut explain = false;
   let mut lanes = false;
   let mut fine: Option<autolayout_route::fine::FineParams> = None;
@@ -533,6 +535,13 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   while let Some(a) = it.next() {
     match a.as_str() {
       "--greedy" => greedy = true,
+      "--quick" => quick = true,
+      "--seed" => {
+        seed = it
+          .next()
+          .and_then(|v| v.parse().ok())
+          .ok_or("--seed needs a number")?
+      }
       "--explain" => explain = true,
       "--lanes" => lanes = true,
       "--fine" => fine = Some(autolayout_route::fine::FineParams::default()),
@@ -588,6 +597,24 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   let mut m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
   if lanes {
     println!("lanes planned for {} pads", m.lanes.len());
+    if std::env::var("AUTOLAYOUT_LANES").is_ok() {
+      let mut v: Vec<_> = m.lanes.iter().collect();
+      v.sort_by_key(|(k, _)| **k);
+      for (&(f, p), l) in v {
+        if let Some(pad) = board.footprints.get(f).and_then(|fp| fp.pads.get(p)) {
+          println!(
+            "lane {}.{} at ({:.3}, {:.3}) -> {} {} (line at {:.3})",
+            board.footprints.get(f).map_or("?", |fp| fp.reference.as_str()),
+            pad.number,
+            pad.at.x,
+            pad.at.y,
+            if l.column { "column" } else { "row" },
+            l.index,
+            if l.column { m.origin.x } else { m.origin.y } + l.index as f64 * m.pitch
+          );
+        }
+      }
+    }
   }
   if let Some(fp) = fine {
     return route_fine_cmd(pcb, &doc, &board, &rules, &m, out_path.as_deref(), fp);
@@ -606,6 +633,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
       share_stubs,
       explain,
       lanes,
+      seed,
       ..Costs::default()
     };
     let (s, stats) = if greedy {
@@ -637,7 +665,15 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     autolayout_route::verify::VerifyReport,
     (f64, bool),
   );
-  let mut best: Attempt = attempt(&m, NEAR_REACH_NARROW, true)?;
+  let mut best: Attempt = attempt(
+    &m,
+    if quick {
+      NEAR_REACH_PITCHES
+    } else {
+      NEAR_REACH_NARROW
+    },
+    true,
+  )?;
   // One line per attempt for the report: what it reached, and whether it ran.
   let mut trail: Vec<String> = Vec::new();
   let describe = |a: &Attempt| {
@@ -657,7 +693,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     )
   };
   trail.push(format!("  portfolio attempt 1: {}", describe(&best)));
-  if !greedy && !(best.0.nets_complete == best.0.nets_total && best.4.clean()) {
+  if !greedy && !quick && !(best.0.nets_complete == best.0.nets_total && best.4.clean()) {
     // The three further attempts are independent of one another (each reads
     // the same model and board), so they run in parallel threads. Their
     // results are folded in the fixed order below, with the same early stop
@@ -701,7 +737,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
         best = next;
       }
     }
-  } else if !greedy {
+  } else if !greedy && !quick {
     trail.push("  portfolio attempts 2-4: not run, attempt 1 was clean".to_string());
   }
   // Island repair: a plane tap the emulated pour leaves cut off from its
@@ -710,7 +746,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   // as many with fewer islands); otherwise the sites are unblocked and the
   // earlier result stands. At most three rounds.
   let mut repair_rounds = 0usize;
-  if !greedy {
+  if !greedy && !quick {
     for _ in 0..3 {
       let islands: Vec<_> = best
         .4
@@ -766,7 +802,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   // earlier one only if it leaves fewer unconnected (then fewer violations);
   // otherwise every forbidden site is unblocked. Runs only when few pads are open.
   let mut tap_rounds = 0usize;
-  if !greedy {
+  if !greedy && !quick {
     let plane_nets: Vec<u32> = m.planes.iter().map(|p| p.net).collect();
     let by_net = board.pads_by_net();
     let tap_sites = |a: &Attempt, m: &RoutingModel| -> Vec<autolayout_board::Point> {

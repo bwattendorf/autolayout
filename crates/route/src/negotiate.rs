@@ -71,7 +71,7 @@ pub fn route_negotiated(
   let by_net = board.pads_by_net();
   let mut s = Summary::default();
   tap_planes(board, model, &mut router, &by_net, &mut s);
-  let nets = order_signal_nets(board, model, &by_net);
+  let nets = order_signal_nets(board, model, &by_net, costs.seed);
 
   router.enable_soft(params.present_first);
   let mut routes: Vec<NetRoute> = nets
