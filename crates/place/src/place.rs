@@ -71,6 +71,10 @@ pub struct Options {
   /// back-side parts cost a second assembly pass). Movable back-side parts
   /// are flipped; locked ones — test points, a designer's decision — are not.
   pub front_only: bool,
+  /// Place by connection grade (`grade.rs`): hubs first, then parts by
+  /// descending grade, each at the free spot nearest the matching pads of the
+  /// parts it links that are already placed (a low-grade part hugs its hub).
+  pub grade: bool,
 }
 
 /// Spreading is OFF by default because it measured worse: on m1 (2026-10-12)
@@ -82,6 +86,7 @@ impl Default for Options {
       escape_halo: true,
       spread: false,
       front_only: true,
+      grade: false,
     }
   }
 }
@@ -151,6 +156,7 @@ pub fn place(board: &Board, g: &Grouping, opts: Options, pairs: &[Pair]) -> Plac
     .map(|(f, fp)| fp.pads.iter().map(|p| (mirror(f, p.at - fp.at), p.net)).collect())
     .collect();
 
+  let gr = opts.grade.then(|| crate::grade::grades(board, PLANE_FANOUT));
   // Nets that get a spring: 2..=PLANE_FANOUT pads.
   let mut net_size: HashMap<u32, usize> = HashMap::new();
   for pads in &offsets {
@@ -325,10 +331,13 @@ pub fn place(board: &Board, g: &Grouping, opts: Options, pairs: &[Pair]) -> Plac
   let area = |f: usize| {
     BBox::from_points(edges[f].iter().flat_map(|&(a, b)| [a, b])).map_or(0.0, |b| b.width() * b.height())
   };
+  // Grade order: hubs before the parts that serve them (all zero when off).
+  let grade_of = |f: usize| gr.as_ref().map_or(0, |x| x.grade.get(f).copied().unwrap_or(0));
   order.sort_by(|&a, &b| {
     let key = |f: usize| {
       (
         g.role.get(f) != Some(&Role::Mcu),
+        std::cmp::Reverse(grade_of(f)),
         std::cmp::Reverse(board.footprints[f].pads.len()),
       )
     };
@@ -438,10 +447,34 @@ pub fn place(board: &Board, g: &Grouping, opts: Options, pairs: &[Pair]) -> Plac
     // A recorded cap searches outward from its pin's FINAL position (the host
     // may have been legalised away from its global-placement spot); anything
     // else from its global target.
+    // With grades, a part not recorded as a cap heads for the matching pads of the
+    // parts it links that are already placed: its pad onto theirs, a direct wire
+    // pulling harder than a many-pad net.
+    let link_target = || -> Option<Point> {
+      let links = gr.as_ref()?.links.get(f)?;
+      let (mut acc, mut w) = (Point::default(), 0.0);
+      for l in links {
+        let Some(other) = final_pos.get(l.other).copied().flatten() else {
+          continue;
+        };
+        let (Some(&(their, _)), Some(&(mine, _))) = (
+          offsets.get(l.other).and_then(|o| o.get(l.their_pad)),
+          offsets.get(f).and_then(|o| o.get(l.my_pad)),
+        ) else {
+          continue;
+        };
+        let wt = crate::grade::Grades::weight(l);
+        let want = other + their - mine;
+        acc = acc + Point::new(want.x * wt, want.y * wt);
+        w += wt;
+      }
+      (w > 0.0).then(|| Point::new(acc.x / w, acc.y / w))
+    };
     let target = pairs
       .iter()
       .find(|p| p.cap == f)
       .and_then(|p| Some(final_pos.get(p.host).copied().flatten()? + offsets.get(p.host)?.get(p.pad)?.0))
+      .or_else(link_target)
       .unwrap_or(pos[f]);
     match nearest_free(target, &fits) {
       Some(at) => {

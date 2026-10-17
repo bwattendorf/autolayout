@@ -7,7 +7,8 @@
 //!   autolayout grade <file.kicad_pcb>...             placement metrics (overlaps, off-board, wirelength)
 //!   autolayout groups <file.kicad_pcb> <file.net>    supplies, MCUs, converters (from structure only)
 //!   autolayout parity <file.kicad_pcb> <file.net>    parts, wiring and net names: board vs netlist
-//!   autolayout place <in.kicad_pcb> <file.net> <out.kicad_pcb> [--no-halo]   place unlocked parts, write a NEW file, grade it
+//!   autolayout place <in.kicad_pcb> <file.net> <out.kicad_pcb> [--no-halo] [--grade] [--pairs <file>]   place unlocked parts, write a NEW file, grade it
+//!   autolayout grades <file.kicad_pcb> [--top N]    each part's connection grade (other parts it shares a signal net with)
 //!   autolayout strip <in.kicad_pcb> <out.kicad_pcb>  remove tracks, arcs, vias and zones (NEW file)
 //!   autolayout flip <in> <out> (<REF>... | ALL)      move footprints to the other side (NEW file)
 //!   autolayout rules <file.kicad_pcb> [--track W --clearance C --via D/DRILL]   design rules from the project beside the board (or explicit)
@@ -206,7 +207,14 @@ fn read_pairs(path: &str, board: &Board) -> Result<Vec<autolayout_place::place::
   Ok(out)
 }
 
-fn place(pcb: &str, net: &str, out: &str, escape_halo: bool, pairs: Option<&String>) -> Result<bool, String> {
+fn place(
+  pcb: &str,
+  net: &str,
+  out: &str,
+  escape_halo: bool,
+  pairs: Option<&String>,
+  grade: bool,
+) -> Result<bool, String> {
   if Path::new(out).exists() {
     return Err(format!("{out}: already exists; refusing to overwrite"));
   }
@@ -224,6 +232,7 @@ fn place(pcb: &str, net: &str, out: &str, escape_halo: bool, pairs: Option<&Stri
     escape_halo,
     spread: false,
     front_only: escape_halo,
+    grade,
   };
   let pairs = match pairs {
     Some(path) => read_pairs(path, &board)?,
@@ -1290,6 +1299,73 @@ fn congestion(pcb: &str, args: &[String]) -> Result<bool, String> {
   Ok(first_ok.is_some())
 }
 
+/// `autolayout place PCB NET OUT [--no-halo] [--grade] [--pairs FILE]`.
+fn place_cmd(pcb: &str, net: &str, out: &str, flags: &[String]) -> Result<bool, String> {
+  let (mut halo, mut pairs, mut grade) = (true, None::<&String>, false);
+  let mut it = flags.iter();
+  while let Some(f) = it.next() {
+    match f.as_str() {
+      "--no-halo" => halo = false,
+      "--grade" => grade = true,
+      "--pairs" => pairs = Some(it.next().ok_or("--pairs needs a file")?),
+      other => return Err(format!("place: unknown flag `{other}`")),
+    }
+  }
+  place(pcb, net, out, halo, pairs, grade)
+}
+
+/// `autolayout grades PCB [--top N]`: each part's connection grade (the number of other parts it
+/// shares a signal net with, `place::grade`), highest first, with its strongest neighbours.
+fn grades_cmd(pcb: &str, args: &[String]) -> Result<bool, String> {
+  let mut top = 25usize;
+  let mut it = args.iter();
+  while let Some(a) = it.next() {
+    match a.as_str() {
+      "--top" => {
+        top = it
+          .next()
+          .and_then(|v| v.parse().ok())
+          .ok_or("--top needs a number")?
+      }
+      other => return Err(format!("grades: unknown flag `{other}`")),
+    }
+  }
+  let (_, doc) = load(pcb)?;
+  let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
+  let g = autolayout_place::grade::grades(&board, autolayout_place::place::PLANE_FANOUT);
+  let mut order: Vec<usize> = (0..board.footprints.len()).collect();
+  order.sort_by(|&a, &b| g.grade[b].cmp(&g.grade[a]).then(a.cmp(&b)));
+  let mut hist: std::collections::BTreeMap<usize, usize> = std::collections::BTreeMap::new();
+  for &gr in &g.grade {
+    *hist.entry(gr).or_default() += 1;
+  }
+  println!("{} parts; parts per grade: {:?}", board.footprints.len(), hist);
+  for &f in order.iter().take(top) {
+    let Some(fp) = board.footprints.get(f) else {
+      continue;
+    };
+    let mut near: std::collections::BTreeMap<usize, usize> = std::collections::BTreeMap::new();
+    for l in g.links.get(f).map_or(&[][..], Vec::as_slice) {
+      *near.entry(l.other).or_default() += 1;
+    }
+    let mut near: Vec<(usize, usize)> = near.into_iter().collect();
+    near.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+    let names: Vec<String> = near
+      .iter()
+      .take(6)
+      .filter_map(|&(o, k)| Some(format!("{}x{k}", board.footprints.get(o)?.reference)))
+      .collect();
+    println!(
+      "  {:<8} grade {:3}  {} pads  links {}",
+      fp.reference,
+      g.grade[f],
+      fp.pads.len(),
+      names.join(" ")
+    );
+  }
+  Ok(true)
+}
+
 fn model(pcb: &str, args: &[String]) -> Result<bool, String> {
   use autolayout_route::model::RoutingModel;
   let (rules, profile, planes) = model_args(pcb, args)?;
@@ -1391,13 +1467,8 @@ fn main() -> ExitCode {
     Some((cmd, files)) if cmd == "grade" && !files.is_empty() => grade(files),
     Some((cmd, [pcb, net])) if cmd == "groups" => groups(pcb, net),
     Some((cmd, [pcb, net])) if cmd == "parity" => parity(pcb, net),
-    Some((cmd, [pcb, net, out])) if cmd == "place" => place(pcb, net, out, true, None),
-    Some((cmd, [pcb, net, out, flag])) if cmd == "place" && flag == "--no-halo" => {
-      place(pcb, net, out, false, None)
-    }
-    Some((cmd, [pcb, net, out, flag, pairs])) if cmd == "place" && flag == "--pairs" => {
-      place(pcb, net, out, true, Some(pairs))
-    }
+    Some((cmd, [pcb, net, out, flags @ ..])) if cmd == "place" => place_cmd(pcb, net, out, flags),
+    Some((cmd, [pcb, flags @ ..])) if cmd == "grades" => grades_cmd(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "rules" => rules(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "model" => model(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "congestion" => congestion(pcb, flags),

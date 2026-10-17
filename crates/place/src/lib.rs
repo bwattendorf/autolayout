@@ -2,6 +2,7 @@
 //! together, decided from the parts and their connectivity, never from net
 //! names or reference designators (CLAUDE.md rule 2).
 
+pub mod grade;
 pub mod group;
 pub mod kind;
 pub mod place;
