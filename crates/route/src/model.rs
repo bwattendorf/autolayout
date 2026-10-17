@@ -29,7 +29,7 @@ use autolayout_board::{BBox, Board, Point, arc_points};
 use autolayout_sexpr::{Document, List};
 
 use crate::rules::{DesignRules, NetClass};
-use crate::shape::{Shape, pad_copper, pad_obstacle};
+use crate::shape::{Shape, pad_copper, pad_extent, pad_obstacle};
 
 /// Cell owner values. A net code `n` is stored as `n + 1`.
 pub const FREE: u32 = 0;
@@ -94,6 +94,17 @@ pub struct ModelStats {
 /// Grid cells (layer, ix, iy) a search for a net may start from.
 pub type SeedCells = Vec<(usize, usize, usize)>;
 
+/// The grid line a pad's stub should land on: a column (`ix`) for a pad long
+/// in y, a row (`iy`) for a pad long in x.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Lane {
+  pub column: bool,
+  pub index: usize,
+}
+
+/// Lanes tried either side of a pad's nearest grid line.
+const LANE_SPAN: i64 = 3;
+
 pub struct RoutingModel {
   pub origin: Point,
   pub pitch: f64,
@@ -126,6 +137,8 @@ pub struct RoutingModel {
   /// Pads whose attached same-net copper includes a via (a through via reaches
   /// every plane): a plane-net pad listed here needs no tap.
   pub preconnected_via: HashSet<(usize, usize)>,
+  /// Planned grid lane per pad of a row of long pads (see `plan_lanes`).
+  pub lanes: HashMap<(usize, usize), Lane>,
   /// Centres of the `preconnected` seed cells with their net: the ways out of
   /// planned escapes. A plane tap via placed near one would close it.
   pub seed_points: Vec<(Point, u32)>,
@@ -375,6 +388,7 @@ impl RoutingModel {
       stats: ModelStats::default(),
       preconnected: HashMap::new(),
       preconnected_via: HashSet::new(),
+      lanes: HashMap::new(),
       seed_points: Vec::new(),
     };
 
@@ -572,6 +586,7 @@ impl RoutingModel {
     m.track = track_maps;
     m.via = via_map;
     m.find_preconnected(board, root);
+    m.plan_lanes(board);
     Ok(m)
   }
 
@@ -585,6 +600,109 @@ impl RoutingModel {
   /// track's centre-line, or of a via's centre on every layer) and that the
   /// net may use become `preconnected` cells: the router starts from them
   /// without drawing any stub, because the copper already runs through them.
+  /// Joint choice of a grid lane for every pad in a row of long pads (a QFN or
+  /// SOIC edge). Pads 0.4 mm apart on a 0.31 mm grid would each take the nearest
+  /// line and share it with a neighbour; instead the pads of a row, in order
+  /// along the row, get strictly increasing lines of least total offset (dynamic
+  /// programming, as the pin-access literature does per cell). Rows are pads of
+  /// one part with the same long axis, on the same side and the same across-axis
+  /// position. A row with no feasible assignment gets none.
+  fn plan_lanes(&mut self, board: &Board) {
+    for (fi, fp) in board.footprints.iter().enumerate() {
+      let count = fp.pads.len().max(1) as f64;
+      let (mx, my) = fp
+        .pads
+        .iter()
+        .fold((0.0, 0.0), |(a, b), q| (a + q.at.x, b + q.at.y));
+      let mut rows: std::collections::BTreeMap<(bool, i64, i64), Vec<(f64, usize)>> =
+        std::collections::BTreeMap::new();
+      for (pi, pad) in fp.pads.iter().enumerate() {
+        if pad.net.is_none() {
+          continue;
+        }
+        let (w, h) = pad_extent(pad);
+        let vertical = if h >= 1.5 * w {
+          true
+        } else if w >= 1.5 * h {
+          false
+        } else {
+          continue;
+        };
+        // Lateral position runs across the pad's short side; `across` along its long side.
+        let (lat, across, mid) = if vertical {
+          (pad.at.x, pad.at.y, my / count)
+        } else {
+          (pad.at.y, pad.at.x, mx / count)
+        };
+        let side = if across >= mid { 1 } else { -1 };
+        rows
+          .entry((vertical, side, (across / 0.05).round() as i64))
+          .or_default()
+          .push((lat, pi));
+      }
+      for ((vertical, _, _), mut row) in rows {
+        if row.len() < 2 {
+          continue;
+        }
+        row.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+        let origin = if vertical { self.origin.x } else { self.origin.y };
+        let line = |j: i64| origin + j as f64 * self.pitch;
+        let cands: Vec<Vec<i64>> = row
+          .iter()
+          .map(|&(t, _)| {
+            let c = ((t - origin) / self.pitch).round() as i64;
+            (c - LANE_SPAN..=c + LANE_SPAN).filter(|&j| j >= 0).collect()
+          })
+          .collect();
+        // best[i][k]: least total offset with pad i on cands[i][k]; from[i][k] its predecessor.
+        let mut best: Vec<Vec<f64>> = Vec::new();
+        let mut from: Vec<Vec<usize>> = Vec::new();
+        for (i, cs) in cands.iter().enumerate() {
+          let mut b = vec![f64::INFINITY; cs.len()];
+          let mut f = vec![0usize; cs.len()];
+          for (k, &j) in cs.iter().enumerate() {
+            let cost = (line(j) - row[i].0).abs();
+            if i == 0 {
+              b[k] = cost;
+              continue;
+            }
+            for (kp, &jp) in cands[i - 1].iter().enumerate() {
+              if jp < j && best[i - 1][kp] + cost < b[k] {
+                b[k] = best[i - 1][kp] + cost;
+                f[k] = kp;
+              }
+            }
+          }
+          best.push(b);
+          from.push(f);
+        }
+        let Some(last) = best.last() else { continue };
+        let Some((mut k, total)) = last
+          .iter()
+          .copied()
+          .enumerate()
+          .min_by(|a, b| a.1.total_cmp(&b.1).then(a.0.cmp(&b.0)))
+        else {
+          continue;
+        };
+        if !total.is_finite() {
+          continue;
+        }
+        for i in (0..row.len()).rev() {
+          let Some(&j) = cands[i].get(k) else { break };
+          self.lanes.insert(
+            (fi, row[i].1),
+            Lane {
+              column: vertical,
+              index: j as usize,
+            },
+          );
+          k = from[i][k];
+        }
+      }
+    }
+  }
+
   fn find_preconnected(&mut self, board: &Board, root: &List) {
     struct Seg {
       net: u32,

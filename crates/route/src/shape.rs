@@ -179,6 +179,25 @@ pub fn pad_copper(pad: &Pad) -> Shape {
   }
 }
 
+/// Width and height of the pad's copper along the board axes. `Shape::bbox` is a
+/// bounding square for a rectangle (it bounds the rotated shape's circle), so it
+/// cannot tell a long pad from a square one; this uses the size and angle.
+pub fn pad_extent(pad: &Pad) -> (f64, f64) {
+  match pad.shape.as_str() {
+    "custom" => pad_copper(pad)
+      .bbox()
+      .map_or((pad.size.x, pad.size.y), |b| (b.width(), b.height())),
+    _ => {
+      let (s, c) = pad.angle.to_radians().sin_cos();
+      let (hx, hy) = (pad.size.x / 2.0, pad.size.y / 2.0);
+      (
+        2.0 * (hx * c.abs() + hy * s.abs()),
+        2.0 * (hx * s.abs() + hy * c.abs()),
+      )
+    }
+  }
+}
+
 /// Smallest signed distance from the segment `a..b` to `s`, minus `r`:
 /// the gap between a track of radius `r` and `s`. `s` is convex, so the
 /// distance along the segment is convex and a ternary search finds the minimum.

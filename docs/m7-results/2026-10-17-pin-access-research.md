@@ -49,3 +49,22 @@ frame, and emits them as seeded copper before the grid search. Next: make escape
   the unseeded router and it touches every board with existing copper.
 - Conclusion so far: a radial escape plan does not beat the grid router on c4/candidate2. Not known: what
   actually pens the ends that reach 4-11 cells (needs a cell dump/picture of one pocket, e.g. U1.54).
+
+## c4/candidate2 follow-ups, all measured on c4 only (KiCad-judged best portfolio attempt, open pads)
+
+Baseline (committed router, no flags): 12.
+- Tight-pads-first net order: 19 (reverted).
+- `--hist 80 --present 60`: 14 (flags kept, defaults unchanged).
+- Capacity (`autolayout capacity --part U1`): 64 nets cross each ring, room for ~300 (strict) at every ring
+  0.6-6 mm: the room is there, the router does not use it.
+- Contested cells at the end of negotiation (`AUTOLAYOUT_CONTEST=1 ... --explain`): mostly stub cells shared
+  by adjacent U1 pins (U1.43/44, 54/55, 38/39, 79/80, 21/22, 16/17/18).
+- Bug found: `Shape::bbox()` of a rect/roundrect is the bounding *circle's* square, so `bent_cells` (and the
+  ratio test in the new lane planner) never saw a long pad as long; bent stubs have only ever fired for
+  oval pads. Fixed with `shape::pad_extent` (size + angle). Alone: still 12 on c4 (attempt 1 22 -> 18).
+  NOT yet measured on the other boards: this turns bent stubs on for every rectangular long pad.
+- `--lanes` (joint grid-line choice per row of long pads, DP, `RoutingModel::plan_lanes`, 305 pads on c4):
+  15, worse than 12; off by default. The unreached pads still sit in pockets ringed by other nets' copper
+  (`AUTOLAYOUT_MAPS=1 ... --explain` prints the cell maps).
+- Open: why PathFinder leaves ~14-20 contested cells forever with 5x capacity. Next: per-net view of one
+  pocket (U1.65) across iterations, and whether the pockets exist at iteration 1.

@@ -524,6 +524,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   };
   let mut greedy = false;
   let mut explain = false;
+  let mut lanes = false;
   let mut fine: Option<autolayout_route::fine::FineParams> = None;
   let mut out_path: Option<String> = None;
   let mut params = Params::default();
@@ -533,6 +534,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     match a.as_str() {
       "--greedy" => greedy = true,
       "--explain" => explain = true,
+      "--lanes" => lanes = true,
       "--fine" => fine = Some(autolayout_route::fine::FineParams::default()),
       "--sub" | "--fine-iters" | "--via-cost" | "--fine-slack" | "--fine-seed" => {
         let v = it.next().ok_or_else(|| format!("{a} needs a value"))?;
@@ -554,6 +556,18 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
           .and_then(|v| v.parse().ok())
           .ok_or("--iters needs a number")?;
       }
+      "--hist" => {
+        params.history_step = it
+          .next()
+          .and_then(|v| v.parse().ok())
+          .ok_or("--hist needs a number")?;
+      }
+      "--present" => {
+        params.present_first = it
+          .next()
+          .and_then(|v| v.parse().ok())
+          .ok_or("--present needs a number")?;
+      }
       _ => rest.push(a.clone()),
     }
   }
@@ -572,6 +586,9 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   let (_, doc) = load(pcb)?;
   let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
   let mut m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
+  if lanes {
+    println!("lanes planned for {} pads", m.lanes.len());
+  }
   if let Some(fp) = fine {
     return route_fine_cmd(pcb, &doc, &board, &rules, &m, out_path.as_deref(), fp);
   }
@@ -588,6 +605,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
       reach,
       share_stubs,
       explain,
+      lanes,
       ..Costs::default()
     };
     let (s, stats) = if greedy {
@@ -943,6 +961,16 @@ fn print_why(board: &Board, s: &autolayout_route::driver::Summary) {
         block.1,
         block.2
       );
+      if std::env::var("AUTOLAYOUT_MAPS").is_ok() {
+        print!(
+          "{}",
+          if w.tree_reach <= w.pad_reach {
+            &w.tree_map
+          } else {
+            &w.pad_map
+          }
+        );
+      }
     }
   }
 }

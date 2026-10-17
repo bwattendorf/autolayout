@@ -142,6 +142,66 @@ pub fn route_negotiated(
     }
   }
 
+  if costs.explain && std::env::var("AUTOLAYOUT_CONTEST").is_ok() {
+    // Cells held by more than one net after the last iteration: who, and the
+    // nearest pad of each (so a pad-landing conflict can be told from a track one).
+    let mut held: std::collections::BTreeMap<(usize, usize), Vec<(usize, bool)>> =
+      std::collections::BTreeMap::new();
+    for (k, (fp, fs)) in fps.iter().zip(&fpss).enumerate() {
+      for &c in fp {
+        held.entry(c).or_default().push((k, false));
+      }
+      for &c in fs {
+        held.entry(c).or_default().push((k, true));
+      }
+    }
+    for (&(l, i), who) in &held {
+      if who.len() < 2 {
+        continue;
+      }
+      let (x, y) = (i % model.nx, i / model.nx);
+      let c = model.centre(x, y);
+      let names: Vec<String> = who
+        .iter()
+        .map(|&(k, stub)| {
+          let net = nets.get(k).map_or(0, |n| n.1);
+          let near = nets.get(k).and_then(|n| {
+            n.2
+              .iter()
+              .filter_map(|&(f, p)| {
+                board
+                  .footprints
+                  .get(f)?
+                  .pads
+                  .get(p)
+                  .map(|pd| ((pd.at - c).length(), f, p))
+              })
+              .min_by(|a, b| a.0.total_cmp(&b.0))
+          });
+          format!(
+            "{}{} (nearest own pad {})",
+            board.nets.get(&net).map_or("?", String::as_str),
+            if stub { " stub" } else { "" },
+            near
+              .and_then(|(d, f, p)| Some(format!(
+                "{}.{} at {:.2} mm",
+                board.footprints.get(f)?.reference,
+                board.footprints.get(f)?.pads.get(p)?.number,
+                d
+              )))
+              .unwrap_or_default()
+          )
+        })
+        .collect();
+      println!(
+        "contested {} ({:.2}, {:.2}): {}",
+        model.layers.get(l).map_or("?", String::as_str),
+        c.x,
+        c.y,
+        names.join(" | ")
+      );
+    }
+  }
   // Legalise the best iteration: keep a net only if it shares no cell with one
   // already kept. A dropped net is not given up on: it is re-routed in hard
   // mode around everything kept (before this, a single contested cell that

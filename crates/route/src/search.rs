@@ -29,7 +29,7 @@ use std::collections::{BinaryHeap, HashMap};
 
 use autolayout_board::{Board, Point};
 
-use crate::model::{FREE, RoutingModel};
+use crate::model::{FREE, Lane, RoutingModel};
 
 /// How far from a plane-net pad's centre (in pitches, beyond its own half
 /// size) a tap via may sit; the stub that joins them is not grid-checked.
@@ -84,6 +84,9 @@ pub struct Costs {
   pub bent_stubs: bool,
   /// Record, for every pad a net could not reach, why (`NetRoute::why`). Changes nothing else.
   pub explain: bool,
+  /// Land each pad of a row of long pads on the grid line planned for it
+  /// jointly with its neighbours (`RoutingModel::lanes`).
+  pub lanes: bool,
 }
 
 impl Default for Costs {
@@ -96,6 +99,7 @@ impl Default for Costs {
       share_stubs: true,
       bent_stubs: true,
       explain: false,
+      lanes: false,
     }
   }
 }
@@ -133,6 +137,10 @@ pub struct Why {
   /// plane-net claims, other nets' claims) in neighbouring cells.
   pub tree_block: (usize, usize, usize),
   pub pad_block: (usize, usize, usize),
+  /// Cell maps around the region each side reached (`o` reached, `#` fixed
+  /// obstacle, `p` plane claim, `x` other net's claim, `.` free), per layer.
+  pub tree_map: String,
+  pub pad_map: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -319,6 +327,62 @@ impl<'a> Router<'a> {
       }
     }
     (fixed, plane, signal)
+  }
+
+  /// ASCII picture of the region the last search reached and its surroundings.
+  fn reached_map(&self, net: u32) -> String {
+    let m = self.model;
+    let plane_nets: Vec<u32> = m.planes.iter().map(|p| p.net).collect();
+    let (mut x0, mut x1, mut y0, mut y1) = (usize::MAX, 0usize, usize::MAX, 0usize);
+    for s in 0..self.stamp.len() {
+      if self.stamp[s] == self.epoch {
+        let (_, x, y) = self.unstate(s);
+        x0 = x0.min(x);
+        x1 = x1.max(x);
+        y0 = y0.min(y);
+        y1 = y1.max(y);
+      }
+    }
+    if x0 > x1 {
+      return String::new();
+    }
+    let (x1, y1) = (x1.min(x0 + 40), y1.min(y0 + 24));
+    let (x0, y0) = (x0.saturating_sub(3), y0.saturating_sub(3));
+    let (x1, y1) = (
+      (x1 + 3).min(m.nx.saturating_sub(1)),
+      (y1 + 3).min(m.ny.saturating_sub(1)),
+    );
+    let mut out = String::new();
+    for l in 0..m.layers.len() {
+      out.push_str(&format!(
+        "    layer {} x {x0}..{x1} y {y0}..{y1}\n",
+        m.layers.get(l).map_or("?", String::as_str)
+      ));
+      for y in y0..=y1 {
+        out.push_str("    ");
+        for x in x0..=x1 {
+          let c = if self.stamp[self.state(l, x, y)] == self.epoch {
+            'o'
+          } else if !m.track_ok(l, x, y, net) {
+            '#'
+          } else {
+            match self.usage.get(l).and_then(|u| u.get(y * m.nx + x)) {
+              Some(&o) if o != FREE && o != net + 1 => {
+                if o != u32::MAX && plane_nets.contains(&(o - 1)) {
+                  'p'
+                } else {
+                  'x'
+                }
+              }
+              _ => '.',
+            }
+          };
+          out.push(c);
+        }
+        out.push('\n');
+      }
+    }
+    out
   }
 
   fn cell_free(&self, layer: usize, ix: usize, iy: usize, net: u32) -> bool {
@@ -657,15 +721,25 @@ impl<'a> Router<'a> {
         preconnected: true,
       });
     }
-    let inside = self.model.pad_access(board, fi, pi).cells;
+    let lane = if self.costs.lanes {
+      self.model.lanes.get(&(fi, pi)).copied()
+    } else {
+      None
+    };
+    let on_lane =
+      |x: usize, y: usize| lane.is_none_or(|l| if l.column { x == l.index } else { y == l.index });
+    let mut inside = self.model.pad_access(board, fi, pi).cells;
+    if lane.is_some() && inside.iter().any(|&(_, x, y)| on_lane(x, y)) {
+      inside.retain(|&(_, x, y)| on_lane(x, y));
+    }
     let mut bends = HashMap::new();
     let mut cells = if inside.is_empty() {
-      self.near_cells(board, fi, pi, net)
+      self.near_cells(board, fi, pi, net, lane)
     } else {
       inside
     };
     if cells.is_empty() && self.costs.bent_stubs {
-      for (l, x, y, corner) in self.bent_cells(board, fi, pi, net) {
+      for (l, x, y, corner) in self.bent_cells(board, fi, pi, net, lane) {
         cells.push((l, x, y));
         bends.insert((l, x, y), corner);
       }
@@ -690,17 +764,21 @@ impl<'a> Router<'a> {
   /// pad's long axis, then a 45 degree jog onto a free grid cell. The corner
   /// is returned with each cell. Both segments must clear every foreign pad
   /// and claim only free corridor cells. At most four, shortest first.
-  fn bent_cells(&self, board: &Board, fi: usize, pi: usize, net: u32) -> Vec<(usize, usize, usize, Point)> {
+  fn bent_cells(
+    &self,
+    board: &Board,
+    fi: usize,
+    pi: usize,
+    net: u32,
+    lane: Option<Lane>,
+  ) -> Vec<(usize, usize, usize, Point)> {
     let Some(fp) = board.footprints.get(fi) else {
       return Vec::new();
     };
     let Some(pad) = fp.pads.get(pi) else {
       return Vec::new();
     };
-    let Some(bb) = crate::shape::pad_copper(pad).bbox() else {
-      return Vec::new();
-    };
-    let (w, h) = (bb.width(), bb.height());
+    let (w, h) = crate::shape::pad_extent(pad);
     let (axis, half) = if w >= 1.5 * h {
       ((1.0, 0.0), w / 2.0)
     } else if h >= 1.5 * w {
@@ -739,6 +817,9 @@ impl<'a> Router<'a> {
       for &l in &layers {
         for iy in y0..=y1.min(m.ny.saturating_sub(1)) {
           for ix in x0..=x1.min(m.nx.saturating_sub(1)) {
+            if lane.is_some_and(|ln| if ln.column { ix != ln.index } else { iy != ln.index }) {
+              continue;
+            }
             let c = m.centre(ix, iy);
             let (dx, dy) = (c.x - pad.at.x, c.y - pad.at.y);
             let (a, lat) = (dx * u.0 + dy * u.1, dx * nrm.0 + dy * nrm.1);
@@ -776,7 +857,14 @@ impl<'a> Router<'a> {
 
   /// Usable cells within `NEAR_REACH_PITCHES` of the pad's centre, nearest four, on the
   /// pad's own copper layers.
-  fn near_cells(&self, board: &Board, fi: usize, pi: usize, net: u32) -> Vec<(usize, usize, usize)> {
+  fn near_cells(
+    &self,
+    board: &Board,
+    fi: usize,
+    pi: usize,
+    net: u32,
+    lane: Option<Lane>,
+  ) -> Vec<(usize, usize, usize)> {
     let Some(pad) = board.footprints.get(fi).and_then(|f| f.pads.get(pi)) else {
       return Vec::new();
     };
@@ -797,6 +885,9 @@ impl<'a> Router<'a> {
       for iy in y0..=y1.min(m.ny.saturating_sub(1)) {
         for ix in x0..=x1.min(m.nx.saturating_sub(1)) {
           let d = m.centre(ix, iy) - pad.at;
+          if lane.is_some_and(|ln| if ln.column { ix != ln.index } else { iy != ln.index }) {
+            continue;
+          }
           if d.length() <= reach
             && self.cell_free(l, ix, iy, net)
             && self.stub_clear(board, fi, pi, m.centre(ix, iy), l, net)
@@ -1028,6 +1119,7 @@ impl<'a> Router<'a> {
           if self.costs.explain {
             let tree_reach = self.reached_count();
             let tree_block = self.frontier_tally(net);
+            let tree_map = self.reached_map(net);
             let tree_pads: Vec<(usize, usize)> = joined.iter().map(|j| j.pad).collect();
             let rest: Vec<Terminal> = terms.clone();
             for t in &rest {
@@ -1041,6 +1133,8 @@ impl<'a> Router<'a> {
                 pad_reach: self.reached_count(),
                 tree_block,
                 pad_block: self.frontier_tally(net),
+                tree_map: tree_map.clone(),
+                pad_map: self.reached_map(net),
               });
             }
           }
