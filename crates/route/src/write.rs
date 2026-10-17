@@ -69,6 +69,84 @@ fn via(at: Point, size: f64, drill: f64, top: &str, bottom: &str, net: u32, net_
   )
 }
 
+/// How the file refers to a net: by code (KiCad 9) or by quoted name (KiCad 10).
+fn net_ref_text(board: &Board, net: u32) -> Result<String, String> {
+  if board.net_table.by_name_style {
+    let name = board
+      .nets
+      .get(&net)
+      .ok_or_else(|| format!("net {net} has no name in this board"))?;
+    Ok(format!("\"{}\"", name.replace('\\', "\\\\").replace('"', "\\\"")))
+  } else {
+    Ok(net.to_string())
+  }
+}
+
+/// Put generated copper text into the document, before the trailing
+/// embedded-fonts/files items where KiCad writes it.
+fn insert_copper(doc: &mut Document, text: &str) -> Result<(), String> {
+  let added = parse(text).map_err(|e| format!("internal: generated copper does not parse: {e}"))?;
+  let root = doc.root_mut().ok_or("no root list")?;
+  let at = root
+    .items
+    .iter()
+    .position(|n| {
+      n.as_list()
+        .is_some_and(|l| l.is("embedded_fonts") || l.is("embedded_files"))
+    })
+    .unwrap_or(root.items.len());
+  let new: Vec<Node> = added
+    .items
+    .into_iter()
+    .filter(|n| matches!(n, Node::List(_)))
+    .collect();
+  root.items.splice(at..at, new);
+  Ok(())
+}
+
+/// Append the copper of the fine-lattice router (`fine::route_fine`) to `doc`.
+pub fn add_routes_fine(
+  doc: &mut Document,
+  model: &RoutingModel,
+  board: &Board,
+  routes: &[crate::fine::FineRoute],
+) -> Result<Written, String> {
+  let width = model.profile.track_width;
+  let (top, bottom) = match (model.stack.first(), model.stack.last()) {
+    (Some(t), Some(b)) => (t.clone(), b.clone()),
+    _ => return Err("board has no copper layers".to_owned()),
+  };
+  let mut text = String::new();
+  let mut w = Written::default();
+  for r in routes {
+    let nref = net_ref_text(board, r.net)?;
+    for (layer, a, b) in &r.segs {
+      let name = model
+        .layers
+        .get(*layer)
+        .ok_or_else(|| format!("route uses layer {layer} the model does not have"))?;
+      text += &segment(*a, *b, width, name, r.net, &nref);
+      w.segments += 1;
+    }
+    for &at in &r.vias {
+      text += &via(
+        at,
+        model.profile.via_diameter,
+        model.profile.via_drill,
+        &top,
+        &bottom,
+        r.net,
+        &nref,
+      );
+      w.vias += 1;
+    }
+  }
+  if !text.is_empty() {
+    insert_copper(doc, &text)?;
+  }
+  Ok(w)
+}
+
 /// Append every route in `summary` to `doc`. Returns what was written.
 pub fn add_routes(
   doc: &mut Document,
@@ -88,18 +166,7 @@ pub fn add_routes(
       .cloned()
       .ok_or_else(|| format!("route uses layer {i} the model does not have"))
   };
-  // How the file refers to a net: by code (KiCad 9) or by quoted name (KiCad 10).
-  let net_ref = |net: u32| -> Result<String, String> {
-    if board.net_table.by_name_style {
-      let name = board
-        .nets
-        .get(&net)
-        .ok_or_else(|| format!("net {net} has no name in this board"))?;
-      Ok(format!("\"{}\"", name.replace('\\', "\\\\").replace('"', "\\\"")))
-    } else {
-      Ok(net.to_string())
-    }
-  };
+  let net_ref = |net: u32| net_ref_text(board, net);
   let mut text = String::new();
   let mut w = Written::default();
   for r in &summary.routes {
@@ -131,23 +198,7 @@ pub fn add_routes(
   if text.is_empty() {
     return Ok(w);
   }
-  let added = parse(&text).map_err(|e| format!("internal: generated copper does not parse: {e}"))?;
-  let root = doc.root_mut().ok_or("no root list")?;
-  // KiCad writes copper before the trailing embedded-fonts/files items.
-  let at = root
-    .items
-    .iter()
-    .position(|n| {
-      n.as_list()
-        .is_some_and(|l| l.is("embedded_fonts") || l.is("embedded_files"))
-    })
-    .unwrap_or(root.items.len());
-  let new: Vec<Node> = added
-    .items
-    .into_iter()
-    .filter(|n| matches!(n, Node::List(_)))
-    .collect();
-  root.items.splice(at..at, new);
+  insert_copper(doc, &text)?;
   Ok(w)
 }
 

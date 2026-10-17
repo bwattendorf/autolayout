@@ -514,6 +514,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     search::Costs,
   };
   let mut greedy = false;
+  let mut fine: Option<autolayout_route::fine::FineParams> = None;
   let mut out_path: Option<String> = None;
   let mut params = Params::default();
   let mut rest = Vec::new();
@@ -521,6 +522,19 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   while let Some(a) = it.next() {
     match a.as_str() {
       "--greedy" => greedy = true,
+      "--fine" => fine = Some(autolayout_route::fine::FineParams::default()),
+      "--sub" | "--fine-iters" | "--via-cost" | "--fine-slack" | "--fine-seed" => {
+        let v = it.next().ok_or_else(|| format!("{a} needs a value"))?;
+        let f = fine.get_or_insert_with(autolayout_route::fine::FineParams::default);
+        let bad = || format!("{a}: `{v}` is not a number");
+        match a.as_str() {
+          "--sub" => f.sub = v.parse().map_err(|_| bad())?,
+          "--fine-iters" => f.iters = v.parse().map_err(|_| bad())?,
+          "--via-cost" => f.via_cost = v.parse().map_err(|_| bad())?,
+          "--fine-slack" => f.slack = v.parse().map_err(|_| bad())?,
+          _ => f.seed = v.parse().map_err(|_| bad())?,
+        }
+      }
       "--no-ripup" => params.ripup_retry = false,
       "--out" => out_path = Some(it.next().ok_or("--out needs a path")?.clone()),
       "--iters" => {
@@ -547,6 +561,9 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   let (_, doc) = load(pcb)?;
   let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
   let mut m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
+  if let Some(fp) = fine {
+    return route_fine_cmd(pcb, &doc, &board, &rules, &m, out_path.as_deref(), fp);
+  }
   let t = std::time::Instant::now();
   let plane_codes: Vec<(String, u32)> = m
     .planes
@@ -867,6 +884,101 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   Ok(s.nets_complete == s.nets_total && v.clean())
 }
 
+/// `autolayout route PCB --fine [--sub N] [--fine-iters N] [--via-cost F] [--fine-slack MM] [--fine-seed S]`:
+/// the fine-lattice router (`route::fine`) on every net. A board that already has
+/// copper or keepout zones is refused (the fine router does not read them yet).
+fn route_fine_cmd(
+  pcb: &str,
+  doc: &Document,
+  board: &Board,
+  rules: &autolayout_route::rules::DesignRules,
+  m: &autolayout_route::model::RoutingModel,
+  out_path: Option<&str>,
+  params: autolayout_route::fine::FineParams,
+) -> Result<bool, String> {
+  let st = &m.stats;
+  if st.existing_segments + st.existing_vias + st.keepout_zones > 0 {
+    return Err(format!(
+      "{pcb}: --fine does not read existing copper or keepout zones yet ({} tracks, {} vias, {} keepouts); route a stripped board",
+      st.existing_segments, st.existing_vias, st.keepout_zones
+    ));
+  }
+  let t = std::time::Instant::now();
+  let res = autolayout_route::fine::route_fine(board, m, rules, params);
+  let mut judged = doc.clone();
+  let written = autolayout_route::write::add_routes_fine(&mut judged, m, board, &res.routes)?;
+  let jtext = judged.to_string();
+  let jdoc = parse(&jtext).map_err(|e| format!("internal: {e}"))?;
+  let jboard = Board::read(&jdoc).map_err(|e| e.to_string())?;
+  let plane_codes: Vec<(String, u32)> = m.planes.iter().map(|p| (p.layer.clone(), p.net)).collect();
+  let v = autolayout_route::verify::verify_fresh_planes(&jdoc, &jboard, rules, &plane_codes);
+  let mm: f64 = res
+    .routes
+    .iter()
+    .flat_map(|r| &r.segs)
+    .map(|(_, a, b)| (*b - *a).length())
+    .sum();
+  println!(
+    "rules from {}; fine lattice {} x {} cells of {:.4} mm (grid pitch {:.4} / {}), {} signal layer(s), seed {}",
+    rules.source,
+    res.lattice.0,
+    res.lattice.1,
+    res.step,
+    m.pitch,
+    params.sub,
+    m.layers.len(),
+    params.seed
+  );
+  println!(
+    "fine route (UNVERIFIED: not checked by KiCad): nets complete {} of {}; {:.1} mm of track, {} vias, {} iteration(s), {} net(s) dropped for overlap, {:.1} s",
+    res.nets_complete,
+    res.nets_total,
+    mm,
+    written.vias,
+    res.iterations,
+    res.dropped,
+    t.elapsed().as_secs_f64()
+  );
+  for r in res.routes.iter().filter(|r| !r.failed.is_empty()).take(20) {
+    let pads: Vec<String> = r
+      .failed
+      .iter()
+      .filter_map(|&(f, p)| {
+        Some(format!(
+          "{}.{}",
+          board.footprints.get(f)?.reference,
+          board.footprints.get(f)?.pads.get(p)?.number
+        ))
+      })
+      .collect();
+    println!(
+      "  incomplete: net {} \u{2014} unreached {}",
+      board.nets.get(&r.net).map_or("?", String::as_str),
+      pads.join(" ")
+    );
+  }
+  if let Some(o) = out_path {
+    fs::write(o, judged.to_string()).map_err(|e| format!("{o}: {e}"))?;
+    let back = fs::read_to_string(o).map_err(|e| format!("{o}: {e}"))?;
+    let parsed = parse(&back).map_err(|e| format!("{o}: written file does not parse: {e}"))?;
+    if parsed.to_string() != back {
+      return Err(format!("{o}: written file does not round-trip byte-exact"));
+    }
+    println!(
+      "wrote {o}: {} segments, {} vias added; judge it with KiCad DRC, not with this tool",
+      written.segments, written.vias
+    );
+  }
+  println!(
+    "verifier (re-derived from the written copper, NOT KiCad; judge is `kicad-cli pcb drc`): {}",
+    v.summary()
+  );
+  for i in v.issues.iter().take(10) {
+    println!("  {} at ({:.4}, {:.4}): {}", i.kind, i.at.x, i.at.y, i.detail);
+  }
+  Ok(res.nets_complete == res.nets_total && v.clean())
+}
+
 /// Judge the copper already in a board file against its project's rules, in
 /// continuous geometry from the file alone (see `route::verify`). `--plane
 /// LAYER=NET` says which layers are poured planes. Exit 1 if anything is found.
@@ -1074,6 +1186,110 @@ fn capacity(pcb: &str, args: &[String]) -> Result<bool, String> {
   Ok(worst == 0)
 }
 
+/// `autolayout congestion PCB [--layers N] [--max-layers M] [--tile MM] [--plane L=N ...] [rule flags]`:
+/// tile-level global routing (`route::congestion`): for each signal layer count, the tracks and
+/// vias the board's nets need beyond what its free space holds. Zero overflow is necessary, not
+/// sufficient, for the board to route on that many layers.
+fn congestion(pcb: &str, args: &[String]) -> Result<bool, String> {
+  use autolayout_route::capacity::CapacityRules;
+  use autolayout_route::congestion::{CongestionParams, predict};
+  use autolayout_route::model::RoutingModel;
+  let (mut layers, mut max_layers, mut params) = (None::<usize>, 4usize, CongestionParams::default());
+  let mut rest = Vec::new();
+  let mut it = args.iter();
+  while let Some(a) = it.next() {
+    let mut num = |what: &str| -> Result<String, String> {
+      it.next().cloned().ok_or_else(|| format!("{what} needs a value"))
+    };
+    match a.as_str() {
+      "--layers" => layers = Some(num(a)?.parse().map_err(|_| "--layers needs a number")?),
+      "--max-layers" => max_layers = num(a)?.parse().map_err(|_| "--max-layers needs a number")?,
+      "--tile" => params.tile = num(a)?.parse().map_err(|_| "--tile needs a number")?,
+      _ => rest.push(a.clone()),
+    }
+  }
+  let (rules, profile, planes) = model_args(pcb, &rest)?;
+  let (_, doc) = load(pcb)?;
+  let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
+  let m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
+  let plane_nets: Vec<u32> = m.planes.iter().map(|p| p.net).collect();
+  let clearance = rules
+    .classes
+    .iter()
+    .map(|c| c.clearance)
+    .fold(profile.clearance.max(rules.min.clearance), f64::max);
+  let cr = CapacityRules {
+    track: profile.track_width,
+    clearance,
+    margin: rules.min.max_error,
+    board_edge: rules.min.copper_edge_clearance,
+  };
+  let counts: Vec<usize> = match layers {
+    Some(n) => vec![n],
+    None => (1..=max_layers.max(1)).collect(),
+  };
+  println!(
+    "tile {:.2} mm; board signal layers {} ({}); via {:.4}, via spacing {:.4}; {} plane net(s)",
+    params.tile,
+    m.layers.len(),
+    m.layers.join(", "),
+    profile.via_diameter,
+    m.via_spacing,
+    plane_nets.len()
+  );
+  let preds = predict(
+    &board,
+    &cr,
+    (
+      profile.via_diameter,
+      m.via_spacing.max(profile.via_diameter + clearance),
+    ),
+    &m.layers,
+    &plane_nets,
+    &counts,
+    params,
+  );
+  let mut first_ok: Option<usize> = None;
+  for p in &preds {
+    if p.overflow == 0 && first_ok.is_none() {
+      first_ok = Some(p.layers);
+    }
+    println!(
+      "{} signal layer(s): overflow {:4} ({} edges, {} via tiles; per layer {:?}); layer changes {} of {} via sites; {} nets, {} iteration(s)",
+      p.layers,
+      p.overflow,
+      p.overflow_edges,
+      p.overflow_via_tiles,
+      p.per_layer_overflow,
+      p.vias_used,
+      p.via_capacity,
+      p.nets,
+      p.iterations
+    );
+    for h in p.hotspots.iter().take(5) {
+      println!(
+        "    ({:.1}, {:.1}) {}{}: uses {} of {}",
+        h.at.x,
+        h.at.y,
+        h.what,
+        h.layer.map_or(String::new(), |l| format!(" on layer {l}")),
+        h.usage,
+        h.capacity
+      );
+    }
+  }
+  match first_ok {
+    Some(n) => {
+      println!("predicted: {n} signal layer(s) leave no overflow in this model (necessary, not sufficient)")
+    }
+    None => println!(
+      "predicted: more than {} signal layers, or more room between parts",
+      counts.last().copied().unwrap_or(0)
+    ),
+  }
+  Ok(first_ok.is_some())
+}
+
 fn model(pcb: &str, args: &[String]) -> Result<bool, String> {
   use autolayout_route::model::RoutingModel;
   let (rules, profile, planes) = model_args(pcb, args)?;
@@ -1184,6 +1400,7 @@ fn main() -> ExitCode {
     }
     Some((cmd, [pcb, flags @ ..])) if cmd == "rules" => rules(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "model" => model(pcb, flags),
+    Some((cmd, [pcb, flags @ ..])) if cmd == "congestion" => congestion(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "capacity" => capacity(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "escape-survey" => escape_survey(pcb, flags),
     Some((cmd, [pcb, flags @ ..])) if cmd == "route" => route(pcb, flags),

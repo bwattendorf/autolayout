@@ -113,7 +113,7 @@ impl RingReport {
   }
 }
 
-fn on_layer(pad_layers: &[String], layer: &str) -> bool {
+pub(crate) fn on_layer(pad_layers: &[String], layer: &str) -> bool {
   pad_layers
     .iter()
     .any(|l| l == layer || l == "*.Cu" || (l == "F&B.Cu" && (layer == "F.Cu" || layer == "B.Cu")))
