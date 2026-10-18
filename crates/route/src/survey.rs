@@ -43,8 +43,9 @@ pub fn axis_room(
   if pad.kind != "smd" || pad.net.is_none() || !pad.at.x.is_finite() || !pad.at.y.is_finite() {
     return None;
   }
-  let bb = pad_copper(pad).bbox()?;
-  let (hw, hh) = (bb.width() / 2.0, bb.height() / 2.0);
+  // The size and angle, not `bbox()`: a rectangle's bbox is a square (see `shape::pad_extent`).
+  let (w, h) = crate::shape::pad_extent(pad);
+  let (hw, hh) = (w / 2.0, h / 2.0);
   let count = fp.pads.len().max(1) as f64;
   let (mx, my) = fp
     .pads
