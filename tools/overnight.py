@@ -2,11 +2,12 @@
 
 Run under KiCad's bundled Python (it needs pcbnew), from the repo root, after building the router:
 
-    set AUTOLAYOUT_CORPUS=C:/Portcullis/controller/boards
-    set KICAD_CLI=C:/Program Files/KiCad/10.0/bin/kicad-cli.exe
-    set AUTOLAYOUT=C:/autolayout/target/release/autolayout.exe
     "C:/Program Files/KiCad/10.0/bin/python.exe" tools/overnight.py OUT_DIR --hours 8 [--boards GLOB ...]
         [--skip SUBSTR,...] [--variants FILE] [--resume]
+
+AUTOLAYOUT_CORPUS, KICAD_CLI and AUTOLAYOUT default to this machine's corpus, KiCad 10 and
+target/release/autolayout.exe (build it first: `bash tools/cargo.sh build --release`); set them in the
+environment to use others.
 
 What it does (nothing here changes the router or any input board):
   * Pass k runs variant k (a set of extra `autolayout route` flags) on every board that is not yet
@@ -37,7 +38,17 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-import m7_batch  # noqa: E402  (needs pcbnew: run under KiCad's Python)
+
+# Defaults for this machine, so the command line needs no environment setup. Anything already set wins.
+for _name, _path in (
+    ("AUTOLAYOUT_CORPUS", "C:/Portcullis/controller/boards"),
+    ("KICAD_CLI", "C:/Program Files/KiCad/10.0/bin/kicad-cli.exe"),
+    ("AUTOLAYOUT", os.path.join(os.path.dirname(HERE), "target", "release", "autolayout.exe")),
+):
+    if _name not in os.environ and os.path.exists(_path):
+        os.environ[_name] = _path
+
+import m7_batch  # noqa: E402  (needs pcbnew: run under KiCad's Python; reads the variables above)
 
 # Cheap first. "" is today's standard pipeline, so every board has its baseline row.
 DEFAULT_VARIANTS = [
@@ -68,7 +79,9 @@ def key_of(row):
     """Lower is better: KiCad unconnected, then routing violations beyond what the board had before."""
     if row.get("status") != "ok":
         return (10**9, 10**9)
-    unconnected = int(row.get("kicad_unconnected_after") or 10**9)
+    got = row.get("kicad_unconnected_after")
+    # 0 is a real count (solved), so test for "missing", not for falsy.
+    unconnected = 10**9 if got is None or got == "" else int(got)
     before = sum(int(row.get(k) or 0) for k in ("kicad_clearance_before", "kicad_shorting_items_before", "kicad_hole_to_hole_before"))
     return (unconnected, max(0, m7_batch.violations(row) - before))
 
