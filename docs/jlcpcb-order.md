@@ -110,4 +110,12 @@ numbers, SMD placement file, hand-source list); not uploaded anywhere.
   larger pad); and the listed "current at 30 minutes after charging" is 0.71 mA against the BOM requirement of
   <= 2 uA at 3.3 V (a 30-minute charging current is not a steady-state leakage, but the datasheet gives no
   steady-state figure; aqueous electrolyte, -25..+70 C, ESR 120 ohm at 1 kHz). Not yet fixed: pick another part.
+  Replacement search 2026-10-18 (Digikey lookups measured; leakage figures are from search-result snippets of
+  Eaton/Mouser pages because eaton.com timed out from here, so NOT datasheet-verified): KEMET FT0H474ZF (16.5 mm,
+  5.08 mm pitch, same flat 0.4 x 1.2 mm leads, same 0.71 mA 30-minute spec, no steady-state figure in the series
+  datasheet, $6.71, 23k stock); Eaton PB-5R0H474-R 5.0 V, 7 uA leakage, 1 ohm ESR, 14.5 x 17.3 x 9 mm horizontal,
+  11.8 mm pitch, $5.93, stock 30; Eaton PM-5R0H474-R 5.0 V, 8 uA after 100 h, $12.27, stock 95; Eaton PHV-5R4V474-R
+  13 uA after 100 h at 5 V, RoHS non-compliant, $7.96, stock 1955; Panasonic EEC-F5R5U474 end of life; Murata
+  DMF3Z5R5H474M3DTA0 obsolete. No 0.47 F part found with <= 2 uA. Hold time to fall from 3.3 V to 1.8 V
+  (estimate, C x dV / I): 7 uA ~ 28 h, 13 uA ~ 15 h, 2 uA ~ 4 days.
 - RTC: RV-3028-C7 is out of stock everywhere checked; orders use RV-3032-C7 (C5127802), firmware change needed.
