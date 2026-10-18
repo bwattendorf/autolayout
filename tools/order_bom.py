@@ -24,6 +24,9 @@ def main(argv):
         sys.exit(__doc__)
     board, out = argv[0], argv[1]
     over = {}
+    if "--no-swaps" not in argv:
+        swaps = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "bom_swaps.json"), encoding="utf-8"))
+        over = {k: v["lcsc"] for k, v in swaps.items() if not k.startswith("_")}
     i = 2
     while i < len(argv):
         if argv[i] == "--set":

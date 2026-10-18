@@ -1,0 +1,5 @@
+{
+ "_note": "Cost/availability substitutes applied by tools/order_bom.py (key = BOM Comment or MPN). Source: out/sourcing/cheaper_parts_scan.md (pcbparts lookups 2026-10-18). Five-year availability is a judgement, not measured.",
+ "BAT54S": {"lcsc": "C7420333", "why": "hongjiacheng BAT54S SOT-23 dual series Schottky, preferred (no fee), $0.0129; replaces BAT54S-7-F C83574 $0.1132. Same package and configuration."},
+ "THVD1450": {"lcsc": "C57928", "why": "SN65HVD75DR SOIC-8, 3-3.6 V, 20 Mbps, $0.5763; replaces THVD1450DR C2671361 $0.8849. All 14 boards that have it run pad 8 at the +3V3 net (read from the freeplace boards); same standard RS-485 SOIC-8 pinout assumed, datasheet pinout and the firmware bus rate NOT checked."}
+}
