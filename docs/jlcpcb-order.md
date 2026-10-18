@@ -61,7 +61,10 @@ numbers, SMD placement file, hand-source list); not uploaded anywhere.
   through-hole 5.08 mm pitch / 14.5 mm body (drill 1.0, pad 2.0 are guesses); 4700 uF (e1, e2) -> CP_Elec_18x22;
   2200 uF (c1 c2 c4 cm) -> CP_Elec_16x17.5. The swapped parts were unlocked so the placer moved them.
 - Hand-source: supercap (every board that has one), ARJP11A, Ag9912-LP, Ag5412, BG95-M3, SE051C2, IN-PI554,
-  EM4095 (EM4095HMSO16B+; Digikey reel only, see out/sourcing/em4095_alternatives.md).
+  EM4095 (EM4095HMSO16B+). Decision 2026-10-18: buy a few as Digikey cut tape (2651-EM4095HMSO16B+CT-ND, about $4.25
+  each per web search snippets) and hand-solder; TME is the fallback. The pcbparts tool only shows the 2500-piece reel
+  record, so confirm the cut-tape listing and stock on the Digikey page before ordering. See
+  out/sourcing/em4095_alternatives.md.
 - Cost/availability swaps applied to every order BOM (tools/bom_swaps.json, tools/bom_patch.py; lookups 2026-10-18):
   BAT54S-7-F C83574 -> hongjiacheng BAT54S C7420333 (preferred, no extended fee); THVD1450DR C2671361 -> SN65HVD75DR
   C57928 (3-3.6 V; all 14 boards that carry it feed pad 8 from the 3.3 V rail; datasheet pinout and firmware bus rate
