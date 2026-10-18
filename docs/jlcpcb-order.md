@@ -24,6 +24,15 @@ assembly prices are not known: get them from the JLCPCB quote page.
 - `emu-jlc-bom.csv`: 77 lines, every line has an LCSC part (parts only, one board about $62.5, 23 extended
   parts; estimate). `emu-cpl.csv` is the project's own.
 
+## Digikey / Mouser for the lines JLCPCB lacks (lookups 2026-10-18, single-unit, measured)
+- ARJP11A-MASA-B-A-EMU2 (PoE magjack, through-hole): Digikey in stock 166, $9.01.
+- Ag9912-LP (Silvertel PoE module): Mouser Ag9912LP stock 159, $9.50. Mouser also has AG9912-LPB, a
+  surface-mount variant (stock 438, $9.00) that is a different part/footprint.
+- BG95M3LA-64-SGNS (Quectel): Mouser stock 488, $37.13 (exact M3 part; the JLCPCB M4 swap is not needed).
+- RV-3028-C7: Mouser lists the TA QA and TA QC variants with stock 0; the Digikey lookup found nothing. The
+  RV-3032-C7 swap stays for now.
+- Not looked up yet: Ag5412, EM4095, SE051C2, IN-PI554, 0.47 F supercap, 2200/4700 uF 10 mm caps.
+
 ## Parts with no JLCPCB match (all boards)
 RTC RV-3028 (alt RV-3032-C7), 0.47 F supercap, 2200/4700 uF 10 mm caps (only lower capacitance fits),
 BG95-M3 (BG95-M4 is a different regional variant), Silvertel Ag9912/Ag5412 PoE modules, ARJP11A PoE magjack,
