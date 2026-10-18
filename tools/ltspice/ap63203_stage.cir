@@ -11,7 +11,9 @@
 .param tper={1/fsw} rhs=0.125 rls=0.07 rl=0.026
 .param duty={(3.3+iload*(rl+rls))/(vin+iload*(rls-rhs))}
 .param rload={3.3/iload}
-.param cout={2*22u*derate}
+* lval and ctot are the board-specific values (tools/ltspice_check.py rewrites this line per board)
+.param lval=4.7u ctot=44u
+.param cout={ctot*derate}
 
 Vin in 0 {vin}
 Cin in 0 10u Rser=5m
@@ -25,7 +27,7 @@ Dbody 0 sw DBODY
 .model SWH SW(Ron={rhs} Roff=10Meg Vt=0.5 Vh=0.1)
 .model SWL SW(Ron={rls} Roff=10Meg Vt=0.5 Vh=0.1)
 .model DBODY D(Is=1e-9 N=1.2 Rs=0.05)
-L1 sw out 4.7u Rser={rl} ic={iload}
+L1 sw out {lval} Rser={rl} ic={iload}
 Co out 0 {cout} Rser=4m ic=3.3
 Rload out 0 {rload}
 

@@ -86,6 +86,13 @@ numbers, SMD placement file, hand-source list); not uploaded anywhere.
   (ripple 0.44-0.65 A p-p over Vin 9-30 V), output ripple 5-12 mV p-p with 100 % to 35 % capacitance; this does
   not test the IC's loop, start-up or current limit. Pre-existing and not investigated: c1 c2 c2g c4 cm e1 e2 el
   g2 io m2 r t have 50-210 differing pad groups between the board file and its netlist before the edit.
+  Per-board LTspice (tools/ltspice_check.py, out/ltspice_all.txt): all 18 converted regulators PASS the only
+  criterion (peak inductor current 2.24-2.25 A at 2 A load vs 0.8 x 5.5 A Isat; ripple 0.6 A p-p). Output
+  capacitance on the 3.3 V net, from the netlists: 50-57 uF on m1 c1 c2 c4 cm g2n t; 36 uF on c2g e2 el g2 io m2 r;
+  30 uF (3 x 10 uF) on g2i g2io g2o; 26 uF on e1. The Diodes EVM page quotes 2 x 22 uF as the recommendation; the
+  minimum output capacitance and compensation of the AP63203 were NOT read, so stability on the 26-36 uF boards
+  is unchecked (the old AP63201 boards had the same capacitors). Open-loop ripple numbers (14-25 mV) include
+  start-up ringing and are not a regulation result.
   Frequency note: sources disagree whether the AP63201 is 500 kHz or 1.1 MHz; the AP63200 (current BOM stand-in
   for the AP63201) is 500 kHz per the LCSC listing; the AP63203 is 1.1 MHz. The Portcullis schematic must get the
   same edit (delete the divider, tie FB to the output) or KiCad parity will flag it.
