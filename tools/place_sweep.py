@@ -37,6 +37,26 @@ import m7_batch  # noqa: E402
 DEFAULT_VARIANTS = ["", "--grade"]
 
 
+def rules_pro(corpus, board_id, mode):
+    """The project file whose rules the placed board is routed and judged under.
+
+    `fab` (default): the rules the board is made with, i.e. the service's: quilter/fab/<id>/<id>.kicad_pro,
+    else the first quilter/returned/<id>/3p5mil-candidate*/<id>.kicad_pro. The freeplace project files
+    carry generic coarse defaults (track 0.25, clearance 0.2, via 0.6/0.3): at those, a 0.5 mm-pitch IC
+    cannot be fanned out and every placement looks bad (measured 2026-10-17: m1 placed by us, 65
+    unconnected at the freeplace rules, 0 at the fab rules). `freeplace`: the file beside the board.
+    """
+    free = os.path.join(corpus, "quilter", "freeplace", board_id, board_id + ".kicad_pro")
+    if mode == "freeplace":
+        return free
+    for sub in ("fab", "finish"):
+        made = os.path.join(corpus, "quilter", sub, board_id, board_id + ".kicad_pro")
+        if os.path.exists(made):
+            return made
+    cands = sorted(glob.glob(os.path.join(corpus, "quilter", "returned", board_id, "3p5mil-candidate*", board_id + ".kicad_pro")))
+    return cands[0] if cands else free
+
+
 def find_netlist(corpus, board_id):
     for d in sorted(glob.glob(os.path.join(corpus, board_id + "-*"))):
         nets = sorted(glob.glob(os.path.join(d, "hardware", "kicad", "*.net")))
@@ -94,7 +114,7 @@ def main(argv):
     out_dir, args = argv[0], argv[1:]
     corpus = os.environ["AUTOLAYOUT_CORPUS"]
     m7_batch.CORPUS = corpus
-    hours, only, variants_file, route_flags, resume = 6.0, [], None, "", False
+    hours, only, variants_file, route_flags, resume, rules_mode = 6.0, [], None, "", False, "fab"
     i = 0
     while i < len(args):
         a = args[i]
@@ -106,6 +126,10 @@ def main(argv):
                 only.append(args[i]); i += 1
         elif a == "--variants":
             variants_file = args[i + 1]; i += 2
+        elif a == "--rules":
+            rules_mode = args[i + 1]; i += 2
+            if rules_mode not in ("fab", "freeplace"):
+                sys.exit("--rules is fab or freeplace")
         elif a == "--route-flags":
             route_flags = args[i + 1]; i += 2
         elif a == "--resume":
@@ -133,7 +157,7 @@ def main(argv):
     results = overnight.load_results(results_path)
     done = {(r["board"], r["variant"]) for r in results}
     deadline = time.time() + hours * 3600
-    log(out_dir, f"start: {len(ids)} board(s) {ids}, variants {variants}, route flags '{route_flags}', {hours} h, "
+    log(out_dir, f"start: rules={rules_mode}, {len(ids)} board(s) {ids}, variants {variants}, route flags '{route_flags}', {hours} h, "
                  f"{len(results)} earlier attempt(s)")
     stop = False
     for vi, variant in enumerate(variants):
@@ -162,7 +186,9 @@ def main(argv):
                 if code != 0 or not os.path.exists(placed):
                     row.update(status="FAIL:place", error=out.strip()[-300:])
                 else:
-                    shutil.copyfile(os.path.splitext(srcs[bid])[0] + ".kicad_pro", os.path.splitext(placed)[0] + ".kicad_pro")
+                    pro = rules_pro(corpus, bid, rules_mode)
+                    row["rules"] = os.path.relpath(pro, corpus).replace("\\", "/")
+                    shutil.copyfile(pro, os.path.splitext(placed)[0] + ".kicad_pro")
                     os.environ["M7_ROUTE_EXTRA"] = route_flags
                     res = m7_batch.do_board(placed, os.path.join(work, "route"), False)
                     row.update({k: v for k, v in res.items() if v != ""})

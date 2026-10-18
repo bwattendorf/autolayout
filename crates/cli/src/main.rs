@@ -207,13 +207,45 @@ fn read_pairs(path: &str, board: &Board) -> Result<Vec<autolayout_place::place::
   Ok(out)
 }
 
+/// `--halo-boost FILE`: one `REFERENCE FACTOR` per line (`#` comments allowed), the factor that
+/// multiplies that part's escape halo. The file is data written by the feedback loop for this board
+/// (`tools/autoplace.py`), not a rule keyed on names in the placer. Unknown references are an error.
+fn read_boost(path: &str, board: &Board) -> Result<Vec<f64>, String> {
+  let text = fs::read_to_string(path).map_err(|e| format!("{path}: {e}"))?;
+  let mut out = vec![1.0; board.footprints.len()];
+  for (n, line) in text.lines().enumerate() {
+    let line = line.split('#').next().unwrap_or("").trim();
+    if line.is_empty() {
+      continue;
+    }
+    let mut it = line.split_whitespace();
+    let (Some(reference), Some(factor), None) = (it.next(), it.next(), it.next()) else {
+      return Err(format!("{path}:{}: expected `REFERENCE FACTOR`", n + 1));
+    };
+    let factor: f64 = factor
+      .parse()
+      .ok()
+      .filter(|f: &f64| f.is_finite() && *f >= 0.0)
+      .ok_or_else(|| format!("{path}:{}: bad factor `{factor}`", n + 1))?;
+    let at = board
+      .footprints
+      .iter()
+      .position(|f| f.reference == reference)
+      .ok_or_else(|| format!("{path}:{}: no part `{reference}` on the board", n + 1))?;
+    if let Some(slot) = out.get_mut(at) {
+      *slot = factor;
+    }
+  }
+  Ok(out)
+}
+
 fn place(
   pcb: &str,
   net: &str,
   out: &str,
-  escape_halo: bool,
+  opts: autolayout_place::place::Options,
   pairs: Option<&String>,
-  grade: bool,
+  boost_file: Option<&String>,
 ) -> Result<bool, String> {
   if Path::new(out).exists() {
     return Err(format!("{out}: already exists; refusing to overwrite"));
@@ -224,16 +256,6 @@ fn place(
   let netlist = Netlist::read(&net_doc).map_err(|e| format!("{net}: {e}"))?;
   let g = autolayout_place::group::group(&board, &netlist);
   let start = std::time::Instant::now();
-  // --no-halo reproduces M4.1 exactly. Spreading stays off: it measured
-  // worse (see place::Options).
-  // Front-only is the default policy; --no-halo reproduces M4.1 exactly, so
-  // it also keeps parts on the side they started on.
-  let opts = autolayout_place::place::Options {
-    escape_halo,
-    spread: false,
-    front_only: escape_halo,
-    grade,
-  };
   let pairs = match pairs {
     Some(path) => read_pairs(path, &board)?,
     None => Vec::new(),
@@ -241,7 +263,11 @@ fn place(
   if !pairs.is_empty() {
     println!("decoupling record: {} cap/pin pair(s)", pairs.len());
   }
-  let p = autolayout_place::place::place(&board, &g, opts, &pairs);
+  let boost = match boost_file {
+    Some(path) => read_boost(path, &board)?,
+    None => Vec::new(),
+  };
+  let p = autolayout_place::place::place_with_boost(&board, &g, opts, &pairs, &boost);
   let secs = start.elapsed().as_secs_f64();
   for &f in &p.flips {
     let fp = board.footprints.get(f).ok_or("bad footprint index")?;
@@ -528,6 +554,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   let mut seed = 0u64;
   let mut explain = false;
   let mut lanes = false;
+  let mut tap_spread = false;
   let mut fine: Option<autolayout_route::fine::FineParams> = None;
   let mut out_path: Option<String> = None;
   let mut params = Params::default();
@@ -552,6 +579,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
       }
       "--explain" => explain = true,
       "--lanes" => lanes = true,
+      "--tap-spread" => tap_spread = true,
       "--fine" => fine = Some(autolayout_route::fine::FineParams::default()),
       "--sub" | "--fine-iters" | "--via-cost" | "--fine-slack" | "--fine-seed" => {
         let v = it.next().ok_or_else(|| format!("{a} needs a value"))?;
@@ -642,6 +670,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
       explain: explain || repair.is_some(),
       lanes,
       seed,
+      tap_spread,
       ..Costs::default()
     };
     let (s, stats) = if greedy {
@@ -1081,6 +1110,9 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   Ok(s.nets_complete == s.nets_total && v.clean())
 }
 
+/// Parts with a pad this close to a stuck region are listed on its `STUCK` line.
+const STUCK_NEIGHBOUR_MM: f64 = 3.0;
+
 /// `route --explain`: for each pad the kept attempt left unreached, which end of its net is boxed in
 /// and what blocks it (see `search::Why`).
 fn print_why(board: &Board, s: &autolayout_route::driver::Summary) {
@@ -1125,6 +1157,22 @@ fn print_why(board: &Board, s: &autolayout_route::driver::Summary) {
         block.1,
         block.2
       );
+      if verdict == "boxed in" {
+        // One machine-readable line per stuck region for the placement feedback loop
+        // (`tools/autoplace.py`): where it is, and which parts have a pad within 3 mm of it.
+        let at = if w.tree_reach <= w.pad_reach {
+          w.tree_at
+        } else {
+          w.pad_at
+        };
+        let near: Vec<&str> = board
+          .footprints
+          .iter()
+          .filter(|fp| fp.pads.iter().any(|p| (p.at - at).length() <= STUCK_NEIGHBOUR_MM))
+          .map(|fp| fp.reference.as_str())
+          .collect();
+        println!("STUCK\t{:.3}\t{:.3}\t{}", at.x, at.y, near.join(","));
+      }
       if std::env::var("AUTOLAYOUT_MAPS").is_ok() {
         print!(
           "{}",
@@ -1547,17 +1595,37 @@ fn congestion(pcb: &str, args: &[String]) -> Result<bool, String> {
 
 /// `autolayout place PCB NET OUT [--no-halo] [--grade] [--pairs FILE]`.
 fn place_cmd(pcb: &str, net: &str, out: &str, flags: &[String]) -> Result<bool, String> {
-  let (mut halo, mut pairs, mut grade) = (true, None::<&String>, false);
+  // --no-halo reproduces M4.1 exactly (and keeps parts on the side they started on: front-only is
+  // the default policy otherwise). Spreading is off by default; --spread turns it on.
+  let (mut halo, mut pairs, mut grade, mut spread, mut halo_scale) =
+    (true, None::<&String>, false, false, 1.0f64);
+  let mut boost = None::<&String>;
   let mut it = flags.iter();
   while let Some(f) = it.next() {
     match f.as_str() {
       "--no-halo" => halo = false,
       "--grade" => grade = true,
+      "--spread" => spread = true,
+      "--halo-scale" => {
+        halo_scale = it
+          .next()
+          .and_then(|v| v.parse().ok())
+          .filter(|v: &f64| v.is_finite() && *v >= 0.0)
+          .ok_or("--halo-scale needs a number >= 0")?
+      }
       "--pairs" => pairs = Some(it.next().ok_or("--pairs needs a file")?),
+      "--halo-boost" => boost = Some(it.next().ok_or("--halo-boost needs a file")?),
       other => return Err(format!("place: unknown flag `{other}`")),
     }
   }
-  place(pcb, net, out, halo, pairs, grade)
+  let opts = autolayout_place::place::Options {
+    escape_halo: halo,
+    spread,
+    front_only: halo,
+    grade,
+    halo_scale,
+  };
+  place(pcb, net, out, opts, pairs, boost)
 }
 
 /// `autolayout grades PCB [--top N]`: each part's connection grade (the number of other parts it

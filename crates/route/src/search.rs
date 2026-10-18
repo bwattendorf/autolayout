@@ -35,6 +35,10 @@ use crate::model::{FREE, Lane, RoutingModel};
 /// size) a tap via may sit; the stub that joins them is not grid-checked.
 /// 1.5 left 4 of 104 m1 plane pads unreachable, 5 reaches all (2026-10-13).
 pub const TAP_REACH_PITCHES: f64 = 5.0;
+/// With `Costs::tap_spread`: signal pads within this many pitches of a via site count as crowding
+/// it, and each full unit of crowding costs this many pitches of distance.
+const TAP_CROWD_PITCHES: f64 = 2.5;
+const TAP_CROWD_WEIGHT_PITCHES: f64 = 3.0;
 
 /// Present and history penalties stop growing here. Without a cap the
 /// present penalty (x1.5 per iteration) overflowed `u32` near iteration 50 and
@@ -89,6 +93,9 @@ pub struct Costs {
   pub lanes: bool,
   /// Net-order variation (0 = plain shortest-first); see `driver::order_signal_nets`.
   pub seed: u64,
+  /// Choose each plane-tap via site by distance plus a penalty for crowding the signal pads
+  /// near it, instead of the nearest free site, so taps do not wall in their neighbours.
+  pub tap_spread: bool,
 }
 
 impl Default for Costs {
@@ -103,6 +110,7 @@ impl Default for Costs {
       explain: false,
       lanes: false,
       seed: 0,
+      tap_spread: false,
     }
   }
 }
@@ -1455,12 +1463,38 @@ impl<'a> Router<'a> {
       lo(pad.at.y + reach, m.origin.y) + 1,
     );
     let on_pad: Vec<(usize, usize, usize)> = m.pad_access(board, fi, pi).cells;
+    // Signal pads near the pad: a via site close to them takes room they need to get out.
+    let crowd_range = TAP_CROWD_PITCHES * m.pitch;
+    let plane_nets: Vec<u32> = m.planes.iter().map(|p| p.net).collect();
+    let crowd_pads: Vec<crate::shape::Shape> = if self.costs.tap_spread {
+      board
+        .footprints
+        .iter()
+        .enumerate()
+        .flat_map(|(f, fp)| fp.pads.iter().enumerate().map(move |(p, pd)| (f, p, pd)))
+        .filter(|&(f, p, pd)| {
+          (f, p) != (fi, pi)
+            && pd
+              .net
+              .is_some_and(|n| n != 0 && n != net && !plane_nets.contains(&n))
+            && (pd.at - pad.at).length() <= reach + crowd_range + pd.size.x.max(pd.size.y)
+        })
+        .map(|(_, _, pd)| crate::shape::pad_obstacle(pd))
+        .collect()
+    } else {
+      Vec::new()
+    };
     let mut best: Option<(u64, usize, usize, usize)> = None;
     for &l in &layers {
       for iy in y0..=y1.min(m.ny.saturating_sub(1)) {
         for ix in x0..=x1.min(m.nx.saturating_sub(1)) {
-          let d = (m.centre(ix, iy) - pad.at).length();
-          let key = (d * 1e6) as u64;
+          let c = m.centre(ix, iy);
+          let d = (c - pad.at).length();
+          let crowd: f64 = crowd_pads
+            .iter()
+            .map(|s| (1.0 - s.distance(c) / crowd_range).max(0.0))
+            .sum();
+          let key = ((d + TAP_CROWD_WEIGHT_PITCHES * m.pitch * crowd) * 1e6) as u64;
           if d <= reach
             && best.is_none_or(|b| key < b.0)
             && self.cell_free(l, ix, iy, net)

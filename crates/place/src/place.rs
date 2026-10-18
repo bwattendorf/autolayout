@@ -75,6 +75,9 @@ pub struct Options {
   /// descending grade, each at the free spot nearest the matching pads of the
   /// parts it links that are already placed (a low-grade part hugs its hub).
   pub grade: bool,
+  /// Multiplies every escape halo (1.0 = the M4.2 values). More room around parts that must
+  /// route signals out; measured by routing the result (`tools/place_sweep.py`).
+  pub halo_scale: f64,
 }
 
 /// Spreading is OFF by default because it measured worse: on m1 (2026-10-12)
@@ -87,6 +90,7 @@ impl Default for Options {
       spread: false,
       front_only: true,
       grade: false,
+      halo_scale: 1.0,
     }
   }
 }
@@ -120,6 +124,19 @@ pub struct Placement {
 }
 
 pub fn place(board: &Board, g: &Grouping, opts: Options, pairs: &[Pair]) -> Placement {
+  place_with_boost(board, g, opts, pairs, &[])
+}
+
+/// [`place`] with extra room around chosen parts: `boost[f]` multiplies footprint `f`'s escape halo
+/// (missing entries and 1.0 leave it alone). Routability feedback uses it: parts around a region the
+/// router could not get out of are given more room and the board is placed again.
+pub fn place_with_boost(
+  board: &Board,
+  g: &Grouping,
+  opts: Options,
+  pairs: &[Pair],
+  boost: &[f64],
+) -> Placement {
   let n = board.footprints.len();
   let Some(outline) = board.outline else {
     return Placement {
@@ -184,15 +201,21 @@ pub fn place(board: &Board, g: &Grouping, opts: Options, pairs: &[Pair]) -> Plac
   // Escape halos: pads on a sprung (routed, non-plane) net must leave the part.
   let halo: Vec<f64> = offsets
     .iter()
-    .map(|pads| {
+    .enumerate()
+    .map(|(f, pads)| {
       if !opts.escape_halo {
         return 0.0;
       }
+      let extra = boost
+        .get(f)
+        .copied()
+        .filter(|b| b.is_finite() && *b >= 0.0)
+        .unwrap_or(1.0);
       let escapes = pads
         .iter()
         .filter(|(_, net)| net.as_ref().is_some_and(sprung))
         .count();
-      (ESCAPE_PITCH_MM * escapes as f64 / 4.0).clamp(HALO_MIN_MM, HALO_MAX_MM)
+      (ESCAPE_PITCH_MM * escapes as f64 / 4.0).clamp(HALO_MIN_MM, HALO_MAX_MM) * opts.halo_scale * extra
     })
     .collect();
   // A part's footprint radius for spreading: the mean half-extent of its
