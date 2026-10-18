@@ -3,7 +3,11 @@
 Run under KiCad's bundled Python (it needs pcbnew), from the repo root:
 
     "C:/Program Files/KiCad/10.0/bin/python.exe" tools/place_sweep.py OUT_DIR --hours 6
-        [--boards ID ...] [--variants FILE] [--route-flags "..."] [--resume]
+        [--boards ID ...] [--variants FILE] [--route-flags "..."] [--rules fab|freeplace] [--exe PATH]
+        [--check] [--resume]
+
+`--check` makes the exit status the verdict (1 if any board is not solved): the regression gate, e.g.
+`tools/place_sweep.py out/reg --boards m1 c2 c4 e1 g2 t --variants out/default_only.txt --check`.
 
 For every `quilter/freeplace/<id>/<id>.kicad_pcb` that has a netlist (`<id>-*/hardware/kicad/*.net`
 in the Portcullis tree) and a project file, and for each placement variant (flags of `autolayout
@@ -115,6 +119,7 @@ def main(argv):
     corpus = os.environ["AUTOLAYOUT_CORPUS"]
     m7_batch.CORPUS = corpus
     hours, only, variants_file, route_flags, resume, rules_mode = 6.0, [], None, "", False, "fab"
+    check = False
     i = 0
     while i < len(args):
         a = args[i]
@@ -126,6 +131,8 @@ def main(argv):
                 only.append(args[i]); i += 1
         elif a == "--variants":
             variants_file = args[i + 1]; i += 2
+        elif a == "--check":
+            check = True; i += 1
         elif a == "--exe":
             m7_batch.AUTOLAYOUT = os.path.abspath(args[i + 1]); i += 2
         elif a == "--rules":
@@ -223,6 +230,12 @@ def main(argv):
             break
     report(out_dir, ids, results)
     log(out_dir, f"finished: {len(results)} attempt(s); see {out_dir}/morning_report.md")
+    if check:
+        unsolved = [b for b in ids if not any(r["board"] == b and overnight.solved(r) for r in results)]
+        if unsolved:
+            log(out_dir, "CHECK FAILED: not solved: " + " ".join(unsolved))
+            sys.exit(1)
+        log(out_dir, f"check passed: all {len(ids)} board(s) solved")
 
 
 if __name__ == "__main__":
