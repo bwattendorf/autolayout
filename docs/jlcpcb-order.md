@@ -93,7 +93,21 @@ numbers, SMD placement file, hand-source list); not uploaded anywhere.
   minimum output capacitance and compensation of the AP63203 were NOT read, so stability on the 26-36 uF boards
   is unchecked (the old AP63201 boards had the same capacitors). Open-loop ripple numbers (14-25 mV) include
   start-up ringing and are not a regulation result.
-  Frequency note: sources disagree whether the AP63201 is 500 kHz or 1.1 MHz; the AP63200 (current BOM stand-in
-  for the AP63201) is 500 kHz per the LCSC listing; the AP63203 is 1.1 MHz. The Portcullis schematic must get the
-  same edit (delete the divider, tie FB to the output) or KiCad parity will flag it.
+  Datasheet read (Diodes DS41326 Rev 3-2, text via tools/pdf_text.py, Figure 21 via tools/pdf_page_png.py):
+  Fig. 21 shows the AP63203 with FB (pin 1) wired straight to VOUT after the inductor, EN tied to VIN, 100 nF
+  BST-SW, 10 uF in, 2 x 22 uF out = our board's wiring. Frequency 500 kHz for AP63200 and AP63201, 1.1 MHz for
+  AP63203 and AP63205 (so the AP63200 stand-in matches the AP63201; the AP63203 is faster). Table 2: 3.3 V ->
+  3.9 uH, 10 uF, 2 x 22 uF. Inductor guidance: dIL 30-50 % of 2 A, 2.2-10 uH, DC rating >= 35 % above load
+  (our 4.7 uH gives 0.46-0.6 A = 23-30 %, Sunlord rated 3.3 A: inside the range). Output capacitor: "22 uF to 68 uF
+  ceramic is sufficient" (no hard minimum stated); ours are 26-57 uF nominal on every converted board, so the
+  question is DC-bias derating on the 26-36 uF boards (not measured; bench-check output ripple/load step on the
+  first article). Input: ">10 uF ceramic is sufficient"; g2i g2io g2o have exactly 10 uF on the 12 V net.
+  HS peak current limit 2.5 min / 2.8 typ / 3.1 max A (our worst 2.25 A at a 2 A load). VIN operating 3.8-32 V,
+  absolute max 35 V DC, 40 V for 400 ms. The Portcullis schematic must get the same edit (delete the divider, tie
+  FB to the output) or KiCad parity will flag it.
+- SUPERCAP PROBLEM (KEMET FG0H474ZF datasheet read 2026-10-18): leads are flat 0.4 x 1.2 mm (LT1/LT2, +/-0.1), not
+  round, so the 1.0 mm drill used in the boards is too small (worst-case diagonal ~1.4 mm; needs about 1.6 mm and a
+  larger pad); and the listed "current at 30 minutes after charging" is 0.71 mA against the BOM requirement of
+  <= 2 uA at 3.3 V (a 30-minute charging current is not a steady-state leakage, but the datasheet gives no
+  steady-state figure; aqueous electrolyte, -25..+70 C, ESR 120 ohm at 1 kHz). Not yet fixed: pick another part.
 - RTC: RV-3028-C7 is out of stock everywhere checked; orders use RV-3032-C7 (C5127802), firmware change needed.
