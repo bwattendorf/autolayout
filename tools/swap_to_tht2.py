@@ -49,7 +49,8 @@ def child_blocks(block):
 
 
 def main(argv):
-    if len(argv) < 3 or "--pitch" not in argv or "--body-dia" not in argv:
+    lib = argv[argv.index("--lib") + 1] if "--lib" in argv else None
+    if len(argv) < 3 or (lib is None and ("--pitch" not in argv or "--body-dia" not in argv)):
         sys.exit(__doc__)
     src, dst, ref = argv[0], argv[1], argv[2]
     if src == dst:
@@ -58,7 +59,7 @@ def main(argv):
     def opt(name, default=None):
         return float(argv[argv.index(name) + 1]) if name in argv else default
 
-    pitch, body = opt("--pitch"), opt("--body-dia")
+    pitch, body = opt("--pitch", 0.0), opt("--body-dia", 0.0)
     drill, pad = opt("--drill", 1.0), opt("--pad", 2.0)
     text = open(src, encoding="utf-8").read()
     m = re.search(r'\(property "Reference" "%s"' % re.escape(ref), text)
@@ -88,6 +89,25 @@ def main(argv):
             continue
         keep.append(child)
     head_line = old[: old.index("\n")]
+    lib_kids = []
+    if lib:
+        ltext = open(lib, encoding="utf-8").read()
+        ls, le = block_at(ltext, ltext.index("(footprint"))
+        lblock = ltext[ls:le]
+        ys = []
+        for cs, ce in child_blocks(lblock):
+            child = lblock[cs:ce]
+            h = child.split()[0].lstrip("(")
+            if h == "pad":
+                num = re.match(r'\(pad "([^"]+)"', child).group(1)
+                if num not in nets:
+                    sys.exit(f"library pad {num} has no net in the old footprint")
+                child = child[:-1].rstrip() + "\n\t\t\t" + nets[num] + "\n\t\t)"
+            if h in ("fp_line", "fp_circle", "fp_rect", "fp_poly", "fp_arc", "pad", "attr"):
+                lib_kids.append(child)
+            for y in re.findall(r"\(\w+ [-\d.]+ ([-\d.]+)\)", child):
+                ys.append(abs(float(y)))
+        body = 2 * max(ys or [3.0]) - 4.4
     dy = body / 2 + 2.2
     out = [head_line]
     for k in keep:
@@ -98,14 +118,17 @@ def main(argv):
         out.append("\t\t" + k)
     if "--unlock" not in argv and "(locked yes)" in old:
         out.insert(1, "\t\t(locked yes)")
-    out.append("\t\t(attr through_hole)")
-    out.append(f'\t\t(fp_circle (center 0 0) (end {body / 2 + 0.1:g} 0) (stroke (width 0.12) (type solid)) (fill no) (layer "F.SilkS"))')
-    out.append(f'\t\t(fp_circle (center 0 0) (end {body / 2 + 0.5:g} 0) (stroke (width 0.05) (type solid)) (fill no) (layer "F.CrtYd"))')
-    for num, x in (("1", -pitch / 2), ("2", pitch / 2)):
-        out.append(
-            f'\t\t(pad "{num}" thru_hole circle (at {x:g} 0) (size {pad:g} {pad:g}) (drill {drill:g}) '
-            f'(layers "*.Cu" "*.Mask") (remove_unused_layers no) {nets[num]})'
-        )
+    if lib:
+        out.extend("\t\t" + k for k in lib_kids)
+    else:
+        out.append("\t\t(attr through_hole)")
+        out.append(f'\t\t(fp_circle (center 0 0) (end {body / 2 + 0.1:g} 0) (stroke (width 0.12) (type solid)) (fill no) (layer "F.SilkS"))')
+        out.append(f'\t\t(fp_circle (center 0 0) (end {body / 2 + 0.5:g} 0) (stroke (width 0.05) (type solid)) (fill no) (layer "F.CrtYd"))')
+        for num, x in (("1", -pitch / 2), ("2", pitch / 2)):
+            out.append(
+                f'\t\t(pad "{num}" thru_hole circle (at {x:g} 0) (size {pad:g} {pad:g}) (drill {drill:g}) '
+                f'(layers "*.Cu" "*.Mask") (remove_unused_layers no) {nets[num]})'
+            )
     out.append("\t)")
     new = "\n".join(out)
     open(dst, "w", encoding="utf-8", newline="").write(text[:s] + new + text[e:])
