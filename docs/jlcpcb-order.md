@@ -31,7 +31,17 @@ assembly prices are not known: get them from the JLCPCB quote page.
 - BG95M3LA-64-SGNS (Quectel): Mouser stock 488, $37.13 (exact M3 part; the JLCPCB M4 swap is not needed).
 - RV-3028-C7: Mouser lists the TA QA and TA QC variants with stock 0; the Digikey lookup found nothing. The
   RV-3032-C7 swap stays for now.
-- Not looked up yet: Ag5412, EM4095, SE051C2, IN-PI554, 0.47 F supercap, 2200/4700 uF 10 mm caps.
+- Ag5412: Digikey 5061-AG5412-ND, stock 1165, $16.25, through hole.
+- SE051C2HQ1/Z01XDZ: Mouser 771-SE051C2HQ1Z01XDZ, stock 14389, $5.84 (3x3 SMT; hand-solder or consign).
+- IN-PI554FCH: Mouser 743-IN-PI554FCH, stock 55635, $0.77 (5x5 SMT).
+- EM4095SO16B+: not found at Digikey or Mouser.
+- 0.47 F supercap: no SMD part fits 6.3x7.7. Through-hole candidates (leakage NOT checked, datasheet needed;
+  values from the lookup tool): Eaton PHV-5R4V474-R 5.4 V, 17.3x9.0x14.5 mm, pitch 11.8 mm, Digikey
+  283-PHV-5R4V474-R-ND $7.96 stock 1955; KEMET FG0H474ZF 5.5 V, 14.5 mm dia x 18 mm, pitch 5.08 mm, Digikey
+  399-10801-ND $4.38 stock 478. In the m1 freeplace board C39 is a LOCKED footprint (fixed by the board owner),
+  so a through-hole swap needs the owner to confirm there is room.
+- 2200 uF / 4700 uF at 10 mm: none exist. Best 10 mm: Panasonic EEE-FT1C102AP 1000 uF 16 V (Mouser, $1.59);
+  470 uF 25 V Nichicon UWD1E471MCL1GS (Digikey, min order 500). Full data in out/sourcing/dkmouser.json.
 
 ## Parts with no JLCPCB match (all boards)
 RTC RV-3028 (alt RV-3032-C7), 0.47 F supercap, 2200/4700 uF 10 mm caps (only lower capacitance fits),
