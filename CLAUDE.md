@@ -129,6 +129,34 @@ check: if you add one, add it to `ci.sh`.
 One task per commit, message starting with the ROADMAP id (`M0.2: footprint
 iterator`).
 
+## Debugging
+
+When a result is wrong or a board will not complete, follow the `/debug` skill
+(`.claude/skills/debug/SKILL.md`; it is based on Kuhlmann, *The Book of
+Debugging*, No Starch Press, and cites its chapters). The rules that matter most:
+
+- **Reproduce first, and make the loop fast.** One run per question. If a run
+  takes minutes, build a faster path before investigating (`route --quick`).
+- **Look at what the program actually did** before theorising: `route
+  --explain`, `AUTOLAYOUT_MAPS=1`, `AUTOLAYOUT_CONTEST=1`. Add a flag or an
+  env switch when you keep wanting to see something, and keep it in the tree.
+- **State a hypothesis and how you will test it** before building. One change
+  per run; the board, the command and the number go in the log (rule 7).
+- **Do not give up on an idea after one bad run, and do not trust a baseline
+  you have not checked.** A latent bug in the baseline (the `bbox` of a
+  rectangle was a bounding square, so bent stubs never fired) can make a good
+  idea look bad. Re-test reverted ideas once a baseline bug is fixed.
+- **Check that a feature fires.** Count what it covered (pads planned, branches
+  taken) before judging its effect.
+- **Change strategy** after two or three failed guesses, or when guesses stop
+  being based on evidence. Prefer bisecting (`git bisect`) when something used
+  to work, and cutting the failing case down to a minimal repro.
+- **Fix the root cause, then verify:** reproduce, undo and see it return,
+  re-apply and see it go; run the other boards one at a time; search for the
+  same mistake elsewhere; turn the repro into a test where practical.
+- Keep a log of leads, experiments and ruled-out areas in
+  `docs/debug-logs/YYYY-MM-DD-<topic>.md`.
+
 ## Running in a Claude cloud session
 
 The router work (M7) is meant to run in a cloud session too. Setup script for
