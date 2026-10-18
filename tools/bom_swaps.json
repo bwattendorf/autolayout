@@ -1,5 +1,7 @@
 {
  "_note": "Cost/availability substitutes applied by tools/order_bom.py (key = BOM Comment or MPN). Source: out/sourcing/cheaper_parts_scan.md (pcbparts lookups 2026-10-18). Five-year availability is a judgement, not measured.",
  "BAT54S": {"lcsc": "C7420333", "why": "hongjiacheng BAT54S SOT-23 dual series Schottky, preferred (no fee), $0.0129; replaces BAT54S-7-F C83574 $0.1132. Same package and configuration."},
+ "SRN6045TA-4R7M": {"lcsc": "C78804", "why": "Sunlord SWPA6045S4R7MT 4.7uH 6x6 mm, 26 mOhm, Isat 5.5 A, rated 3.3 A (original Bourns 4.5 A / 6.8 A), $0.0825, 30567 in stock; replaces Bourns C2044594 $0.339, 204 in stock. Standard 6045 body; land pattern NOT compared against the datasheet."},
+ "TL3305AF160QG": {"lcsc": "C398052", "why": "SHOU HAN TS4538TP 4.5x4.5x3.8 mm gull-wing tact switch, $0.0203, 107816 in stock; replaces E-Switch C2886899 $0.3044. Actuation force 2.5 N vs 1.6 N, life 50k vs 500k cycles; land pattern NOT compared."},
  "THVD1450": {"lcsc": "C57928", "why": "SN65HVD75DR SOIC-8, 3-3.6 V, 20 Mbps, $0.5763; replaces THVD1450DR C2671361 $0.8849. All 14 boards that have it run pad 8 at the +3V3 net (read from the freeplace boards); same standard RS-485 SOIC-8 pinout assumed, datasheet pinout and the firmware bus rate NOT checked."}
 }

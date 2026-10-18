@@ -65,6 +65,10 @@ numbers, SMD placement file, hand-source list); not uploaded anywhere.
 - Cost/availability swaps applied to every order BOM (tools/bom_swaps.json, tools/bom_patch.py; lookups 2026-10-18):
   BAT54S-7-F C83574 -> hongjiacheng BAT54S C7420333 (preferred, no extended fee); THVD1450DR C2671361 -> SN65HVD75DR
   C57928 (3-3.6 V; all 14 boards that carry it feed pad 8 from the 3.3 V rail; datasheet pinout and firmware bus rate
-  not checked). Not applied: relay swap (Songle for Omron G5LE; the user wants long-life relays for soak use, so the
-  Omron stays), tact switch (pad pattern not compared). Scan: out/sourcing/cheaper_parts_scan.md.
+  not checked); SRN6045TA-4R7M C2044594 -> Sunlord SWPA6045S4R7MT C78804 (same 6x6 body, 3.3 A rated vs 4.5 A);
+  TL3305AF160QG C2886899 -> SHOU HAN TS4538TP C398052 (same 4.5x4.5x3.8 body, 2.5 N vs 1.6 N, 50k vs 500k cycles).
+  Land patterns of the last two were NOT compared with their datasheets; same-size parts were chosen so no board is
+  re-placed or re-routed. Not applied: relay swap (Songle for Omron G5LE; the user wants long-life relays for soak
+  use, so the Omron stays); AP63203 fixed 3.3 V for AP63200 (its FB pin works differently, so the feedback divider
+  on the schematic would change; not a BOM-only swap). Scan: out/sourcing/cheaper_parts_scan.md.
 - RTC: RV-3028-C7 is out of stock everywhere checked; orders use RV-3032-C7 (C5127802), firmware change needed.
