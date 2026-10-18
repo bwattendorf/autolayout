@@ -74,4 +74,19 @@ numbers, SMD placement file, hand-source list); not uploaded anywhere.
   re-placed or re-routed. Not applied: relay swap (Songle for Omron G5LE; the user wants long-life relays for soak
   use, so the Omron stays); AP63203 fixed 3.3 V for AP63200 (its FB pin works differently, so the feedback divider
   on the schematic would change; not a BOM-only swap). Scan: out/sourcing/cheaper_parts_scan.md.
+- AP63201 -> AP63203 (user decision 2026-10-18; tools/fb_fix.py, fb_verify.py, fb_run.py, ltspice/ap63203_stage.cir).
+  22 regulators on 17 boards run a 140k/44.2k divider = 3.33 V (vref 0.8 V; check = the m1 value); each becomes the
+  fixed 3.3 V AP63203WU-7 (C780769) with both divider resistors deleted and pin 1 on the +3V3 net. Not converted:
+  the 140k/10k regulators (12 V) and c2g U10 / g2c U2 (140k/37.4k, 3.8 V). Evidence: Diodes AP63203 EVB guide and
+  SparkFun's open-source AP63203 schematic (pin 1 = FB wired to the 3.3 V output; pins 2 EN, 3 VIN, 4 GND, 5 SW,
+  6 BST = the pad map of our boards; reference parts 4.7 uH, 10 uF in, 2 x 22 uF out, 0.1 uF boost = our values).
+  Checks (all PASS, out/fb_verify.txt): edited netlist equals the netlist rebuilt independently from the original;
+  board-vs-netlist differences unchanged; only the listed resistors removed. LTspice power stage (open-loop,
+  out/ap63203_ltspice.log, assumed Rds(on)/derating, no vendor model): inductor peak 2.18-2.24 A at 2 A load
+  (ripple 0.44-0.65 A p-p over Vin 9-30 V), output ripple 5-12 mV p-p with 100 % to 35 % capacitance; this does
+  not test the IC's loop, start-up or current limit. Pre-existing and not investigated: c1 c2 c2g c4 cm e1 e2 el
+  g2 io m2 r t have 50-210 differing pad groups between the board file and its netlist before the edit.
+  Frequency note: sources disagree whether the AP63201 is 500 kHz or 1.1 MHz; the AP63200 (current BOM stand-in
+  for the AP63201) is 500 kHz per the LCSC listing; the AP63203 is 1.1 MHz. The Portcullis schematic must get the
+  same edit (delete the divider, tie FB to the output) or KiCad parity will flag it.
 - RTC: RV-3028-C7 is out of stock everywhere checked; orders use RV-3032-C7 (C5127802), firmware change needed.

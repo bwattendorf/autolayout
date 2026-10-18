@@ -34,8 +34,8 @@ def main(argv):
     sets = []
     i = 3
     while i < len(argv):
-        if argv[i] == "--set":
-            sets += ["--set", argv[i + 1]]
+        if argv[i] in ("--set", "--fbfix"):
+            sets += [argv[i], argv[i + 1]]
             i += 2
         else:
             i += 1

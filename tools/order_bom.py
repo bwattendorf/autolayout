@@ -17,6 +17,7 @@ import os
 import sys
 
 BOM = "C:/Portcullis/controller/boards/_bom"
+AP63203 = "C780769"  # Diodes AP63203WU-7, fixed 3.3 V; used for the regulators tools/fb_fix.py converts
 
 
 def main(argv):
@@ -33,8 +34,13 @@ def main(argv):
             k, v = argv[i + 1].split("=", 1)
             over[k] = v
             i += 2
+        elif argv[i] == "--fbfix":
+            i += 2
         else:
             i += 1
+    fb = {"convert": [], "remove": []}
+    if "--fbfix" in argv:
+        fb = json.load(open(argv[argv.index("--fbfix") + 1], encoding="utf-8"))
     uniq = json.load(open("out/bom_unique.json", encoding="utf-8"))
     by_key = {u["key"]: i for i, u in enumerate(uniq)}
     src = {}
@@ -54,8 +60,17 @@ def main(argv):
                 if k in (mpn, comment):
                     print(f"override {comment} ({mpn}): {lcsc} -> {v}")
                     lcsc = v
-            n = len([d for d in r["Designator"].split(",") if d.strip()])
-            row = [comment, r["Designator"], fp, n, lcsc or ""]
+            des = [d.strip() for d in r["Designator"].split(",") if d.strip()]
+            des = [d for d in des if d not in fb["remove"]]
+            if not des:
+                continue
+            if any(d in fb["convert"] for d in des):
+                conv = [d for d in des if d in fb["convert"]]
+                des = [d for d in des if d not in fb["convert"]]
+                ok.append(["AP63203", ",".join(conv), fp, len(conv), AP63203, "AP63203WU-7", "fixed 3.3 V (FB tied to output)"])
+                if not des:
+                    continue
+            row = [comment, ",".join(des), fp, len(des), lcsc or ""]
             (ok if lcsc else hand).append(row + [mpn, spec])
     head = ["Comment", "Designator", "Footprint", "Quantity", "LCSC Part #"]
     for name, rows, h in (("jlc-bom", ok, head), ("handsource", hand, head + ["MPN", "Spec"])):

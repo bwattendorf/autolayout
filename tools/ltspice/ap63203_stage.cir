@@ -1,0 +1,40 @@
+* Power-stage check for the AP63203 (fixed 3.3 V, 1.1 MHz) with the board's external parts.
+* Run: LTspice.exe -b tools/ltspice/ap63203_stage.cir   (results in the .log: .meas lines)
+*
+* WHAT THIS IS: an open-loop switching model with the duty set to the ideal 3.3 V value. It checks the power
+* stage only (inductor ripple and peak current, output ripple, steady-state Vout), NOT the IC's own control loop,
+* start-up, current limit or EMI spread spectrum: no vendor SPICE model for the AP63203 was found.
+* Assumed (not datasheet values, change them if you read the datasheet): high-side Ron 0.125 ohm, low-side
+* Ron 0.07 ohm, f = 1.1 MHz (WE AP63203 EVM page and jlc_search), L = 4.7 uH with 26 mohm DCR (Sunlord
+* SWPA6045S4R7MT listing), Cout = 2 x 22 uF 6.3 V X5R with a DC-bias derating swept from 100 % to 35 %.
+.param vin=12 iload=2 derate=0.5 fsw=1.1meg
+.param tper={1/fsw} rhs=0.125 rls=0.07 rl=0.026
+.param duty={(3.3+iload*(rl+rls))/(vin+iload*(rls-rhs))}
+.param rload={3.3/iload}
+.param cout={2*22u*derate}
+
+Vin in 0 {vin}
+Cin in 0 10u Rser=5m
+* gate drives: high side on for duty*T, low side on for the rest with 5 ns dead time
+Vg1 g1 0 PULSE(0 1 0 1n 1n {duty*tper-5n} {tper})
+Vg2 g2 0 PULSE(0 1 {duty*tper+5n} 1n 1n {(1-duty)*tper-10n} {tper})
+S1 in sw g1 0 SWH
+S2 sw 0 g2 0 SWL
+* body diode of the low-side switch carries the inductor current during dead time
+Dbody 0 sw DBODY
+.model SWH SW(Ron={rhs} Roff=10Meg Vt=0.5 Vh=0.1)
+.model SWL SW(Ron={rls} Roff=10Meg Vt=0.5 Vh=0.1)
+.model DBODY D(Is=1e-9 N=1.2 Rs=0.05)
+L1 sw out 4.7u Rser={rl} ic={iload}
+Co out 0 {cout} Rser=4m ic=3.3
+Rload out 0 {rload}
+
+.step param vin list 9 12 24 30
+.step param derate list 1 0.5 0.35
+.tran 0 160u 0 5n uic
+.meas tran vavg AVG v(out) from=130u to=160u
+.meas tran vpp PP v(out) from=130u to=160u
+.meas tran ipk MAX i(L1) from=130u to=160u
+.meas tran imin MIN i(L1) from=130u to=160u
+.meas tran iavg AVG i(L1) from=130u to=160u
+.end
