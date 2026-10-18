@@ -41,7 +41,18 @@ import m7_batch  # noqa: E402
 DEFAULT_VARIANTS = ["", "--grade"]
 
 
-def rules_pro(corpus, board_id, mode):
+def jlc_pro(base_pro, out_dir, board_id, via):
+    """The fab rules of a board made JLCPCB-conformant (tools/jlc_rules.py), written under OUT_DIR/jlc/."""
+    import jlc_rules
+
+    os.makedirs(os.path.join(out_dir, "jlc"), exist_ok=True)
+    dst = os.path.join(out_dir, "jlc", board_id + ".kicad_pro")
+    d, drill = (float(x) for x in via.split("/"))
+    jlc_rules.convert(base_pro, dst, d, drill)
+    return dst
+
+
+def rules_pro(corpus, board_id, mode, out_dir="."):
     """The project file whose rules the placed board is routed and judged under.
 
     `fab` (default): the rules the board is made with, i.e. the service's: quilter/fab/<id>/<id>.kicad_pro,
@@ -53,12 +64,20 @@ def rules_pro(corpus, board_id, mode):
     free = os.path.join(corpus, "quilter", "freeplace", board_id, board_id + ".kicad_pro")
     if mode == "freeplace":
         return free
+    base = None
     for sub in ("fab", "finish"):
         made = os.path.join(corpus, "quilter", sub, board_id, board_id + ".kicad_pro")
         if os.path.exists(made):
-            return made
-    cands = sorted(glob.glob(os.path.join(corpus, "quilter", "returned", board_id, "3p5mil-candidate*", board_id + ".kicad_pro")))
-    return cands[0] if cands else free
+            base = made
+            break
+    if base is None:
+        cands = sorted(glob.glob(os.path.join(corpus, "quilter", "returned", board_id, "3p5mil-candidate*", board_id + ".kicad_pro")))
+        base = cands[0] if cands else free
+    if mode == "jlc-small":
+        return jlc_pro(base, out_dir, board_id, "0.25/0.15")
+    if mode == "jlc-std":
+        return jlc_pro(base, out_dir, board_id, "0.45/0.20")
+    return base
 
 
 def find_netlist(corpus, board_id):
@@ -137,8 +156,8 @@ def main(argv):
             m7_batch.AUTOLAYOUT = os.path.abspath(args[i + 1]); i += 2
         elif a == "--rules":
             rules_mode = args[i + 1]; i += 2
-            if rules_mode not in ("fab", "freeplace"):
-                sys.exit("--rules is fab or freeplace")
+            if rules_mode not in ("fab", "freeplace", "jlc-small", "jlc-std"):
+                sys.exit("--rules is fab, freeplace, jlc-small (vias 0.25/0.15, extra-cost option) or jlc-std (vias 0.45/0.20)")
         elif a == "--route-flags":
             route_flags = args[i + 1]; i += 2
         elif a == "--resume":
@@ -195,7 +214,7 @@ def main(argv):
                 if code != 0 or not os.path.exists(placed):
                     row.update(status="FAIL:place", error=out.strip()[-300:])
                 else:
-                    pro = rules_pro(corpus, bid, rules_mode)
+                    pro = rules_pro(corpus, bid, rules_mode, out_dir)
                     row["rules"] = os.path.relpath(pro, corpus).replace("\\", "/")
                     shutil.copyfile(pro, os.path.splitext(placed)[0] + ".kicad_pro")
                     os.environ["M7_ROUTE_EXTRA"] = route_flags

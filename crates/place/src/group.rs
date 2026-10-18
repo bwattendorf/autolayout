@@ -193,9 +193,21 @@ impl Ctx<'_> {
 /// board edge, one pad 1.4 mm off the board; the service moved it). Such a part is placed like a loose
 /// one; callers should say so. Decided from geometry only, never from a name. A locked part with all
 /// its pads (mounting holes aside) inside the outline, an edge connector say, keeps its lock.
-pub fn locked_off_board(board: &Board) -> Vec<usize> {
+///
+/// Second case, for a board that is to be manufactured (found 2026-10-18 on c4 and g2: locked 0805 caps
+/// whose pad copper touches the board edge, KiCad "copper_edge_clearance" 0 mm against the project's 0.3):
+/// a locked part that is small (at most [`SMALL_PART_PADS`] pads) and all SMD, with any pad's copper
+/// closer to the outline than `edge_clearance` (the project's `min_copper_edge_clearance`), cannot be made
+/// as it sits and is released too. Bigger locked parts keep their lock: a connector on the edge is a
+/// designer's decision (the clearance finding stays in KiCad's report).
+pub fn locked_off_board(board: &Board, edge_clearance: f64) -> Vec<usize> {
   let Some(o) = board.outline else {
     return Vec::new();
+  };
+  let clearance = if edge_clearance.is_finite() {
+    edge_clearance.max(0.0)
+  } else {
+    0.0
   };
   board
     .footprints
@@ -203,16 +215,38 @@ pub fn locked_off_board(board: &Board) -> Vec<usize> {
     .enumerate()
     .filter(|(_, fp)| {
       fp.locked
-        && fp.pads.iter().any(|p| {
+        && (fp.pads.iter().any(|p| {
           p.kind != "np_thru_hole"
             && (p.at.x < o.min.x || p.at.x > o.max.x || p.at.y < o.min.y || p.at.y > o.max.y)
-        })
+        }) || (fp.pads.len() <= SMALL_PART_PADS
+          && fp.pads.iter().all(|p| p.kind == "smd")
+          && fp.pads.iter().any(|p| {
+            let (s, c) = p.angle.to_radians().sin_cos();
+            let (hx, hy) = (
+              p.size.x / 2.0 * c.abs() + p.size.y / 2.0 * s.abs(),
+              p.size.x / 2.0 * s.abs() + p.size.y / 2.0 * c.abs(),
+            );
+            p.at.x - hx < o.min.x + clearance
+              || p.at.x + hx > o.max.x - clearance
+              || p.at.y - hy < o.min.y + clearance
+              || p.at.y + hy > o.max.y - clearance
+          })))
     })
     .map(|(f, _)| f)
     .collect()
 }
 
+/// A locked part with at most this many pads counts as small for [`locked_off_board`]'s edge rule.
+pub const SMALL_PART_PADS: usize = 6;
+
 pub fn group(board: &Board, netlist: &Netlist) -> Grouping {
+  group_with(board, netlist, 0.0)
+}
+
+/// [`group`] for a board that is to be manufactured: `edge_clearance` is the project's
+/// `min_copper_edge_clearance`, which decides which small locked parts are released
+/// ([`locked_off_board`]).
+pub fn group_with(board: &Board, netlist: &Netlist, edge_clearance: f64) -> Grouping {
   let kinds: Vec<Kind> = board.footprints.iter().map(kind_of).collect();
   let mut pintype = HashMap::new();
   let mut net_pads: HashMap<u32, Vec<PadRef>> = HashMap::new();
@@ -257,7 +291,7 @@ pub fn group(board: &Board, netlist: &Netlist) -> Grouping {
         >= 16
     })
     .collect();
-  let released = locked_off_board(board);
+  let released = locked_off_board(board, edge_clearance);
   let fixed: Vec<usize> = board
     .footprints
     .iter()
@@ -765,8 +799,8 @@ mod tests {
     (pad "1" smd rect (at -1 0) (size 1 1) (layers "F.Cu") (net 1 "A"))
     (pad "2" smd rect (at 1 0) (size 1 1) (layers "F.Cu") (net 2 "B")))
   (footprint "J" (locked yes) (layer "F.Cu") (at 29 15) (property "Reference" "J1")
-    (pad "1" smd rect (at 0 -1) (size 2 1) (layers "F.Cu") (net 1 "A"))
-    (pad "2" smd rect (at 0 1) (size 2 1) (layers "F.Cu") (net 2 "B")))
+    (pad "1" thru_hole rect (at 0 -1) (size 2 1) (drill 0.8) (layers "*.Cu") (net 1 "A"))
+    (pad "2" thru_hole rect (at 0 1) (size 2 1) (drill 0.8) (layers "*.Cu") (net 2 "B")))
   (footprint "C" (layer "F.Cu") (at 10 12) (property "Reference" "C3")
     (pad "1" smd rect (at -1 0) (size 1 1) (layers "F.Cu") (net 1 "A"))
     (pad "2" smd rect (at 1 0) (size 1 1) (layers "F.Cu") (net 2 "B")))
@@ -777,11 +811,35 @@ mod tests {
   fn a_locked_part_with_a_pad_outside_the_outline_is_released() {
     let doc = parse(BOARD).unwrap();
     let b = Board::read(&doc).unwrap();
-    let names: Vec<&str> = locked_off_board(&b)
-      .iter()
-      .map(|&f| b.footprints[f].reference.as_str())
-      .collect();
+    let names = |c: f64| -> Vec<&str> {
+      locked_off_board(&b, c)
+        .iter()
+        .map(|&f| b.footprints[f].reference.as_str())
+        .collect()
+    };
     // C1 straddles the edge; C2 and J1 are inside; C3 is not locked; the hole's pad is not counted.
-    assert_eq!(names, vec!["C1"]);
+    assert_eq!(names(0.0), vec!["C1"]);
+  }
+
+  /// A small locked part whose pad copper is nearer the edge than the project's clearance is released;
+  /// a big locked part (the connector) is not, and neither is one that clears the edge.
+  #[test]
+  fn a_small_locked_part_too_near_the_edge_is_released_a_connector_is_not() {
+    let text = BOARD.replace(
+      "(footprint \"C\" (locked yes) (layer \"F.Cu\") (at 20 15) (property \"Reference\" \"C2\")",
+      "(footprint \"C\" (locked yes) (layer \"F.Cu\") (at 11.7 15) (property \"Reference\" \"C2\")",
+    );
+    let doc = parse(&text).unwrap();
+    let b = Board::read(&doc).unwrap();
+    let names = |c: f64| -> Vec<&str> {
+      locked_off_board(&b, c)
+        .iter()
+        .map(|&f| b.footprints[f].reference.as_str())
+        .collect()
+    };
+    // C2's pad 1 is centred at x = 10.7 and spans 10.2..11.2: 0.2 mm from the edge at x = 10.
+    assert_eq!(names(0.0), vec!["C1"]);
+    assert_eq!(names(0.3), vec!["C1", "C2"]);
+    assert!(!names(0.3).contains(&"J1"), "a connector keeps its lock");
   }
 }

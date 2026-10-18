@@ -254,15 +254,19 @@ fn place(
   let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
   let (_, net_doc) = load(net)?;
   let netlist = Netlist::read(&net_doc).map_err(|e| format!("{net}: {e}"))?;
-  let g = autolayout_place::group::group(&board, &netlist);
-  let released = autolayout_place::group::locked_off_board(&board);
+  // The project's copper-to-edge clearance decides which small locked parts cannot be made where they sit.
+  let edge = autolayout_route::rules::DesignRules::load_for_board(Path::new(pcb))
+    .map(|r| r.min.copper_edge_clearance)
+    .unwrap_or(0.0);
+  let g = autolayout_place::group::group_with(&board, &netlist, edge);
+  let released = autolayout_place::group::locked_off_board(&board, edge);
   if !released.is_empty() {
     let names: Vec<&str> = released
       .iter()
       .filter_map(|&f| board.footprints.get(f).map(|fp| fp.reference.as_str()))
       .collect();
     println!(
-      "locked part(s) with a pad outside the outline cannot stay where they are, so they are placed: {}",
+      "locked part(s) with a pad outside the outline, or a small one closer to the edge than {edge} mm, cannot be made where they sit, so they are placed: {}",
       names.join(" ")
     );
   }
