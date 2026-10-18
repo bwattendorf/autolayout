@@ -1170,4 +1170,56 @@ mod tests {
     let m = RoutingModel::build(&doc, &board, &r, &default, &[]).unwrap();
     assert!((m.pitch - (0.2 + 0.5 + 0.005)).abs() < 1e-12, "pitch {}", m.pitch);
   }
+
+  /// A row of six pads 0.4 mm apart on a 0.31 mm grid: the nearest-line choice would put some of
+  /// them on the same line; `plan_lanes` gives each its own, in order, within a few lines of it.
+  #[test]
+  fn lanes_give_every_pad_of_a_fine_pitch_row_its_own_grid_line_in_order() {
+    let mut pads = String::new();
+    for k in 0..6 {
+      pads += &format!(
+        "(pad \"{n}\" smd roundrect (at {x} 0) (size 0.2 0.8) (layers \"F.Cu\") (net {n} \"N{n}\"))\n",
+        n = k + 1,
+        x = k as f64 * 0.4
+      );
+    }
+    let text = format!(
+      r#"(kicad_pcb
+  (layers (0 "F.Cu" signal) (2 "B.Cu" signal) (25 "Edge.Cuts" user))
+  (net 0 "") (net 1 "N1") (net 2 "N2") (net 3 "N3") (net 4 "N4") (net 5 "N5") (net 6 "N6")
+  (gr_line (start 0 0) (end 20 0) (layer "Edge.Cuts"))
+  (gr_line (start 20 0) (end 20 10) (layer "Edge.Cuts"))
+  (gr_line (start 20 10) (end 0 10) (layer "Edge.Cuts"))
+  (gr_line (start 0 10) (end 0 0) (layer "Edge.Cuts"))
+  (footprint "X" (layer "F.Cu") (at 8 5) (property "Reference" "U1")
+{pads}))"#
+    );
+    let doc = parse(&text).unwrap();
+    let board = Board::read(&doc).unwrap();
+    let mut r = DesignRules::explicit(0.1524, 0.1524, 0.6096, 0.3048).unwrap();
+    r.min.copper_edge_clearance = 0.5;
+    let p = r.classes[0].clone();
+    let m = RoutingModel::build(&doc, &board, &r, &p, &[]).unwrap();
+    assert!(m.pitch > 0.30 && m.pitch < 0.32, "pitch {}", m.pitch);
+    assert_eq!(m.lanes.len(), 6, "every pad of the row is planned");
+    let mut last = None;
+    for (k, pad) in board.footprints[0].pads.iter().enumerate() {
+      let l = m.lanes.get(&(0, k)).expect("planned");
+      assert!(l.column, "a pad long in y lands on a column");
+      let line = m.origin.x + l.index as f64 * m.pitch;
+      assert!(
+        (line - pad.at.x).abs() <= 3.0 * m.pitch,
+        "pad {k} lane {line} vs {}",
+        pad.at.x
+      );
+      if let Some(prev) = last {
+        assert!(
+          l.index > prev,
+          "lanes strictly increase along the row: {prev} then {}",
+          l.index
+        );
+      }
+      last = Some(l.index);
+    }
+  }
 }

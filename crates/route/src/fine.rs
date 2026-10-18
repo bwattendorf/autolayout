@@ -866,11 +866,20 @@ pub fn repair_region(
       continue;
     }
     for &(f, p) in pads {
+      // A pad whose copper reaches into the ripped-up rectangle is inside: its track may start
+      // there even when its centre is outside.
+      let touches = |pd: &Pad| {
+        let (w, h) = crate::shape::pad_extent(pd);
+        pd.at.x + w / 2.0 >= lo.x
+          && pd.at.x - w / 2.0 <= hi.x
+          && pd.at.y + h / 2.0 >= lo.y
+          && pd.at.y - h / 2.0 <= hi.y
+      };
       if board
         .footprints
         .get(f)
         .and_then(|fp| fp.pads.get(p))
-        .is_some_and(|pd| inside(pd.at))
+        .is_some_and(touches)
       {
         pads_in.entry(n).or_default().push((f, p));
         nets_in.push(n);
@@ -1676,5 +1685,86 @@ mod tests {
     let a = route_fine(&board, &m, &rules, FineParams::default());
     let b = route_fine(&board, &m, &rules, FineParams::default());
     assert_eq!(a.routes, b.routes);
+  }
+
+  #[test]
+  fn clipping_a_segment_to_a_rectangle() {
+    let (lo, hi) = (Point::new(0.0, 0.0), Point::new(10.0, 10.0));
+    let p = Point::new;
+    // Inside, outside, crossing in, passing through, along an edge, grazing a corner.
+    assert_eq!(clip_to_rect(p(2.0, 2.0), p(8.0, 8.0), lo, hi), Some((0.0, 1.0)));
+    assert_eq!(clip_to_rect(p(-5.0, 2.0), p(-1.0, 8.0), lo, hi), None);
+    let (t0, t1) = clip_to_rect(p(-5.0, 5.0), p(5.0, 5.0), lo, hi).unwrap();
+    assert!((t0 - 0.5).abs() < 1e-12 && (t1 - 1.0).abs() < 1e-12, "{t0} {t1}");
+    let (t0, t1) = clip_to_rect(p(-5.0, 5.0), p(15.0, 5.0), lo, hi).unwrap();
+    assert!(
+      (t0 - 0.25).abs() < 1e-12 && (t1 - 0.75).abs() < 1e-12,
+      "{t0} {t1}"
+    );
+    assert_eq!(clip_to_rect(p(10.0, 1.0), p(10.0, 9.0), lo, hi), Some((0.0, 1.0)));
+    // A segment that only touches the corner (10, 10) clips to a single point.
+    let (t0, t1) = clip_to_rect(p(9.0, 11.0), p(11.0, 9.0), lo, hi).unwrap();
+    assert!((t0 - 0.5).abs() < 1e-12 && (t1 - 0.5).abs() < 1e-12, "{t0} {t1}");
+    // One that passes the corner without touching it is outside.
+    assert_eq!(clip_to_rect(p(10.0, 12.0), p(12.0, 10.0), lo, hi), None);
+  }
+
+  /// For many segments the clipped part lies inside the rectangle and the two ends of the segment
+  /// outside it are not.
+  #[test]
+  fn clipped_parts_lie_inside_the_rectangle() {
+    let (lo, hi) = (Point::new(1.0, 2.0), Point::new(7.0, 5.0));
+    let mut n = 0;
+    for ax in (-3..12).step_by(2) {
+      for ay in (-2..9).step_by(3) {
+        for bx in (-3..12).step_by(5) {
+          for by in (-2..9).step_by(2) {
+            let (a, b) = (
+              Point::new(f64::from(ax), f64::from(ay)),
+              Point::new(f64::from(bx), f64::from(by)),
+            );
+            if let Some((t0, t1)) = clip_to_rect(a, b, lo, hi) {
+              assert!(t0 <= t1 && (0.0..=1.0).contains(&t0) && (0.0..=1.0).contains(&t1));
+              for t in [t0, (t0 + t1) / 2.0, t1] {
+                let q = Point::new(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
+                assert!(q.x >= lo.x - 1e-9 && q.x <= hi.x + 1e-9 && q.y >= lo.y - 1e-9 && q.y <= hi.y + 1e-9);
+              }
+              n += 1;
+            }
+          }
+        }
+      }
+    }
+    assert!(n > 20, "the sweep should clip a fair number of segments, got {n}");
+  }
+
+  /// Rip up the middle of a finished routing and re-route it: every net still complete, nothing
+  /// overlapping, and the file verifier agrees.
+  #[test]
+  fn repairing_a_window_of_a_finished_routing_keeps_every_net_connected() {
+    let (mut doc, board, m, rules) = setup();
+    let params = FineParams::default();
+    let res = route_fine(&board, &m, &rules, params);
+    assert_eq!(res.nets_complete, 3);
+    let g = |v: f64, o: f64| ((v - o) / m.pitch).round() as usize;
+    let window = (
+      g(8.0, m.origin.x),
+      g(1.5, m.origin.y),
+      g(22.0, m.origin.x),
+      g(10.5, m.origin.y),
+    );
+    let out = repair_region(&board, &m, &rules, &res.routes, window, params);
+    assert!(
+      out.nets_rerouted >= 2,
+      "the window holds copper of several nets: {out:?}"
+    );
+    assert_eq!(out.nets_failed, 0, "{out:?}");
+    assert_eq!(out.dropped, 0, "{out:?}");
+    crate::write::add_routes_fine(&mut doc, &m, &board, &out.routes).unwrap();
+    let back = parse(&doc.to_string()).unwrap();
+    let b2 = Board::read(&back).unwrap();
+    let report = crate::verify::verify(&back, &b2, &rules, &[]);
+    assert!(report.clean(), "{report:?}");
+    assert_eq!(report.unconnected, 0, "{report:?}");
   }
 }

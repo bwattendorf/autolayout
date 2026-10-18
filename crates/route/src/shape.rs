@@ -285,4 +285,34 @@ mod tests {
     assert!(!polygon_contains(&ring, p(5.0, 5.0)), "inside the hole");
     assert!(!polygon_contains(&ring, p(12.0, 5.0)));
   }
+
+  /// `Shape::bbox` of a rectangle is the square around its bounding circle, so it cannot tell a long
+  /// pad from a square one (the bug that kept bent stubs from ever firing on QFN pads, 2026-10-17);
+  /// `pad_extent` uses the size and the angle.
+  #[test]
+  fn pad_extent_tells_a_long_pad_from_a_square_one_at_any_angle() {
+    let doc = autolayout_sexpr::parse(
+      r#"(kicad_pcb (net 0 "") (net 1 "A")
+      (footprint "X" (layer "F.Cu") (at 0 0) (property "Reference" "U1")
+        (pad "1" smd roundrect (at 0 0) (size 0.8 0.2) (layers "F.Cu") (net 1 "A"))
+        (pad "2" smd roundrect (at 2 0 90) (size 0.8 0.2) (layers "F.Cu") (net 1 "A"))
+        (pad "3" smd rect (at 4 0 45) (size 0.8 0.2) (layers "F.Cu") (net 1 "A"))
+        (pad "4" smd rect (at 6 0) (size 0.5 0.5) (layers "F.Cu") (net 1 "A"))))"#,
+    )
+    .unwrap();
+    let b = autolayout_board::Board::read(&doc).unwrap();
+    let pads = &b.footprints[0].pads;
+    let near = |a: (f64, f64), w: f64, h: f64| (a.0 - w).abs() < 1e-9 && (a.1 - h).abs() < 1e-9;
+    assert!(near(pad_extent(&pads[0]), 0.8, 0.2), "{:?}", pad_extent(&pads[0]));
+    assert!(near(pad_extent(&pads[1]), 0.2, 0.8), "{:?}", pad_extent(&pads[1]));
+    let d = 0.5 * 2.0_f64.sqrt();
+    assert!(near(pad_extent(&pads[2]), d, d), "{:?}", pad_extent(&pads[2]));
+    assert!(near(pad_extent(&pads[3]), 0.5, 0.5));
+    // The trap this replaces: the bounding box of the long pad is square.
+    let bb = pad_copper(&pads[0]).bbox().unwrap();
+    assert!(
+      (bb.width() - bb.height()).abs() < 1e-9,
+      "bbox is a square, which is why it cannot be used"
+    );
+  }
 }
