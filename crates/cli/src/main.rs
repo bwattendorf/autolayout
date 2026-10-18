@@ -567,6 +567,9 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   let mut quick = false;
   let mut repair = None::<f64>;
   let mut seed = 0u64;
+  // When the first order of the nets does not finish the board, try this many other fixed orders
+  // (seeds 1..=N, the same settings the best attempt used) and keep the best. 0 turns it off.
+  let mut retry_seeds = DEFAULT_RETRY_SEEDS;
   let mut explain = false;
   let mut lanes = false;
   let mut tap_spread = false;
@@ -586,6 +589,12 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
             .and_then(|v| v.parse().ok())
             .ok_or("--repair needs a margin in mm")?,
         );
+      }
+      "--retry-seeds" => {
+        retry_seeds = it
+          .next()
+          .and_then(|v| v.parse().ok())
+          .ok_or("--retry-seeds needs a number")?;
       }
       "--seed" => {
         seed = it
@@ -704,7 +713,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     .collect();
   // One routing attempt at a stub reach, judged from the text it would be
   // written as (the same judge the final report uses).
-  let attempt = |m: &RoutingModel, reach: f64, share_stubs: bool| -> Result<_, String> {
+  let attempt = |m: &RoutingModel, reach: f64, share_stubs: bool, seed: u64| -> Result<_, String> {
     let costs = Costs {
       reach,
       share_stubs,
@@ -751,6 +760,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
       NEAR_REACH_NARROW
     },
     true,
+    seed,
   )?;
   // One line per attempt for the report: what it reached, and whether it ran.
   let mut trail: Vec<String> = Vec::new();
@@ -789,7 +799,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
         .map(|&(reach, share)| {
           let attempt = &attempt;
           let m = &m;
-          scope.spawn(move || attempt(m, reach, share))
+          scope.spawn(move || attempt(m, reach, share, seed))
         })
         .collect();
       handles
@@ -818,6 +828,25 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   } else if !greedy && !quick {
     trail.push("  portfolio attempts 2-4: not run, attempt 1 was clean".to_string());
   }
+  // Another order of the nets: a board the first order leaves one conflict short of done is often
+  // finished by a different order (m2 placed by us: seeds 1-4 all complete it, seed 0 leaves one pad).
+  // The seeds are fixed, so the result is still reproducible; each retry keeps the settings the best
+  // attempt so far used.
+  if !greedy && !quick && seed == 0 && !(best.0.nets_complete == best.0.nets_total && best.4.clean()) {
+    let (reach, share) = best.5;
+    for s in 1..=retry_seeds {
+      let next = attempt(&m, reach, share, s)?;
+      trail.push(format!("  retry with net order seed {s}: {}", describe(&next)));
+      let key = |a: &Attempt| (a.4.unconnected, a.4.clearance + a.4.shorting + a.4.hole_to_hole);
+      let done = next.0.nets_complete == next.0.nets_total && next.4.clean();
+      if key(&next) < key(&best) {
+        best = next;
+      }
+      if done {
+        break;
+      }
+    }
+  }
   // Island repair: a plane tap the emulated pour leaves cut off from its
   // plane (`plane_island`) is moved by forbidding its via site and routing
   // again with the same settings. Kept only if it leaves fewer unconnected (or
@@ -841,7 +870,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
         break;
       }
       let (reach, share) = best.5;
-      let next = attempt(&m, reach, share)?;
+      let next = attempt(&m, reach, share, seed)?;
       let key = |a: &Attempt| {
         (
           a.4.unconnected,
@@ -923,7 +952,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
         break;
       }
       blocked_total += newly;
-      let next = attempt(&m, reach_cfg, share)?;
+      let next = attempt(&m, reach_cfg, share, seed)?;
       let after = tap_sites(&next, &m);
       if key(&next) < key(&best) {
         trail.push(format!(
@@ -1170,6 +1199,9 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   }
   Ok(s.nets_complete == s.nets_total && v.clean())
 }
+
+/// Other net orders `route` tries, by default, when the first order does not finish the board.
+const DEFAULT_RETRY_SEEDS: u64 = 4;
 
 /// Parts with a pad this close to a stuck region are listed on its `STUCK` line.
 const STUCK_NEIGHBOUR_MM: f64 = 3.0;
