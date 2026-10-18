@@ -126,6 +126,8 @@ def main(argv):
                 only.append(args[i]); i += 1
         elif a == "--variants":
             variants_file = args[i + 1]; i += 2
+        elif a == "--exe":
+            m7_batch.AUTOLAYOUT = os.path.abspath(args[i + 1]); i += 2
         elif a == "--rules":
             rules_mode = args[i + 1]; i += 2
             if rules_mode not in ("fab", "freeplace"):

@@ -48,7 +48,8 @@ def main(argv):
             cy = min(cells - 1, max(0, int((y - y0) / (y1 - y0) * cells)))
             grid[cy][cx] += 1
         empty = sum(1 for r in grid for c in r if c == 0)
-        print(f"{p}\n  outline {x1 - x0:.0f} x {y1 - y0:.0f} mm, {len(ps)} parts, {empty} of {cells * cells} cells empty")
+        print(f"{p}\n  outline {x1 - x0:.0f} x {y1 - y0:.0f} mm from ({x0:.2f}, {y0:.2f}) to ({x1:.2f}, {y1:.2f}), "
+              f"{len(ps)} parts, {empty} of {cells * cells} cells empty")
         for r in grid:
             print("  " + " ".join(f"{c:3d}" if c else "  ." for c in r))
 

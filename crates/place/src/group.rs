@@ -188,6 +188,30 @@ impl Ctx<'_> {
   }
 }
 
+/// Locked parts whose lock cannot be honoured: a pad on a net has its centre outside the outline, so it
+/// cannot be connected where the part sits (found 2026-10-18 on c2: a locked 0805 cap straddling the
+/// board edge, one pad 1.4 mm off the board; the service moved it). Such a part is placed like a loose
+/// one; callers should say so. Decided from geometry only, never from a name. A locked part with all
+/// its pads (mounting holes aside) inside the outline, an edge connector say, keeps its lock.
+pub fn locked_off_board(board: &Board) -> Vec<usize> {
+  let Some(o) = board.outline else {
+    return Vec::new();
+  };
+  board
+    .footprints
+    .iter()
+    .enumerate()
+    .filter(|(_, fp)| {
+      fp.locked
+        && fp.pads.iter().any(|p| {
+          p.kind != "np_thru_hole"
+            && (p.at.x < o.min.x || p.at.x > o.max.x || p.at.y < o.min.y || p.at.y > o.max.y)
+        })
+    })
+    .map(|(f, _)| f)
+    .collect()
+}
+
 pub fn group(board: &Board, netlist: &Netlist) -> Grouping {
   let kinds: Vec<Kind> = board.footprints.iter().map(kind_of).collect();
   let mut pintype = HashMap::new();
@@ -233,11 +257,12 @@ pub fn group(board: &Board, netlist: &Netlist) -> Grouping {
         >= 16
     })
     .collect();
+  let released = locked_off_board(board);
   let fixed: Vec<usize> = board
     .footprints
     .iter()
     .enumerate()
-    .filter(|(_, fp)| fp.locked)
+    .filter(|(f, fp)| fp.locked && !released.contains(f))
     .map(|(f, _)| f)
     .collect();
 
@@ -715,5 +740,48 @@ impl Grouping {
       );
     }
     s
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use autolayout_sexpr::parse;
+
+  /// 20 x 10 mm outline from (10, 10). C1 is locked and straddles the left edge (pad 1 at x = 9);
+  /// C2 is locked and inside; J1 is a locked connector whose pads are inside; C3 is not locked and
+  /// straddles the edge; HM is a locked mounting hole with its (unnetted) pad outside.
+  const BOARD: &str = r#"(kicad_pcb
+  (layers (0 "F.Cu" signal) (2 "B.Cu" signal) (25 "Edge.Cuts" user))
+  (net 0 "") (net 1 "A") (net 2 "B")
+  (gr_line (start 10 10) (end 30 10) (layer "Edge.Cuts"))
+  (gr_line (start 30 10) (end 30 20) (layer "Edge.Cuts"))
+  (gr_line (start 30 20) (end 10 20) (layer "Edge.Cuts"))
+  (gr_line (start 10 20) (end 10 10) (layer "Edge.Cuts"))
+  (footprint "C" (locked yes) (layer "F.Cu") (at 10 15) (property "Reference" "C1")
+    (pad "1" smd rect (at -1 0) (size 1 1) (layers "F.Cu") (net 1 "A"))
+    (pad "2" smd rect (at 1 0) (size 1 1) (layers "F.Cu") (net 2 "B")))
+  (footprint "C" (locked yes) (layer "F.Cu") (at 20 15) (property "Reference" "C2")
+    (pad "1" smd rect (at -1 0) (size 1 1) (layers "F.Cu") (net 1 "A"))
+    (pad "2" smd rect (at 1 0) (size 1 1) (layers "F.Cu") (net 2 "B")))
+  (footprint "J" (locked yes) (layer "F.Cu") (at 29 15) (property "Reference" "J1")
+    (pad "1" smd rect (at 0 -1) (size 2 1) (layers "F.Cu") (net 1 "A"))
+    (pad "2" smd rect (at 0 1) (size 2 1) (layers "F.Cu") (net 2 "B")))
+  (footprint "C" (layer "F.Cu") (at 10 12) (property "Reference" "C3")
+    (pad "1" smd rect (at -1 0) (size 1 1) (layers "F.Cu") (net 1 "A"))
+    (pad "2" smd rect (at 1 0) (size 1 1) (layers "F.Cu") (net 2 "B")))
+  (footprint "H" (locked yes) (layer "F.Cu") (at 9 12) (property "Reference" "HM")
+    (pad "" np_thru_hole circle (at 0 0) (size 2 2) (drill 2) (layers "*.Cu"))))"#;
+
+  #[test]
+  fn a_locked_part_with_a_pad_outside_the_outline_is_released() {
+    let doc = parse(BOARD).unwrap();
+    let b = Board::read(&doc).unwrap();
+    let names: Vec<&str> = locked_off_board(&b)
+      .iter()
+      .map(|&f| b.footprints[f].reference.as_str())
+      .collect();
+    // C1 straddles the edge; C2 and J1 are inside; C3 is not locked; the hole's pad is not counted.
+    assert_eq!(names, vec!["C1"]);
   }
 }

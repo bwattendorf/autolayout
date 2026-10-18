@@ -255,6 +255,17 @@ fn place(
   let (_, net_doc) = load(net)?;
   let netlist = Netlist::read(&net_doc).map_err(|e| format!("{net}: {e}"))?;
   let g = autolayout_place::group::group(&board, &netlist);
+  let released = autolayout_place::group::locked_off_board(&board);
+  if !released.is_empty() {
+    let names: Vec<&str> = released
+      .iter()
+      .filter_map(|&f| board.footprints.get(f).map(|fp| fp.reference.as_str()))
+      .collect();
+    println!(
+      "locked part(s) with a pad outside the outline cannot stay where they are, so they are placed: {}",
+      names.join(" ")
+    );
+  }
   let start = std::time::Instant::now();
   let pairs = match pairs {
     Some(path) => read_pairs(path, &board)?,
@@ -1075,6 +1086,26 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   }
   if explain {
     print_why(&board, &s);
+    // Failed pads the search recorded no reason for: say how many on-grid cells the pad itself has.
+    for r in &s.routes {
+      for &(f, p) in &r.failed {
+        if r.why.iter().any(|w| w.pad == (f, p)) {
+          continue;
+        }
+        let Some(pad) = board.footprints.get(f).and_then(|fp| fp.pads.get(p)) else {
+          continue;
+        };
+        println!(
+          "  unexplained: net {} pad {}.{} at ({:.3}, {:.3}): {} on-grid landing cells inside the pad",
+          board.nets.get(&r.net).map_or("?", String::as_str),
+          board.footprints.get(f).map_or("?", |fp| fp.reference.as_str()),
+          pad.number,
+          pad.at.x,
+          pad.at.y,
+          m.pad_access(&board, f, p).cells.len()
+        );
+      }
+    }
   }
   if let Some(o) = &out_path {
     fs::write(o, judged.to_string()).map_err(|e| format!("{o}: {e}"))?;
