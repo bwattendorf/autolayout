@@ -48,3 +48,18 @@ RTC RV-3028 (alt RV-3032-C7), 0.47 F supercap, 2200/4700 uF 10 mm caps (only low
 BG95-M3 (BG95-M4 is a different regional variant), Silvertel Ag9912/Ag5412 PoE modules, ARJP11A PoE magjack,
 IN-PI554 LED (WS2812B is a candidate), EM4095, SE051 (SE050 candidate). Details in `out/sourcing/alt_group*.json`.
 Pin-compatibility ratings there are judgement, not datasheet checks.
+
+## All boards under JLCPCB rules (2026-10-18; KiCad `pcb drc --refill-zones`, measured via tools/place_sweep.py)
+Our own placement + route, then `fab_ready.py`: 0 unconnected and none of the absolute manufacturing DRC kinds on
+every board below. DRC only, not a design review. Order files: `out/order/<board>/` (Gerbers zip, BOM with LCSC
+numbers, SMD placement file, hand-source list); not uploaded anywhere.
+- Standard JLCPCB vias (0.45/0.20): m1, e1, e2, c2, c4, cm, c2g, g2c, el, g2, t, g2n, g2i, g2o, g2io.
+- Needs JLCPCB's smaller-via option (0.25/0.15, extra cost, price not looked up): c1 (1-2 nets open at the
+  standard vias with every placement variant tried), io, m2, r (2 open each at the standard vias).
+- emu: the service's board and BOM (not our placement).
+- Footprint swaps made in copies of the inputs (tools/cap_fix.py, tools/swap_to_tht2.py): 0.47 F supercap ->
+  through-hole 5.08 mm pitch / 14.5 mm body (drill 1.0, pad 2.0 are guesses); 4700 uF (e1, e2) -> CP_Elec_18x22;
+  2200 uF (c1 c2 c4 cm) -> CP_Elec_16x17.5. The swapped parts were unlocked so the placer moved them.
+- Hand-source: supercap (every board that has one), ARJP11A, Ag9912-LP, Ag5412, BG95-M3, SE051C2, IN-PI554,
+  EM4095 (EM4095HMSO16B+; Digikey reel only, see out/sourcing/em4095_alternatives.md).
+- RTC: RV-3028-C7 is out of stock everywhere checked; orders use RV-3032-C7 (C5127802), firmware change needed.
