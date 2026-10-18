@@ -5,3 +5,6 @@
 *.dsn
 *.ses
 /out/
+
+# per-machine Claude Code permissions
+.claude/settings.local.json
