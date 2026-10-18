@@ -38,7 +38,7 @@ use autolayout_board::{Board, Pad, Point};
 
 use crate::model::RoutingModel;
 use crate::rules::DesignRules;
-use crate::shape::{pad_copper, pad_obstacle};
+use crate::shape::{Shape, pad_copper, pad_obstacle};
 
 /// Options of the fine router.
 #[derive(Debug, Clone, Copy)]
@@ -317,30 +317,31 @@ pub fn plan_escapes(
   run(board, model, rules, params, Some(esc))
 }
 
-fn run(
-  board: &Board,
+/// One net's work for the PathFinder loop: the real pads to join, extra fixed
+/// terminals (a repair's crossing points), whether it is a plane net, and for an
+/// escape the states it may end on.
+struct Job {
+  net: u32,
+  q: u16,
+  pads: Vec<(usize, usize)>,
+  extra: Vec<PadStart>,
+  plane: bool,
+  exit: Option<HashSet<usize>>,
+}
+
+/// An empty lattice of `w` x `h` cells with its corner at (`ox`, `oy`) (a grid node), the rules'
+/// distances turned into stamp kernels, and nothing in it yet.
+fn make_lattice(
   model: &RoutingModel,
   rules: &DesignRules,
   params: FineParams,
-  esc: Option<EscapeParams>,
-) -> FineResult {
+  ox: f64,
+  oy: f64,
+  w: usize,
+  h: usize,
+) -> Lattice {
   let sub = params.sub.max(1);
   let step = model.pitch / sub as f64;
-  // The lattice: the whole grid, or for an escape the window, whose corner is a grid node.
-  let (ox, oy, w, h) = match esc.and_then(|e| escape_window(board, model, e)) {
-    Some((gx0, gy0, gx1, gy1)) => (
-      model.origin.x + gx0 as f64 * model.pitch,
-      model.origin.y + gy0 as f64 * model.pitch,
-      (gx1 - gx0) * sub + 1,
-      (gy1 - gy0) * sub + 1,
-    ),
-    None => (
-      model.origin.x,
-      model.origin.y,
-      model.nx.saturating_sub(1) * sub + 1,
-      model.ny.saturating_sub(1) * sub + 1,
-    ),
-  };
   let nl = model.layers.len();
   let cells = w * h;
   let r = &model.profile;
@@ -354,7 +355,7 @@ fn run(
   let vt = r.via_diameter / 2.0 + clr + r.track_width / 2.0 + m;
   let vv = (r.via_diameter + clr).max(r.via_drill + rules.min.hole_to_hole) + m;
   let vh = r.via_drill + rules.min.hole_to_hole + m + 0.01;
-  let mut lat = Lattice {
+  Lattice {
     w,
     h,
     nl,
@@ -382,8 +383,11 @@ fn run(
     k_vv: disc(vv, step),
     k_vh: disc(vh, step),
     vh_cells2: (vh / step) * (vh / step),
-  };
-  // Net ids: net code -> 1.. (0 = none).
+  }
+}
+
+/// Net ids for the lattice maps: net code -> 1.. (0 = none).
+fn net_ids(board: &Board) -> HashMap<u32, u16> {
   let mut id_of: HashMap<u32, u16> = HashMap::new();
   for p in board.footprints.iter().flat_map(|f| f.pads.iter()) {
     if let Some(n) = p.net.filter(|&n| n != 0) {
@@ -391,10 +395,22 @@ fn run(
       id_of.entry(n).or_insert(next);
     }
   }
+  id_of
+}
+
+/// The pads as obstacles, and the board edge as a no-go band.
+fn fill_obstacles(
+  lat: &mut Lattice,
+  board: &Board,
+  model: &RoutingModel,
+  rules: &DesignRules,
+  id_of: &HashMap<u32, u16>,
+) {
   let reach = lat.need_via.max(lat.need_track) + 0.4;
-  build_obstacles(&mut lat, board, model, &id_of, reach);
+  build_obstacles(lat, board, model, id_of, reach);
   if let Some(o) = board.outline {
-    let edge = rules.min.copper_edge_clearance + r.track_width / 2.0;
+    let edge = rules.min.copper_edge_clearance + model.profile.track_width / 2.0;
+    let (w, h) = (lat.w, lat.h);
     for iy in 0..h {
       for ix in 0..w {
         let p = lat.point(iy * w + ix);
@@ -406,40 +422,29 @@ fn run(
       }
     }
   }
-  let plane_nets: Vec<u32> = model.planes.iter().map(|p| p.net).collect();
-  let mut by_net = board.pads_by_net();
-  let min_pads = if esc.is_some() { 1 } else { 2 };
-  if let Some(e) = esc {
-    // Only this part's pads are routed, each to the edge of the window.
-    by_net = by_net
-      .into_iter()
-      .filter_map(|(n, pads)| {
-        let mine: Vec<(usize, usize)> = pads.into_iter().filter(|&(f, _)| f == e.part).collect();
-        (!mine.is_empty()).then_some((n, mine))
-      })
-      .collect();
-  }
-  let mut nets: Vec<u32> = by_net
-    .iter()
-    .filter(|&(&n, pads)| n != 0 && pads.len() >= min_pads && id_of.contains_key(&n))
-    .map(|(&n, _)| n)
-    .collect();
-  nets.sort_unstable();
-  let exits: HashMap<u32, HashSet<usize>> = match esc {
-    Some(e) => nets
-      .iter()
-      .map(|&n| (n, exit_states(&lat, board, model, &id_of, n, e)))
-      .collect(),
-    None => HashMap::new(),
-  };
+}
+
+/// PathFinder over `jobs`: every net is ripped up and re-routed in turn, paying for cells inside
+/// another net's zone and for cells fought over, until nothing overlaps. Nets still overlapping at
+/// the end are dropped (a plane net loses only the conflicting taps). Returns what each job
+/// holds, the iterations run and the nets dropped.
+fn negotiate(
+  lat: &mut Lattice,
+  board: &Board,
+  model: &RoutingModel,
+  jobs: &[Job],
+  params: FineParams,
+) -> (Vec<Laid>, usize, usize) {
+  let (w, h, nl) = (lat.w, lat.h, lat.nl);
+  let cells = w * h;
   let mut search = Search {
     dist: vec![INF; nl * cells],
     prev: vec![u32::MAX; nl * cells],
     seen: vec![0; nl * cells],
     epoch: 0,
   };
-  let mut laid: Vec<Laid> = vec![Laid::default(); nets.len()];
-  let mut order: Vec<usize> = (0..nets.len()).collect();
+  let mut laid: Vec<Laid> = vec![Laid::default(); jobs.len()];
+  let mut order: Vec<usize> = (0..jobs.len()).collect();
   let mut rng = params.seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1;
   let mut pres = 0.4f32;
   let mut iterations = 0usize;
@@ -458,23 +463,22 @@ fn run(
       }
     }
     for &k in &order {
-      let (Some(&net), Some(old)) = (nets.get(k), laid.get(k).cloned()) else {
+      let (Some(job), Some(old)) = (jobs.get(k), laid.get(k).cloned()) else {
         continue;
       };
-      let Some(&q) = id_of.get(&net) else { continue };
       lat.stamp_laid(&old, -1);
-      let pads = by_net.get(&net).cloned().unwrap_or_default();
       let new = route_one(
-        &lat,
+        lat,
         &mut search,
         board,
         model,
-        q,
-        &pads,
-        plane_nets.contains(&net),
+        job.q,
+        &job.pads,
+        &job.extra,
+        job.plane,
         pres,
         params.via_cost,
-        exits.get(&net),
+        job.exit.as_ref(),
       );
       lat.stamp_laid(&new, 1);
       if let Some(slot) = laid.get_mut(k) {
@@ -511,6 +515,11 @@ fn run(
       }
     }
     let failed_pads: usize = laid.iter().map(|l| l.failed.len()).sum();
+    if std::env::var("AUTOLAYOUT_FINE_TRACE").is_ok() {
+      eprintln!(
+        "fine iteration {it}: {conflicts} conflicting cells, {failed_pads} failed pads, pres {pres:.1}"
+      );
+    }
     let score = conflicts * 1000 + failed_pads;
     if score < best_score {
       best_score = score;
@@ -521,7 +530,7 @@ fn run(
     }
     pres = (pres * 1.35).min(50.0);
   }
-  // Keep what overlaps nothing already kept (in net order). A signal net is kept
+  // Keep what overlaps nothing already kept (in job order). A signal net is kept
   // whole or dropped; a plane net's taps are independent, so only the conflicting
   // taps (and the taps that shared a dropped tap's via) are dropped.
   for l in &laid {
@@ -530,9 +539,8 @@ fn run(
   let mut kept: Vec<Laid> = Vec::with_capacity(best.len());
   let mut dropped = 0usize;
   for (k, l) in best.iter().enumerate() {
-    let net = nets.get(k).copied().unwrap_or(0);
-    let pads = by_net.get(&net).cloned().unwrap_or_default();
-    if plane_nets.contains(&net) {
+    let Some(job) = jobs.get(k) else { continue };
+    if job.plane {
       let mut out = Laid {
         failed: l.failed.clone(),
         ..Laid::default()
@@ -567,17 +575,81 @@ fn run(
       kept.push(l.clone());
     } else {
       dropped += 1;
+      let mut failed = job.pads.clone();
+      failed.extend(job.extra.iter().map(|e| e.1));
       kept.push(Laid {
-        failed: pads,
+        failed,
         ..Laid::default()
       });
     }
   }
+  (kept, iterations, dropped)
+}
+
+fn run(
+  board: &Board,
+  model: &RoutingModel,
+  rules: &DesignRules,
+  params: FineParams,
+  esc: Option<EscapeParams>,
+) -> FineResult {
+  let sub = params.sub.max(1);
+  let step = model.pitch / sub as f64;
+  // The lattice: the whole grid, or for an escape the window, whose corner is a grid node.
+  let (ox, oy, w, h) = match esc.and_then(|e| escape_window(board, model, e)) {
+    Some((gx0, gy0, gx1, gy1)) => (
+      model.origin.x + gx0 as f64 * model.pitch,
+      model.origin.y + gy0 as f64 * model.pitch,
+      (gx1 - gx0) * sub + 1,
+      (gy1 - gy0) * sub + 1,
+    ),
+    None => (
+      model.origin.x,
+      model.origin.y,
+      model.nx.saturating_sub(1) * sub + 1,
+      model.ny.saturating_sub(1) * sub + 1,
+    ),
+  };
+  let mut lat = make_lattice(model, rules, params, ox, oy, w, h);
+  let id_of = net_ids(board);
+  fill_obstacles(&mut lat, board, model, rules, &id_of);
+  let plane_nets: Vec<u32> = model.planes.iter().map(|p| p.net).collect();
+  let mut by_net = board.pads_by_net();
+  let min_pads = if esc.is_some() { 1 } else { 2 };
+  if let Some(e) = esc {
+    // Only this part's pads are routed, each to the edge of the window.
+    by_net = by_net
+      .into_iter()
+      .filter_map(|(n, pads)| {
+        let mine: Vec<(usize, usize)> = pads.into_iter().filter(|&(f, _)| f == e.part).collect();
+        (!mine.is_empty()).then_some((n, mine))
+      })
+      .collect();
+  }
+  let mut nets: Vec<u32> = by_net
+    .iter()
+    .filter(|&(&n, pads)| n != 0 && pads.len() >= min_pads && id_of.contains_key(&n))
+    .map(|(&n, _)| n)
+    .collect();
+  nets.sort_unstable();
+  let jobs: Vec<Job> = nets
+    .iter()
+    .filter_map(|&n| {
+      Some(Job {
+        net: n,
+        q: *id_of.get(&n)?,
+        pads: by_net.get(&n).cloned().unwrap_or_default(),
+        extra: Vec::new(),
+        plane: plane_nets.contains(&n),
+        exit: esc.map(|e| exit_states(&lat, board, model, &id_of, n, e)),
+      })
+    })
+    .collect();
+  let (kept, iterations, dropped) = negotiate(&mut lat, board, model, &jobs, params);
   let mut routes = Vec::new();
   let mut complete = 0usize;
-  for (k, l) in kept.iter().enumerate() {
-    let Some(&net) = nets.get(k) else { continue };
-    let fr = to_route(&lat, net, l);
+  for (job, l) in jobs.iter().zip(&kept) {
+    let fr = to_route(&lat, job.net, l);
     if fr.failed.is_empty() {
       complete += 1;
     }
@@ -587,10 +659,336 @@ fn run(
     routes,
     iterations,
     dropped,
-    nets_total: nets.len(),
+    nets_total: jobs.len(),
     nets_complete: complete,
     lattice: (w, h),
     step,
+  }
+}
+
+/// The grid router's copper as the fine router's millimetre form, per net: runs and stubs as
+/// segments, vias as points, the pads it missed as `failed`.
+pub fn grid_copper(model: &RoutingModel, summary: &crate::driver::Summary) -> Vec<FineRoute> {
+  summary
+    .routes
+    .iter()
+    .map(|r| {
+      let mut segs: Vec<(usize, Point, Point)> = r
+        .runs
+        .iter()
+        .map(|run| {
+          (
+            run.layer,
+            model.centre(run.a.0, run.a.1),
+            model.centre(run.b.0, run.b.1),
+          )
+        })
+        .collect();
+      segs.extend(
+        r.stubs
+          .iter()
+          .filter(|s| s.from != s.to)
+          .map(|s| (s.layer, s.from, s.to)),
+      );
+      FineRoute {
+        net: r.net,
+        segs,
+        vias: r.vias.iter().map(|&(x, y)| model.centre(x, y)).collect(),
+        failed: r.failed.clone(),
+      }
+    })
+    .collect()
+}
+
+/// The part of segment `a..b` inside the closed rectangle, as parameters (t0, t1) along it.
+fn clip_to_rect(a: Point, b: Point, lo: Point, hi: Point) -> Option<(f64, f64)> {
+  let (mut t0, mut t1) = (0.0f64, 1.0f64);
+  for (p, d, l, h) in [(a.x, b.x - a.x, lo.x, hi.x), (a.y, b.y - a.y, lo.y, hi.y)] {
+    if d.abs() < 1e-12 {
+      if p < l || p > h {
+        return None;
+      }
+    } else {
+      let (u, v) = ((l - p) / d, (h - p) / d);
+      let (u, v) = if u <= v { (u, v) } else { (v, u) };
+      t0 = t0.max(u);
+      t1 = t1.min(v);
+      if t0 > t1 {
+        return None;
+      }
+    }
+  }
+  Some((t0, t1))
+}
+
+/// What a region repair did.
+#[derive(Debug, Clone, Default)]
+pub struct RepairOut {
+  /// All copper after the repair: the input outside the region, new copper inside it.
+  pub routes: Vec<FineRoute>,
+  pub iterations: usize,
+  pub dropped: usize,
+  /// Nets whose copper inside the region was ripped up and re-routed.
+  pub nets_rerouted: usize,
+  /// Of those, nets that came out with a terminal unconnected.
+  pub nets_failed: usize,
+  /// Nets with a failed pad inside the window and nothing else of the net inside to join it to.
+  pub isolated: usize,
+}
+
+/// Re-route everything inside a window of the grid with the fine lattice. `copper` is the whole
+/// board's copper (see [`grid_copper`]). The window is `(gx0, gy0, gx1, gy1)` in grid indices;
+/// copper strictly inside it shrunk by one pitch is ripped up, copper outside is kept as obstacles
+/// (so true clearances apply to it), and for every net the places where its copper crossed the
+/// shrunk window's edge, plus its pads inside, are joined again by PathFinder in the fine lattice.
+/// A plane-net pad inside gets a new legal via. Same input, window and seed give the same copper.
+pub fn repair_region(
+  board: &Board,
+  model: &RoutingModel,
+  rules: &DesignRules,
+  copper: &[FineRoute],
+  window: (usize, usize, usize, usize),
+  params: FineParams,
+) -> RepairOut {
+  let (gx0, gy0, gx1, gy1) = window;
+  let sub = params.sub.max(1);
+  let (ox, oy) = (
+    model.origin.x + gx0 as f64 * model.pitch,
+    model.origin.y + gy0 as f64 * model.pitch,
+  );
+  let (w, h) = (
+    gx1.saturating_sub(gx0) * sub + 1,
+    gy1.saturating_sub(gy0) * sub + 1,
+  );
+  let mut lat = make_lattice(model, rules, params, ox, oy, w, h);
+  let id_of = net_ids(board);
+  fill_obstacles(&mut lat, board, model, rules, &id_of);
+  let step = lat.step;
+  // The rectangle that is ripped up: the lattice window less one pitch all round.
+  let span = (gx1 - gx0) as f64 * model.pitch;
+  let (lo, hi) = (
+    Point::new(ox + model.pitch, oy + model.pitch),
+    Point::new(
+      ox + span - model.pitch,
+      oy + (gy1 - gy0) as f64 * model.pitch - model.pitch,
+    ),
+  );
+  let inside = |p: Point| p.x >= lo.x && p.x <= hi.x && p.y >= lo.y && p.y <= hi.y;
+  let reach = lat.need_via.max(lat.need_track) + 0.4;
+  let q_of = |net: u32| id_of.get(&net).copied().unwrap_or(NO_NET);
+  let (win_lo, win_hi) = (
+    Point::new(ox - reach, oy - reach),
+    Point::new(ox + span + reach, oy + (gy1 - gy0) as f64 * model.pitch + reach),
+  );
+  let near_window = |a: Point, b: Point| {
+    a.x.max(b.x) >= win_lo.x
+      && a.x.min(b.x) <= win_hi.x
+      && a.y.max(b.y) >= win_lo.y
+      && a.y.min(b.y) <= win_hi.y
+  };
+
+  // Split the copper into what stays and what is ripped up.
+  struct Kept {
+    net: u32,
+    segs: Vec<(usize, Point, Point)>,
+    vias: Vec<Point>,
+    failed: Vec<(usize, usize)>,
+    crossings: Vec<(usize, Point)>,
+    removed: bool,
+  }
+  let mut kept: Vec<Kept> = Vec::new();
+  for r in copper {
+    let mut k = Kept {
+      net: r.net,
+      segs: Vec::new(),
+      vias: Vec::new(),
+      failed: r.failed.clone(),
+      crossings: Vec::new(),
+      removed: false,
+    };
+    for &(l, a, b) in &r.segs {
+      match clip_to_rect(a, b, lo, hi) {
+        None => k.segs.push((l, a, b)),
+        Some((t0, t1)) => {
+          k.removed = true;
+          let at = |t: f64| Point::new(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
+          if t0 > 1e-9 {
+            k.segs.push((l, a, at(t0)));
+            k.crossings.push((l, at(t0)));
+          }
+          if t1 < 1.0 - 1e-9 {
+            k.segs.push((l, at(t1), b));
+            k.crossings.push((l, at(t1)));
+          }
+        }
+      }
+    }
+    for &v in &r.vias {
+      if inside(v) {
+        k.removed = true;
+      } else {
+        k.vias.push(v);
+      }
+    }
+    kept.push(k);
+  }
+  // Kept copper near the window is a fixed obstacle with its net's id.
+  let via_r = model.profile.via_diameter / 2.0;
+  let hole_r = lat.via_drill / 2.0 + lat.via_drill / 2.0 + lat.h2h + lat.m + 0.01;
+  let all_layers: Vec<usize> = (0..lat.nl).collect();
+  for k in &kept {
+    let q = q_of(k.net);
+    for &(l, a, b) in &k.segs {
+      if near_window(a, b) {
+        add_distance(
+          &mut lat,
+          &Shape::Capsule(a, b, model.profile.track_width / 2.0),
+          &[l],
+          q,
+          reach,
+        );
+      }
+    }
+    for &v in &k.vias {
+      if near_window(v, v) {
+        add_distance(&mut lat, &Shape::Capsule(v, v, via_r), &all_layers, q, reach);
+        stamp_via_block(&mut lat, v, hole_r);
+      }
+    }
+  }
+  // Jobs: every net with ripped-up copper or a pad inside.
+  let plane_nets: Vec<u32> = model.planes.iter().map(|p| p.net).collect();
+  let by_net = board.pads_by_net();
+  let mut nets_in: Vec<u32> = kept.iter().filter(|k| k.removed).map(|k| k.net).collect();
+  let mut pads_in: HashMap<u32, Vec<(usize, usize)>> = HashMap::new();
+  for (&n, pads) in &by_net {
+    if n == 0 || !id_of.contains_key(&n) {
+      continue;
+    }
+    for &(f, p) in pads {
+      if board
+        .footprints
+        .get(f)
+        .and_then(|fp| fp.pads.get(p))
+        .is_some_and(|pd| inside(pd.at))
+      {
+        pads_in.entry(n).or_default().push((f, p));
+        nets_in.push(n);
+      }
+    }
+  }
+  nets_in.sort_unstable();
+  nets_in.dedup();
+  let mut jobs: Vec<Job> = Vec::new();
+  let mut lost = 0usize;
+  let mut isolated = 0usize;
+  for &n in &nets_in {
+    let Some(&q) = id_of.get(&n) else { continue };
+    let plane = plane_nets.contains(&n);
+    let pads = pads_in.get(&n).cloned().unwrap_or_default();
+    let mut extra: Vec<PadStart> = Vec::new();
+    if !plane {
+      for (i, (l, p)) in kept
+        .iter()
+        .filter(|k| k.net == n)
+        .flat_map(|k| k.crossings.iter().copied())
+        .enumerate()
+      {
+        let (cx, cy) = (
+          ((p.x - ox) / step).round() as i64,
+          ((p.y - oy) / step).round() as i64,
+        );
+        let cell = [
+          (0, 0),
+          (1, 0),
+          (-1, 0),
+          (0, 1),
+          (0, -1),
+          (1, 1),
+          (-1, -1),
+          (1, -1),
+          (-1, 1),
+        ]
+        .iter()
+        .filter_map(|&(dx, dy)| {
+          let (x, y) = (cx + dx, cy + dy);
+          (x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h).then(|| y as usize * w + x as usize)
+        })
+        .find(|&idx| lat.track_ok(l, idx, q));
+        match cell {
+          Some(idx) => extra.push((vec![(l, idx)], (usize::MAX, i), p)),
+          None => lost += 1,
+        }
+      }
+    }
+    if plane && pads.is_empty() || !plane && pads.len() + extra.len() < 2 {
+      if kept.iter().any(|k| k.net == n && !k.failed.is_empty()) {
+        isolated += 1;
+      }
+      continue;
+    }
+    jobs.push(Job {
+      net: n,
+      q,
+      pads,
+      extra,
+      plane,
+      exit: None,
+    });
+  }
+  let (laid, iterations, dropped) = negotiate(&mut lat, board, model, &jobs, params);
+  let mut out: Vec<FineRoute> = kept
+    .into_iter()
+    .map(|k| FineRoute {
+      net: k.net,
+      segs: k.segs,
+      vias: k.vias,
+      failed: k.failed,
+    })
+    .collect();
+  let mut nets_failed = lost;
+  for (job, l) in jobs.iter().zip(&laid) {
+    let fr = to_route(&lat, job.net, l);
+    if std::env::var("AUTOLAYOUT_FINE_TRACE").is_ok() {
+      eprintln!(
+        "repair job net {} ({}): {} pad(s), {} crossing terminal(s) -> {} segments, {} vias, failed {:?}",
+        job.net,
+        board.nets.get(&job.net).map_or("?", String::as_str),
+        job.pads.len(),
+        job.extra.len(),
+        fr.segs.len(),
+        fr.vias.len(),
+        fr.failed
+      );
+    }
+    let real_failed: Vec<(usize, usize)> = fr.failed.iter().copied().filter(|f| f.0 != usize::MAX).collect();
+    if !fr.failed.is_empty() {
+      nets_failed += 1;
+    }
+    match out.iter_mut().find(|r| r.net == job.net) {
+      Some(r) => {
+        // Pads this region could not reach stay failed; the rest of the net's old list stands
+        // unless this job joined them.
+        r.segs.extend(fr.segs);
+        r.vias.extend(fr.vias);
+        r.failed.retain(|f| !job.pads.contains(f));
+        r.failed.extend(real_failed);
+      }
+      None => out.push(FineRoute {
+        net: job.net,
+        segs: fr.segs,
+        vias: fr.vias,
+        failed: real_failed,
+      }),
+    }
+  }
+  RepairOut {
+    routes: out,
+    iterations,
+    dropped,
+    nets_rerouted: jobs.len(),
+    nets_failed,
+    isolated,
   }
 }
 
@@ -680,7 +1078,6 @@ fn build_obstacles(
   id_of: &HashMap<u32, u16>,
   reach: f64,
 ) {
-  let (w, h, step) = (lat.w, lat.h, lat.step);
   for fp in &board.footprints {
     for pad in &fp.pads {
       if pad.kind == "np_thru_hole" && pad.drill.is_none() {
@@ -690,56 +1087,68 @@ fn build_obstacles(
       if let Some(d) = pad.drill {
         // A via hole keeps hole-to-hole spacing from this pad's drill, whatever the net.
         let r = d.x.max(d.y) / 2.0 + lat.via_drill / 2.0 + lat.h2h + lat.m + 0.01;
-        let ix0 = ((pad.at.x - r - lat.ox) / step).floor().max(0.0) as usize;
-        let ix1 = (((pad.at.x + r - lat.ox) / step).ceil().max(0.0) as usize).min(w.saturating_sub(1));
-        let iy0 = ((pad.at.y - r - lat.oy) / step).floor().max(0.0) as usize;
-        let iy1 = (((pad.at.y + r - lat.oy) / step).ceil().max(0.0) as usize).min(h.saturating_sub(1));
-        for iy in iy0..=iy1 {
-          for ix in ix0..=ix1 {
-            if (lat.point(iy * w + ix) - pad.at).length() < r
-              && let Some(b) = lat.via_block.get_mut(iy * w + ix)
-            {
-              *b = true;
-            }
-          }
-        }
+        stamp_via_block(lat, pad.at, r);
       }
-      let shape = pad_obstacle(pad);
-      let Some(bb) = shape.bbox() else { continue };
       let layers = model.pad_layer_indices(&pad.layers);
-      let ix0 = ((bb.min.x - reach - lat.ox) / step).floor().max(0.0) as usize;
-      let ix1 = (((bb.max.x + reach - lat.ox) / step).ceil().max(0.0) as usize).min(w.saturating_sub(1));
-      let iy0 = ((bb.min.y - reach - lat.oy) / step).floor().max(0.0) as usize;
-      let iy1 = (((bb.max.y + reach - lat.oy) / step).ceil().max(0.0) as usize).min(h.saturating_sub(1));
-      for iy in iy0..=iy1 {
-        for ix in ix0..=ix1 {
-          let idx = iy * w + ix;
-          let d = shape.distance(lat.point(idx)) as f32;
-          if f64::from(d) > reach {
-            continue;
-          }
-          for &l in &layers {
-            let Some(cur) = read4(lat, l, idx) else { continue };
-            let (mut d1, mut n1, mut d2, mut n2) = cur;
-            if n1 == q {
-              d1 = d1.min(d);
-            } else if n2 == q {
-              if d < d2 {
-                d2 = d;
-                if d2 < d1 {
-                  std::mem::swap(&mut d1, &mut d2);
-                  std::mem::swap(&mut n1, &mut n2);
-                }
-              }
-            } else if d < d1 {
-              (d2, n2) = (d1, n1);
-              (d1, n1) = (d, q);
-            } else if d < d2 {
-              (d2, n2) = (d, q);
+      add_distance(lat, &pad_obstacle(pad), &layers, q, reach);
+    }
+  }
+}
+
+/// Forbid a via hole within `r` mm of `at`.
+fn stamp_via_block(lat: &mut Lattice, at: Point, r: f64) {
+  let (w, h, step) = (lat.w, lat.h, lat.step);
+  let ix0 = ((at.x - r - lat.ox) / step).floor().max(0.0) as usize;
+  let ix1 = (((at.x + r - lat.ox) / step).ceil().max(0.0) as usize).min(w.saturating_sub(1));
+  let iy0 = ((at.y - r - lat.oy) / step).floor().max(0.0) as usize;
+  let iy1 = (((at.y + r - lat.oy) / step).ceil().max(0.0) as usize).min(h.saturating_sub(1));
+  for iy in iy0..=iy1 {
+    for ix in ix0..=ix1 {
+      if (lat.point(iy * w + ix) - at).length() < r
+        && let Some(b) = lat.via_block.get_mut(iy * w + ix)
+      {
+        *b = true;
+      }
+    }
+  }
+}
+
+/// Fold a copper shape of net `q` on `layers` into the nearest-copper distance maps, within
+/// `reach` mm of it.
+fn add_distance(lat: &mut Lattice, shape: &Shape, layers: &[usize], q: u16, reach: f64) {
+  let (w, h, step) = (lat.w, lat.h, lat.step);
+  let Some(bb) = shape.bbox() else { return };
+  let ix0 = ((bb.min.x - reach - lat.ox) / step).floor().max(0.0) as usize;
+  let ix1 = (((bb.max.x + reach - lat.ox) / step).ceil().max(0.0) as usize).min(w.saturating_sub(1));
+  let iy0 = ((bb.min.y - reach - lat.oy) / step).floor().max(0.0) as usize;
+  let iy1 = (((bb.max.y + reach - lat.oy) / step).ceil().max(0.0) as usize).min(h.saturating_sub(1));
+  for iy in iy0..=iy1 {
+    for ix in ix0..=ix1 {
+      let idx = iy * w + ix;
+      let d = shape.distance(lat.point(idx)) as f32;
+      if f64::from(d) > reach {
+        continue;
+      }
+      for &l in layers {
+        let Some(cur) = read4(lat, l, idx) else { continue };
+        let (mut d1, mut n1, mut d2, mut n2) = cur;
+        if n1 == q {
+          d1 = d1.min(d);
+        } else if n2 == q {
+          if d < d2 {
+            d2 = d;
+            if d2 < d1 {
+              std::mem::swap(&mut d1, &mut d2);
+              std::mem::swap(&mut n1, &mut n2);
             }
-            write4(lat, l, idx, (d1, n1, d2, n2));
           }
+        } else if d < d1 {
+          (d2, n2) = (d1, n1);
+          (d1, n1) = (d, q);
+        } else if d < d2 {
+          (d2, n2) = (d, q);
         }
+        write4(lat, l, idx, (d1, n1, d2, n2));
       }
     }
   }
@@ -818,6 +1227,7 @@ fn route_one(
   model: &RoutingModel,
   q: u16,
   pads: &[(usize, usize)],
+  extra: &[PadStart],
   plane: bool,
   pres: f32,
   via_cost: f32,
@@ -836,6 +1246,7 @@ fn route_one(
       starts.push((c, (fi, pi), pad.at));
     }
   }
+  starts.extend(extra.iter().cloned());
   if starts.is_empty() {
     return laid;
   }

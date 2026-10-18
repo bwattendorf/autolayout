@@ -144,6 +144,9 @@ pub struct Why {
   /// obstacle, `p` plane claim, `x` other net's claim, `.` free), per layer.
   pub tree_map: String,
   pub pad_map: String,
+  /// Where the region each side reached sits (mean of its grid cells, mm).
+  pub tree_at: Point,
+  pub pad_at: Point,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -330,6 +333,25 @@ impl<'a> Router<'a> {
       }
     }
     (fixed, plane, signal)
+  }
+
+  /// Mean position of the grid cells the last search reached.
+  fn reached_centre(&self) -> Point {
+    let (mut sx, mut sy, mut n) = (0.0f64, 0.0f64, 0usize);
+    for s in 0..self.stamp.len() {
+      if self.stamp[s] == self.epoch {
+        let (_, x, y) = self.unstate(s);
+        let c = self.model.centre(x, y);
+        sx += c.x;
+        sy += c.y;
+        n += 1;
+      }
+    }
+    if n == 0 {
+      Point::default()
+    } else {
+      Point::new(sx / n as f64, sy / n as f64)
+    }
   }
 
   /// ASCII picture of the region the last search reached and its surroundings.
@@ -1131,6 +1153,7 @@ impl<'a> Router<'a> {
             let tree_reach = self.reached_count();
             let tree_block = self.frontier_tally(net);
             let tree_map = self.reached_map(net);
+            let tree_at = self.reached_centre();
             let tree_pads: Vec<(usize, usize)> = joined.iter().map(|j| j.pad).collect();
             let rest: Vec<Terminal> = terms.clone();
             for t in &rest {
@@ -1146,6 +1169,8 @@ impl<'a> Router<'a> {
                 pad_block: self.frontier_tally(net),
                 tree_map: tree_map.clone(),
                 pad_map: self.reached_map(net),
+                tree_at,
+                pad_at: self.reached_centre(),
               });
             }
           }

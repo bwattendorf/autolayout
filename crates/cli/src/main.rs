@@ -524,6 +524,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   };
   let mut greedy = false;
   let mut quick = false;
+  let mut repair = None::<f64>;
   let mut seed = 0u64;
   let mut explain = false;
   let mut lanes = false;
@@ -536,6 +537,13 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     match a.as_str() {
       "--greedy" => greedy = true,
       "--quick" => quick = true,
+      "--repair" => {
+        repair = Some(
+          it.next()
+            .and_then(|v| v.parse().ok())
+            .ok_or("--repair needs a margin in mm")?,
+        );
+      }
       "--seed" => {
         seed = it
           .next()
@@ -631,7 +639,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
     let costs = Costs {
       reach,
       share_stubs,
-      explain,
+      explain: explain || repair.is_some(),
       lanes,
       seed,
       ..Costs::default()
@@ -866,7 +874,124 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
       m.via = saved;
     }
   }
-  let (s, stats, judged, written, v, chosen) = best;
+  let (s, stats, mut judged, mut written, mut v, chosen) = best;
+  // Fine-lattice repair of the pads the grid router left open: for each cluster of them, rip up
+  // a window around it, re-route the window with the fine lattice against the copper kept
+  // outside it, and keep the result only if the verifier finds fewer unconnected.
+  let mut repaired = false;
+  if let Some(margin) = repair {
+    let st = &m.stats;
+    if st.existing_segments + st.existing_vias + st.keepout_zones > 0 {
+      println!("repair: skipped, the board has existing copper or keepouts the fine lattice does not read");
+    } else {
+      use autolayout_route::fine::{FineParams, grid_copper, repair_region};
+      let fp = FineParams {
+        sub: 12,
+        iters: 250,
+        slack: -0.003,
+        hist_inc: 1.0,
+        ..FineParams::default()
+      };
+      let mut copper = grid_copper(&m, &s);
+      // Where each unreached pad is stuck: the region of the side that reached fewer cells.
+      let mut open: Vec<autolayout_board::Point> = s
+        .routes
+        .iter()
+        .flat_map(|r| r.why.iter())
+        .map(|w| {
+          if w.tree_reach <= w.pad_reach {
+            w.tree_at
+          } else {
+            w.pad_at
+          }
+        })
+        .collect();
+      open.sort_by(|a, b| a.x.total_cmp(&b.x).then(a.y.total_cmp(&b.y)));
+      // Windows: pads closer than the margin share one; the window is their box plus the margin.
+      let mut groups: Vec<Vec<autolayout_board::Point>> = Vec::new();
+      for p in open {
+        match groups
+          .iter_mut()
+          .find(|g| g.iter().any(|q| (*q - p).length() < 2.0 * margin))
+        {
+          Some(g) => g.push(p),
+          None => groups.push(vec![p]),
+        }
+      }
+      for (gi, g) in groups.iter().enumerate() {
+        let (mut x0, mut y0, mut x1, mut y1) = (f64::MAX, f64::MAX, f64::MIN, f64::MIN);
+        for p in g {
+          x0 = x0.min(p.x);
+          y0 = y0.min(p.y);
+          x1 = x1.max(p.x);
+          y1 = y1.max(p.y);
+        }
+        // Grow the window until every failed net inside it has something to join to.
+        let t = std::time::Instant::now();
+        let mut grown = margin;
+        let out = loop {
+          let lo = |v: f64, o: f64| ((v - grown - o) / m.pitch).floor().max(0.0) as usize;
+          let hi = |v: f64, o: f64, n: usize| {
+            (((v + grown - o) / m.pitch).ceil().max(0.0) as usize).min(n.saturating_sub(1))
+          };
+          let window = (
+            lo(x0, m.origin.x),
+            lo(y0, m.origin.y),
+            hi(x1, m.origin.x, m.nx),
+            hi(y1, m.origin.y, m.ny),
+          );
+          let out = repair_region(&board, &m, &rules, &copper, window, fp);
+          if out.isolated == 0 || grown >= margin + 12.0 {
+            break out;
+          }
+          grown += 3.0;
+        };
+        let mut d2 = doc.clone();
+        let w2 = autolayout_route::write::add_routes_fine(&mut d2, &m, &board, &out.routes)?;
+        let text = d2.to_string();
+        let d2 = parse(&text).map_err(|e| format!("internal: {e}"))?;
+        let b2 = Board::read(&d2).map_err(|e| e.to_string())?;
+        let plane_codes: Vec<(String, u32)> = m.planes.iter().map(|p| (p.layer.clone(), p.net)).collect();
+        let v2 = autolayout_route::verify::verify_fresh_planes(&d2, &b2, &rules, &plane_codes);
+        let better = (v2.unconnected, !v2.clean() as usize) < (v.unconnected, !v.clean() as usize);
+        println!(
+          "repair window {} around {} stuck region(s) near ({:.1}, {:.1}), margin {:.0} mm: {} net(s) re-routed ({} with a terminal unjoined), {} dropped, {} iteration(s), {:.1} s; verifier unconnected {} -> {}, clearance+shorting+hole-to-hole {} -> {}: {}",
+          gi + 1,
+          g.len(),
+          (x0 + x1) / 2.0,
+          (y0 + y1) / 2.0,
+          grown,
+          out.nets_rerouted,
+          out.nets_failed,
+          out.dropped,
+          out.iterations,
+          t.elapsed().as_secs_f64(),
+          v.unconnected,
+          v2.unconnected,
+          v.clearance + v.shorting + v.hole_to_hole,
+          v2.clearance + v2.shorting + v2.hole_to_hole,
+          if better { "kept" } else { "not better, discarded" }
+        );
+        if std::env::var("AUTOLAYOUT_REPAIR_DIFF").is_ok() {
+          for (tag, rep) in [("before", &v), ("after", &v2)] {
+            for i in rep.issues.iter().filter(|i| i.kind == "unconnected") {
+              println!(
+                "  {tag}: {} at ({:.3}, {:.3}): {}",
+                i.kind, i.at.x, i.at.y, i.detail
+              );
+            }
+          }
+        }
+        if better {
+          copper = out.routes;
+          judged = d2;
+          written = w2;
+          v = v2;
+          repaired = true;
+        }
+      }
+    }
+  }
   println!(
     "rules from {}; pitch {:.4} mm; grid {} x {} x {}",
     rules.source,
@@ -949,6 +1074,9 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   );
   for i in v.issues.iter().take(10) {
     println!("  {} at ({:.4}, {:.4}): {}", i.kind, i.at.x, i.at.y, i.detail);
+  }
+  if repaired {
+    return Ok(v.unconnected == 0 && v.clean());
   }
   Ok(s.nets_complete == s.nets_total && v.clean())
 }
