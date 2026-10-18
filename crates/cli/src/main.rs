@@ -566,6 +566,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   let mut explain = false;
   let mut lanes = false;
   let mut tap_spread = false;
+  let mut auto_planes = false;
   let mut fine: Option<autolayout_route::fine::FineParams> = None;
   let mut out_path: Option<String> = None;
   let mut params = Params::default();
@@ -591,6 +592,7 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
       "--explain" => explain = true,
       "--lanes" => lanes = true,
       "--tap-spread" => tap_spread = true,
+      "--auto-planes" => auto_planes = true,
       "--fine" => fine = Some(autolayout_route::fine::FineParams::default()),
       "--sub" | "--fine-iters" | "--via-cost" | "--fine-slack" | "--fine-seed" => {
         let v = it.next().ok_or_else(|| format!("{a} needs a value"))?;
@@ -641,6 +643,30 @@ fn route(pcb: &str, args: &[String]) -> Result<bool, String> {
   }
   let (_, doc) = load(pcb)?;
   let board = Board::read(&doc).map_err(|e| format!("{pcb}: {e}"))?;
+  // --auto-planes: with no --plane given, the inner layers become planes by `planes::plan` (the nets
+  // with the most pads, never a name), as `autolayout planes` would print them.
+  let mut planes = planes;
+  if auto_planes && planes.is_empty() {
+    let plan = autolayout_route::planes::plan(&doc, &board);
+    planes = plan
+      .assignments
+      .iter()
+      .map(|(l, n, _)| (l.clone(), n.clone()))
+      .collect();
+    let shown: Vec<String> = plan
+      .assignments
+      .iter()
+      .map(|(l, n, k)| format!("{l}={n} ({k} pads)"))
+      .collect();
+    println!(
+      "planes (automatic): {}",
+      if shown.is_empty() {
+        "none".to_owned()
+      } else {
+        shown.join(", ")
+      }
+    );
+  }
   let mut m = RoutingModel::build(&doc, &board, &rules, &profile, &planes).map_err(|e| e.to_string())?;
   if lanes {
     println!("lanes planned for {} pads", m.lanes.len());
