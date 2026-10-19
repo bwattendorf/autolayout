@@ -15,6 +15,11 @@ Loop through the four steps until the bug cannot be reproduced; always start wit
 - Open or create a debugging log for this bug (see Log below) and write down the symptom, what you
   expected, and the exact command that shows it. Symptoms only; keep theories out of that line (Part I).
 - Do one bug at a time, and one board at a time. Finish or park it before starting another (ch. 18).
+- Write the symptom objectively (no theories) and a reproduction frequency: attempts and successes
+  ("c4/candidate2, 10 of 10"), or always / frequently / rarely / once (Part I, bug reports).
+- **Check you are running what you edited** (stale code or assets, ch. 1 "Common Root Causes"): is the
+  binary the one just built, is the output file the new one and not an old run in `out/`, is the board
+  the intended one. Make an obvious change and see it show up before trusting a result.
 
 ## 1. Reproduce (ch. 1-3)
 
@@ -32,6 +37,8 @@ Loop through the four steps until the bug cannot be reproduced; always start wit
 
 - Make an educated guess, but cap the time: stop after about an hour, or after two or three shortcuts
   that did not pan out, or when the guesses stop being based on evidence (ch. 4). Switch strategy then.
+- Ask for help after about 20 minutes of real effort with no progress (ch. 10). Give facts first, keep
+  theories labelled as theories, and include a minimal repro.
 - Rule systems out as well as in. Check the code that has broken before, and the glue between
   systems, before looking at old trusted code or libraries (ch. 4).
 - **Bisect when it used to work** (ch. 6): find a good commit and a bad one and `git bisect` between
@@ -39,6 +46,7 @@ Loop through the four steps until the bug cannot be reproduced; always start wit
 - **Instrument before theorising** (ch. 8): assertions as early as possible, check every return
   value, make bad data look obviously bad. Keep instrumentation optional (env switches, flags), off
   by default. Do not let it change the behaviour you are chasing; re-check the bug still happens.
+  If adding a probe makes the symptom vanish, that is a clue about timing or state, not a fix.
 - **Remove randomness** (ch. 9): fixed seeds, fixed order, no clock. A "random" result has a cause.
   (autolayout's results are deterministic; a result that moves with a trivial change is telling you
   about a sensitive spot, not about luck.)
@@ -48,7 +56,10 @@ Loop through the four steps until the bug cannot be reproduced; always start wit
 ## 3. Examine: find the root cause (ch. 13-19)
 
 - **Follow the data** (ch. 15): find the original input, follow it through each transformation, find
-  where it first becomes bad, compare good and bad cases side by side.
+  where it first becomes bad, compare good and bad cases side by side. Bisect the data flow like a
+  commit history: check at each stage, last-good to first-bad. Bad data tells: NaN or infinity,
+  negative sizes, values that do not belong. Separate "undesired" data (the logic is wrong) from
+  "corrupt" data (a transformation broke good input).
 - **Question everything** (ch. 16): list your assumptions and verify each one. Do not trust a feature
   because it exists; check that it actually fires (count how many pads a planner covered, how many
   times a branch ran). A symptom can sit far from its cause.
@@ -63,6 +74,8 @@ Loop through the four steps until the bug cannot be reproduced; always start wit
   next leads so there is always a plan. Store it with the project and reference it from the commit.
 - **Build tools** (ch. 19): when you keep wanting to see something, make a flag or a command for it
   and document it. A hidden tool does not help.
+- **Stub a subsystem** (ch. 29): feed it known-good answers (a hand-made escape plan, a saved result)
+  to rule it in or out; widen the stub until the bug returns or a real replacement exists.
 - Talk it through (ch. 23) when stuck: stating the problem to someone (or in the log) often exposes
   the assumption that is wrong.
 
@@ -76,14 +89,23 @@ Loop through the four steps until the bug cannot be reproduced; always start wit
 - Check side effects separately from the fix: run the other boards (one at a time) and compare
   (ch. 24).
 - **Share what you learned** (ch. 25): commit message with root cause, symptom and solution; update
-  ROADMAP/gaps; ask how the cause got in and what safeguard prevents it (an assert, a test, a check
-  in `ci.sh`). Turn the repro into a regression test when practical.
+  ROADMAP/gaps; ask how the cause got in (ignorance, oversight, or a known shortcut) as a separate
+  question from the fix, and what safeguard prevents it (an assert, a test, a check in `ci.sh`).
+  Turn the repro into a regression test when practical.
+- **Look for dependent behaviour** (ch. 27): code or tuned parameters that only work because of the
+  bug may break when it is fixed. Re-run the other boards and re-check parameters that were tuned
+  against the buggy baseline.
 - **Search for related problems** (ch. 26): the same mistake may exist elsewhere (the pad-extent bug
   affected every use of `bbox` on a rectangle). Fix the family while the context is fresh; make bulk
   changes with care.
 - If a clean fix is not possible yet: deploy a quick fix or workaround and say so (ch. 28), or rewrite
   the offending piece from scratch and compare the two (ch. 29), or change the requirement (ch. 30).
   Do not stop at the workaround; record what remains.
+- A rewrite is best done from the spec (clean room: inputs, outputs, failure cases) or, if you read the
+  old code, by abstracting what it does rather than copying it (dirty room). Keep the old version
+  behind a switch as a comparison oracle and flag the first divergence (ch. 29).
+- Disable, do not delete, a feature that cannot be fixed yet (a flag, not a removed code path). Write
+  down why, link it from the code, and list it as technical debt in the gaps file (ch. 30).
 
 ## Anti-patterns seen in this project (avoid)
 
@@ -92,6 +114,9 @@ Loop through the four steps until the bug cannot be reproduced; always start wit
 - Reading a count as proof without looking at why (look at the cells, the pockets, the nets).
 - Running a ten-minute experiment when a forty-second one answers the same question.
 - Claiming a feature works because it compiled; measure that it covered what you think it did.
+- Judging a result with the wrong rules or the wrong input (the freeplace rules instead of the 3.5 mil
+  fab rules; a stale board): check the setup is what you think before reading the number (stale
+  code or assets, Workflow chapter).
 
 ## Debugging log template
 
@@ -102,7 +127,8 @@ Create `docs/debug-logs/YYYY-MM-DD-<short-topic>.md`:
 Symptom (objective, no theory):
 Expected:
 Repro command + input + seed:   (fast version: ...)
-Frequency / measured numbers:
+Frequency / measured numbers:   (attempts and successes)
+Last known good / first known bad:   (commit, or rules/input set)
 
 ## Leads (prioritised: effort vs chance)
 1. ...
