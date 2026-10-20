@@ -14,10 +14,10 @@ Loop through the four steps until the bug cannot be reproduced; always start wit
 - Take responsibility: assume the bug is in our code, not in KiCad, the corpus, or "the board" (Intro).
 - Open or create a debugging log for this bug (see Log below) and write down the symptom, what you
   expected, and the exact command that shows it. Symptoms only; keep theories out of that line (Part I).
-- Do one bug at a time, and one board at a time. Finish or park it before starting another (ch. 18).
+- Do one bug at a time, and one board at a time. Finish or park it before starting another (p. 180, one bug per change; ch. 18, do not chase every new idea).
 - Write the symptom objectively (no theories) and a reproduction frequency: attempts and successes
   ("c4/candidate2, 10 of 10"), or always / frequently / rarely / once (Part I, bug reports).
-- **Check you are running what you edited** (stale code or assets, ch. 1 "Common Root Causes"): is the
+- **Check you are running what you edited** (stale code or assets: the common-root-causes list in "The Workflow", p. 8): is the
   binary the one just built, is the output file the new one and not an old run in `out/`, is the board
   the intended one. Make an obvious change and see it show up before trusting a result.
 
@@ -33,7 +33,7 @@ Loop through the four steps until the bug cannot be reproduced; always start wit
 - Vary one thing at a time to learn which steps matter: order, timing, seed, layer count, window size.
 - Automate the repeat. Keep the repro as a script or a test once the bug is fixed (ch. 3, 25).
 
-## 2. Probe: find an entry point (ch. 4-9)
+## 2. Probe: find an entry point (Part II, ch. 4-12)
 
 - Make an educated guess, but cap the time: stop after about an hour, or after two or three shortcuts
   that did not pan out, or when the guesses stop being based on evidence (ch. 4). Switch strategy then.
@@ -53,7 +53,7 @@ Loop through the four steps until the bug cannot be reproduced; always start wit
 - Look at the data the program actually produced (maps, dumps, plots) before reasoning about it
   (ch. 15). Examples here: `route --explain`, `AUTOLAYOUT_MAPS=1`, `AUTOLAYOUT_CONTEST=1`.
 
-## 3. Examine: find the root cause (ch. 13-19)
+## 3. Examine: find the root cause (Part III, ch. 13-23)
 
 - **Follow the data** (ch. 15): find the original input, follow it through each transformation, find
   where it first becomes bad, compare good and bad cases side by side. Bisect the data flow like a
@@ -79,11 +79,11 @@ Loop through the four steps until the bug cannot be reproduced; always start wit
 - Talk it through (ch. 23) when stuck: stating the problem to someone (or in the log) often exposes
   the assumption that is wrong.
 
-## 4. Fix (ch. 23-30)
+## 4. Fix (Part IV: "What makes a great fix", p. 180, then ch. 24-30)
 
 - A great fix is minimal, complete, revertible, and addresses the root cause, not the symptom.
-  One bug per change (ch. 23, 24).
-- **Verify** (ch. 23): reproduce several times; undo the change and confirm the bug returns; re-apply
+  One bug per change (p. 180; ch. 24).
+- **Verify** ("What makes a great fix", p. 180): reproduce several times; undo the change and confirm the bug returns; re-apply
   and confirm it goes. Test the fix alone, without other local edits. For us: KiCad DRC and the
   unconnected count, on the real board, with the number in the commit message.
 - Check side effects separately from the fix: run the other boards (one at a time) and compare
